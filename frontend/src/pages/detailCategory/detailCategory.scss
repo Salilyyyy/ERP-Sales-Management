@@ -1,0 +1,126 @@
+$primary-color: #1a3300;
+$border-color: #ccc;
+$bg-light: #f5f5f5;
+$text-color: #1a3300;
+
+.detail-category-container {
+  width: 75%;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    
+
+    .back {
+      display: flex;
+      cursor: pointer;
+      align-items: center;
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+      }
+    }
+
+    h2 {
+      margin-left: 450px;
+      color: #d32f2f;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 20px;
+
+    button {
+      width: 100px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 5px;
+      justify-content: center;
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+      }
+    }
+
+    .delete {
+      background: #FF3F3F;
+      color: #fff;
+    }
+
+    .edit {
+      background: $primary-color;
+      color: #fff;
+    }
+
+    .print {
+      background: #E9762B;
+      color: #fff;
+    }
+  }
+
+  .detail-category-content {
+    padding: 16px;
+    background-color: #EEF0E5;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+
+        .info-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 10px;
+
+          .info-label {
+            font-weight: bold;
+            color: $text-color;
+          }
+
+          .info-value {
+            color: #555;
+          }
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px;
+
+    .header {
+      h2 {
+        margin-left: 0;
+      }
+    }
+
+    .category-info {
+      padding-left: 0;
+    }
+
+    .info-row {
+      flex-direction: column;
+      .info-item {
+        border-right: none;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 10px;
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+}

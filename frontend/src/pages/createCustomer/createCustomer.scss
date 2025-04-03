@@ -1,0 +1,140 @@
+.customer-form-container {
+  width: 75%;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #163020;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+   
+    .back{
+      display: flex;
+      cursor: pointer;
+    }
+   
+    h2 {
+      margin-left: 450px;
+      color: #d32f2f;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 20px;
+    button {
+      width: 150px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 5px;
+      justify-content: center;
+      
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+        color: #fff;
+      }
+    }
+
+    .delete {
+      background: #FF3F3F;
+      color: #fff;
+    }
+
+    .create {
+      background: #FBFADA;
+      color: #163020;
+      border: solid 1px #163020;
+    }
+
+    
+  }
+.customer-form{
+  padding: 15px;
+    background: #EEF0E5;
+    border-radius: 5px;
+
+
+  .form-group {
+    display: flex;
+    flex-direction: row;
+    margin: 20px;
+    label {
+      width: 150px;
+      font-weight: bold;
+      color: #333;
+      display: flex;
+      justify-content: flex-start;
+    
+    }
+
+    input, select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .notes {
+      width: 80%;
+    }
+  }
+
+  .select-group {
+    .select-container {
+      display: flex;
+      gap: 8px;
+
+      select {
+        flex: 1;
+      }
+    }
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .delete-button {
+      background: red;
+      color: white;
+    }
+
+    .create-button {
+      background: #f8fae6;
+      border: 1px solid black;
+      color: black;
+    }
+  }
+}
+}

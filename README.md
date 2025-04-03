@@ -5,73 +5,65 @@ This is a comprehensive Enterprise Resource Planning (ERP) system focused on sal
 
 ## Project Structure
 ```
-├── Backend/                 # NestJS server application
-│   ├── src/                # Source code
-│   │   ├── config/         # Configuration files
-│   │   ├── modules/        # Feature modules
-│   │   ├── common/         # Shared resources
-│   │   │   ├── decorators/ # Custom decorators
-│   │   │   ├── filters/    # Exception filters
-│   │   │   ├── guards/     # Authentication guards
-│   │   │   ├── interfaces/ # TypeScript interfaces
-│   │   │   └── pipes/      # Data transformation pipes
-│   │   ├── auth/           # Authentication module
-│   │   ├── sales/          # Sales module
-│   │   ├── inventory/      # Inventory module
-│   │   ├── customers/      # Customers module
-│   │   ├── reports/        # Reports module
-│   │   └── main.ts         # Application entry point
-│   ├── test/               # Test files
-│   ├── nest-cli.json       # NestJS CLI configuration
-│   └── package.json        # Backend dependencies
+├── backend/               # Express.js server application
+│   ├── prisma/           # Database ORM
+│   │   ├── migrations/   # Database migrations
+│   │   └── schema.prisma # Database schema
+│   ├── routes/           # API routes
+│   │   ├── auth.js       # Authentication routes
+│   │   ├── customers.js  # Customer management
+│   │   ├── invoices.js   # Invoice management
+│   │   ├── products.js   # Product management
+│   │   ├── promotions.js # Promotion management
+│   │   ├── shipments.js  # Shipping management
+│   │   ├── stockins.js   # Inventory management
+│   │   └── suppliers.js  # Supplier management
+│   ├── middleware/       # Custom middleware
+│   ├── services/        # Business logic layer
+│   ├── utils/          # Helper utilities
+│   └── index.js        # Application entry point
 │
-├── Frontend/               # React application
-│   ├── public/            # Static files and assets
-│   ├── src/               # Source code
-│   │   ├── assets/        # Images, fonts, and other resources
-│   │   ├── components/    # Reusable UI components
-│   │   ├── contexts/      # React context providers
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── layouts/       # Page layout components
-│   │   ├── pages/         # Page components
-│   │   ├── redux/         # Redux store, actions, and reducers
-│   │   ├── services/      # API service integrations
-│   │   ├── styles/        # Global styles and themes
-│   │   ├── utils/         # Helper functions
-│   │   ├── App.tsx        # Root component
-│   │   └── index.tsx      # Entry point
-│   ├── package.json       # Frontend dependencies
-│   └── tsconfig.json      # TypeScript configuration
+├── frontend/           # React application
+│   ├── public/        # Static files and assets
+│   ├── src/           # Source code
+│   │   ├── assets/    # Images and resources
+│   │   │   └── img/   # Image assets
+│   │   ├── components/# Reusable UI components
+│   │   │   ├── layout/# Page layout components
+│   │   │   └── sidebar/# Navigation sidebar
+│   │   ├── constants/ # Application constants
+│   │   ├── pages/     # Page components
+│   │   │   └── dashboard/# Dashboard page
+│   │   ├── App.js     # Root component
+│   │   └── index.js   # Entry point
+│   └── package.json   # Frontend dependencies
 │
-├── .gitignore             # Git ignore rules
-├── README.md              # Main documentation
-└── package.json           # Root configuration
+└── README.md          # Project documentation
 ```
 
 
 ## Features
 
 - **Sales Management**
+  - Invoice Generation and Management
   - Order Processing
-  - Invoice Generation
-  - Sales Analytics
-  - Revenue Tracking
+  - Promotion Management
+  - Shipping Management
 
 - **Inventory Management**
-  - Stock Tracking
-  - Automated Reordering
-  - Inventory Analytics
-  - Product Categorization
+  - Stock-in Management
+  - Product Management
+  - Product Categories
+  - Supplier Management
 
 - **Customer Management**
   - Customer Database
-  - Contact Management
-  - Customer History
-  - Relationship Tracking
+  - Post Office Integration
+  - Customer Details
+  - Shipping Information
 
-- **Reporting & Analytics**
+- **Dashboard & Analytics**
   - Real-time Dashboard
-  - Custom Report Generation
-  - Sales Performance Metrics
-  - Trend Analysis
-
+  - Sales Overview
+  - Business Performance Metrics
+  - User Management

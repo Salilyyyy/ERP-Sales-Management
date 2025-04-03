@@ -1,0 +1,160 @@
+.create-product-container {
+  width: 75%;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #163020;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .back {
+      display: flex;
+      cursor: pointer;
+    }
+
+
+    h2 {
+      margin-left: 450px;
+      color: #d32f2f;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 20px;
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 5px;
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+        color: #fff;
+      }
+    }
+
+    .delete {
+      background: #ff3f3f;
+      color: #fff;
+    }
+
+    .create {
+      background: #fbfada;
+      color: #163020;
+      border: solid 1px #163020;
+    }
+  }
+
+  .product-form {
+    background-color: #eef0e5;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .image-upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 30px;
+
+      .image-container {
+        width: 200px;
+        height: 200px;
+        background-color: #e0e0e0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 10px;
+        overflow: hidden;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .placeholder {
+          color: #333;
+          font-size: 18px;
+        }
+      }
+
+      .upload-label {
+        color: #436850;
+        font-size: 14px;
+        font-style: italic;
+        cursor: pointer;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .form-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* Chia thành 2 cột */
+      gap: 20px;
+      width: 100%;
+      max-width: 800px;
+
+      .form-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 15px;
+
+        label {
+          display: inline-block;
+          width: 35%;  
+          font-weight: 500;
+          font-size: 14px;
+          color: #333;
+          display: flex;
+          justify-content: flex-start;
+        }
+
+        input {
+          width: 300px; 
+          padding: 8px 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+
+          &:focus {
+            outline: none;
+            border-color: #007aff;
+          }
+        }
+
+          .width, .height, .length {
+            width: 65px;
+            margin-left: 8px;
+          }
+        }
+      }
+    
+  }
+}

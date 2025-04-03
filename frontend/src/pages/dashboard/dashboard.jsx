@@ -1,7 +1,7 @@
 const Dashboard = () => {
     return (
         <div>
-            <h1>Dashboard</h1>
+            <h1>Tổng quan</h1>
         </div>
     );
 };

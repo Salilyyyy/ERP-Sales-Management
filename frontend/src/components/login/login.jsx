@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "./login.scss";
 import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
-import eyeOpen from "../../assets/img/eye.svg";  
-import eyeClosed from "../../assets/img/close-eye.svg";  
+import eyeOpen from "../../assets/img/eye.svg";
+import eyeClosed from "../../assets/img/close-eye.svg";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -33,7 +33,10 @@ const LoginPage = () => {
       if (response.ok) {
         console.log("Đăng nhập thành công:", data);
         alert("Đăng nhập thành công");
+
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
         navigate("/dashboard");
       } else {
         console.error("Lỗi đăng nhập:", data.message);
@@ -52,29 +55,29 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <img src={emailIcon} alt="Email Icon" className="icon" />
-            <input 
-              type="email" 
-              placeholder="Email" 
+            <input
+              type="email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
           </div>
 
           <div className="input-group">
             <img src={passwordIcon} alt="Password Icon" className="icon" />
-            <input 
-              type={passwordVisible ? "text" : "password"} 
-              placeholder="Mật khẩu" 
+            <input
+              type={passwordVisible ? "text" : "password"}
+              placeholder="Mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required 
+              required
             />
-            <img 
-              src={passwordVisible ? eyeOpen : eyeClosed} 
-              alt="Toggle Password" 
-              className="icon toggle-password" 
-              onClick={togglePasswordVisibility} 
+            <img
+              src={passwordVisible ? eyeOpen : eyeClosed}
+              alt="Toggle Password"
+              className="icon toggle-password"
+              onClick={togglePasswordVisibility}
             />
           </div>
 

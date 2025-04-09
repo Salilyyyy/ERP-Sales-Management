@@ -11,13 +11,13 @@ const SALT_ROUNDS = 10;
 // Validation middleware
 const userValidation = [
   body('email').isEmail().normalizeEmail(),
+  body('department').notEmpty().withMessage('Position is required'),
   body('password').optional().isLength({ min: 6 }),
-  body('address').notEmpty(),
-  body('phoneNumber').notEmpty(),
-  body('department').notEmpty(),
-  body('IdentityCard').notEmpty(),
-  body('userType').notEmpty(),
-  body('birthday').isISO8601().toDate(),
+  body('address').optional(),
+  body('phoneNumber').optional(),
+  body('IdentityCard').optional(),
+  body('userType').optional(),
+  body('birthday').optional().isISO8601().toDate(),
 ];
 
 // Create a new user
@@ -49,15 +49,15 @@ router.post('/', userValidation, async (req, res) => {
 
     const user = await prisma.users.create({
       data: {
-        address,
-        image,
         email,
-        password: req.body.password,
-        birthday,
-        phoneNumber,
         department,
-        IdentityCard,
-        userType,
+        address: address || null,
+        image: image || null,
+        password: req.body.password || null,
+        birthday: birthday || null,
+        phoneNumber: phoneNumber || null,
+        IdentityCard: IdentityCard || null,
+        userType: userType || 'USER',
         createAt: new Date(),
         status: status || 'ACTIVE',
       },

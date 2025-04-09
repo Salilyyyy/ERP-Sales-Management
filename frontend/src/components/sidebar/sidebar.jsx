@@ -21,6 +21,10 @@ const Sidebar = () => {
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const [activeItem, setActiveItem] = useState("");
 
+    // Lấy userType từ localStorage
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userType = user?.userType || "";
+
     useEffect(() => {
         const path = location.pathname;
         if (path.includes("/dashboard")) setActiveItem("dashboard");
@@ -53,14 +57,13 @@ const Sidebar = () => {
         setActiveItem(item);
         navigate(path);
     };
+
     const handleLogout = () => {
-        localStorage.removeItem("token"); 
-    
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         navigate("/login");
-    
         alert("Bạn đã đăng xuất.");
-      };
-    
+    };
 
     return (
         <div className="sidebar">
@@ -78,15 +81,19 @@ const Sidebar = () => {
                         <span>Tổng quan</span>
                     </div>
                 </li>
-                <li
-                    className={`menu-item ${activeItem === "employee" ? "active" : ""}`}
-                    onClick={() => handleItemClick("employee", "/employee")}
-                >
-                    <div className="menu-no">
-                        <img className="icon" src={EmployeeIcon} alt="Employee" />
-                        <span>Nhân viên</span>
-                    </div>
-                </li>
+
+                {(userType === "manager" || userType === "admin") && (
+                    <li
+                        className={`menu-item ${activeItem === "employee" ? "active" : ""}`}
+                        onClick={() => handleItemClick("employee", "/employee")}
+                    >
+                        <div className="menu-no">
+                            <img className="icon" src={EmployeeIcon} alt="Employee" />
+                            <span>Nhân viên</span>
+                        </div>
+                    </li>
+                )}
+
                 <li
                     className={`menu-item ${activeItem === "invoice" ? "active" : ""}`}
                     onClick={() => handleItemClick("invoice", "/invoices")}
@@ -96,11 +103,9 @@ const Sidebar = () => {
                         <span>Đơn hàng</span>
                     </div>
                 </li>
+
                 <li className="menu-item">
-                    <div
-                        className="menu-main"
-                        onClick={() => toggleSubmenu("product")}
-                    >
+                    <div className="menu-main" onClick={() => toggleSubmenu("product")}>
                         <div className="name">
                             <img className="icon" src={ProductIcon} alt="Product" />
                             <span>Sản phẩm</span>
@@ -128,6 +133,7 @@ const Sidebar = () => {
                         </ul>
                     )}
                 </li>
+
                 <li
                     className={`menu-item ${activeItem === "customer" ? "active" : ""}`}
                     onClick={() => handleItemClick("customer", "/customer")}
@@ -137,11 +143,9 @@ const Sidebar = () => {
                         <span>Khách hàng</span>
                     </div>
                 </li>
+
                 <li className="menu-item">
-                    <div
-                        className="menu-main"
-                        onClick={() => toggleSubmenu("stockIn")}
-                    >
+                    <div className="menu-main" onClick={() => toggleSubmenu("stockIn")}>
                         <div className="name">
                             <img className="icon" src={StockIn} alt="StockIn" />
                             <span>Nhập hàng</span>
@@ -169,11 +173,9 @@ const Sidebar = () => {
                         </ul>
                     )}
                 </li>
+
                 <li className="menu-item">
-                    <div
-                        className="menu-main"
-                        onClick={() => toggleSubmenu("shipping")}
-                    >
+                    <div className="menu-main" onClick={() => toggleSubmenu("shipping")}>
                         <div className="name">
                             <img className="icon" src={Shipping} alt="Shipping" />
                             <span>Vận chuyển</span>
@@ -201,6 +203,7 @@ const Sidebar = () => {
                         </ul>
                     )}
                 </li>
+
                 <li
                     className={`menu-item ${activeItem === "promotion" ? "active" : ""}`}
                     onClick={() => handleItemClick("promotion", "/promotion")}
@@ -240,7 +243,6 @@ const Sidebar = () => {
                         <span>Đăng xuất</span>
                     </div>
                 </li>
-
             </div>
         </div>
     );

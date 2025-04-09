@@ -37,7 +37,10 @@ import Profile from './components/profile/profile';
 import Employee from './pages/employee/employee';
 import CreateEmployee from './pages/createEmployee/createEmployee';
 import DetailEmployee from './pages/detailEmployee/detailEmployee';
-
+import Error404 from './components/error/error-404';
+import Error403 from './components/error/error-403';
+import Error401 from './components/error/error-401';
+import Error500 from './components/error/error-500';
 
 
 function App() {
@@ -46,10 +49,13 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" replace />} />
-
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="*" element={<Error404 />} />
+                    <Route path="/error-403" element={<Error403 />} />
+                    <Route path="/error-401" element={<Error401 />} />
+                    <Route path="/error-500" element={<Error500 />} />
                     <Route path="/" element={<Layout />}>
                         <Route path="dashboard" element={<Dashboard />} />
                         <Route path="invoices" element={<Invoices />} />

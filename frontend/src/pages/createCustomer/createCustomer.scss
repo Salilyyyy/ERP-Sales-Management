@@ -107,34 +107,5 @@
       }
     }
   }
-
-  .button-group {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 15px;
-
-    button {
-      padding: 10px 15px;
-      border: none;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .delete-button {
-      background: red;
-      color: white;
-    }
-
-    .create-button {
-      background: #f8fae6;
-      border: 1px solid black;
-      color: black;
-    }
-  }
 }
 }

@@ -1,0 +1,137 @@
+.create-shipping-container{
+    width: 75%;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #163020;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+  
+      .back {
+        display: flex;
+        cursor: pointer;
+      }
+  
+  
+      h2 {
+        margin-left: 450px;
+        color: #d32f2f;
+      }
+    }
+  
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin: 20px;
+      button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 5px;
+  
+        img {
+          width: 16px;
+          height: 16px;
+          margin-right: 5px;
+          color: #fff;
+        }
+      }
+  
+      .delete {
+        background: #ff3f3f;
+        color: #fff;
+      }
+  
+      .create {
+        background: #fbfada;
+        color: #163020;
+        border: solid 1px #163020;
+      }
+    }
+  
+    .form {
+        background-color: #EEF0E5;
+        padding: 20px;
+        border-radius: 8px;
+        .row {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 15px;
+    
+          .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+    
+            label {
+              width: 150px;
+              margin-bottom: 4px;
+              font-weight: bold;
+              display: flex;
+            }
+    
+            input,
+            select {
+              width: 350px;
+              padding: 8px;
+              border: 1px solid #ccc;
+              border-radius: 4px;
+            }
+
+            select {
+                width: 370px;
+            }
+    
+            &.full {
+              flex: 1 0 100%;
+              input{
+                width: 80%;
+              }
+            }
+    
+            .size-inputs {
+              display: flex;
+              gap: 8px;
+    
+              input {
+                flex: 1;
+                width: 100px;
+              }
+            }
+    
+            .payer-options {
+              display: flex;
+              gap: 20px;
+    
+              label {
+                width: 200px;
+                display: flex;
+                justify-content: center;
+                 align-items: center;
+                font-weight: normal;
+                input {
+                    width: 15px;
+                    height: 15px;
+                  margin-right: 4px;
+                }
+              }
+            }
+          }
+        }
+      }
+    }

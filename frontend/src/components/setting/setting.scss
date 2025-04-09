@@ -1,0 +1,163 @@
+:root {
+    --base-font-size: 16px;
+    --background-color: #ffffff;
+    --text-color: #000000;
+  }
+  
+  [data-theme="dark"] {
+    --background-color: #000000;
+    --text-color: #ffffff;
+  }
+  
+  [data-font-size="small"] {
+    --base-font-size: 12px;
+  }
+  [data-font-size="medium"] {
+    --base-font-size: 16px;
+  }
+  [data-font-size="large"] {
+    --base-font-size: 20px;
+  }
+  
+  body {
+    font-size: var(--base-font-size);
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+  
+  .settings-container {
+    width: 75%;
+    padding: 40px;
+    font-family: Arial, sans-serif;
+    color: var(--text-color);
+    position: relative;
+  
+    h2 {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+  
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 20px;
+  
+      label {
+        font-size: 16px;
+        width: 200px;
+        font-weight: bold;
+        display: flex;
+      }
+  
+      select {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+  
+      .theme-toggle {
+        position: relative;
+        width: 70px;
+        height: 36px;
+        border: 2px solid #1a3300;
+        background-color: #fff;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 10px;
+        cursor: pointer;
+  
+        .icon {
+          width: 16px;
+          height: 16px;
+          z-index: 2;
+        }
+  
+        .toggle-indicator {
+          position: absolute;
+          top: 2px;
+          bottom: 2px;
+          left: 0px;
+          width: 50%;
+          background-color: #e0e0e0;
+          border-radius: 20px;
+          transition: transform 0.3s ease;
+          z-index: 1;
+        }
+  
+        &.light .toggle-indicator {
+          transform: translateX(0);
+        }
+  
+        &.dark .toggle-indicator {
+          transform: translateX(100%);
+        }
+      }
+  
+      .font-size-toggle {
+        select {
+          padding: 6px 12px;
+          border-radius: 6px;
+          border: 1px solid #ccc;
+          font-size: 14px;
+        }
+      }
+  
+      .preview-btn {
+        background-color: #163020;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        cursor: pointer;
+  
+        img {
+          margin-left: 8px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+  
+      .help-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 20px;
+        color: #163020;
+        background-color: #dfe4d7;
+        border-radius: 50%;
+        padding: 4px;
+        cursor: pointer;
+      }
+    }
+  
+    .save-btn {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      background-color: #f4f4d4;
+      color: #163020;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      cursor: pointer;
+  
+      &:hover {
+        background-color: #e8e8c7;
+      }
+  
+      img {
+        margin-right: 6px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+  

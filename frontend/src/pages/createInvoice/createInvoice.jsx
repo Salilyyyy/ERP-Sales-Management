@@ -123,7 +123,7 @@ const CreateInvoice = () => {
   return (
     <div className="invoice-container">
       <div className="header">
-        <div className="back" onClick={() => navigate("/categories")}>
+        <div className="back" onClick={() => navigate("/invoices")}>
           <img src={backIcon} alt="Quay lại" />
         </div>
         <h2>Tạo đơn hàng</h2>

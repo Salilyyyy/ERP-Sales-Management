@@ -181,23 +181,242 @@ const products = [
   },
 ];
 const categories = [
-  { id: 1, name: "Gốm sứ", color: "Vàng", width: 5, height: 10, length: 5, inventory: 100, unit: "Cái" , status: "Còn hàng", decription: "Sản phẩm gốm sứ cao cấp, an toàn cho sức khỏe.", notes: "Không sử dụng trong lò vi sóng."},
-  { id: 2, name: "Tranh nghệ thuật", color: "Đỏ", width: 50, height: 70, length: 5, inventory: 50, unit: "Bức", status: "Còn hàng", decription: "Tranh nghệ thuật độc đáo, mang lại vẻ đẹp cho không gian sống.", notes: "Tránh ánh nắng trực tiếp."},
-  { id: 3, name: "Đồ gỗ", color: "Xanh", width: 60, height: 80, length: 5, inventory: 30, unit: "Bức", status: "Hết hàng", decription: "Sản phẩm đồ gỗ tự nhiên, bền đẹp theo thời gian.", notes: "Lau chùi bằng khăn mềm."},
-  { id: 4, name: "Đồ thủ công mỹ nghệ", color: "Tím", width: 70, height: 90, length: 5, inventory: 20, unit: "Bức", status: "Hết hàng", decription: "Sản phẩm thủ công mỹ nghệ, độc đáo và tinh tế.", notes: "Tránh tiếp xúc với nước."},
-  { id: 5, name: "Đồ gia dụng", color: "Cam", width: 80, height: 100, length: 5, inventory: 10, unit: "Bức", status: "Còn hàng", decription: "Sản phẩm gia dụng tiện ích, phục vụ nhu cầu hàng ngày.", notes: "Rửa sạch trước khi sử dụng."},
+  { id: 1, name: "Gốm sứ", color: "Vàng", width: 5, height: 10, length: 5, inventory: 100, unit: "Cái", status: "Còn hàng", decription: "Sản phẩm gốm sứ cao cấp, an toàn cho sức khỏe.", notes: "Không sử dụng trong lò vi sóng." },
+  { id: 2, name: "Tranh nghệ thuật", color: "Đỏ", width: 50, height: 70, length: 5, inventory: 50, unit: "Bức", status: "Còn hàng", decription: "Tranh nghệ thuật độc đáo, mang lại vẻ đẹp cho không gian sống.", notes: "Tránh ánh nắng trực tiếp." },
+  { id: 3, name: "Đồ gỗ", color: "Xanh", width: 60, height: 80, length: 5, inventory: 30, unit: "Bức", status: "Hết hàng", decription: "Sản phẩm đồ gỗ tự nhiên, bền đẹp theo thời gian.", notes: "Lau chùi bằng khăn mềm." },
+  { id: 4, name: "Đồ thủ công mỹ nghệ", color: "Tím", width: 70, height: 90, length: 5, inventory: 20, unit: "Bức", status: "Hết hàng", decription: "Sản phẩm thủ công mỹ nghệ, độc đáo và tinh tế.", notes: "Tránh tiếp xúc với nước." },
+  { id: 5, name: "Đồ gia dụng", color: "Cam", width: 80, height: 100, length: 5, inventory: 10, unit: "Bức", status: "Còn hàng", decription: "Sản phẩm gia dụng tiện ích, phục vụ nhu cầu hàng ngày.", notes: "Rửa sạch trước khi sử dụng." },
 ];
 const customers = [
   { id: 1, name: "Nguyễn Văn A", phone: "0912345678", address: "123 Đường ABC, Quận 1, TP.HCM", mail: "vana@gmail.com", invoices: ["001", "002"] },
-  { id: 2, name: "Trần Thị B", phone: "0987654321", address: "456 Đường DEF, Quận 2, TP.HCM" , mail:"thib@gmail.com" , invoices: ["003"]},
-  { id: 3, name: "Lê Văn C", phone: "0911122233", address: "789 Đường GHI, Quận 3, TP.HCM" , mail: "vanc@gmail.com", invoices: ["004"]},
-  { id: 4, name: "Phạm Thị D", phone: "0988776655", address: "321 Đường JKL, Quận 4, TP.HCM" , mail: "thid@gmail.com", invoices: ["005"]},
-  { id: 5, name: "Nguyễn Văn E", phone: "0912345678", address: "654 Đường MNO, Quận 5, TP.HCM" , mail: "vane@gmail.com", invoices: ["006"]},
+  { id: 2, name: "Trần Thị B", phone: "0987654321", address: "456 Đường DEF, Quận 2, TP.HCM", mail: "thib@gmail.com", invoices: ["003"] },
+  { id: 3, name: "Lê Văn C", phone: "0911122233", address: "789 Đường GHI, Quận 3, TP.HCM", mail: "vanc@gmail.com", invoices: ["004"] },
+  { id: 4, name: "Phạm Thị D", phone: "0988776655", address: "321 Đường JKL, Quận 4, TP.HCM", mail: "thid@gmail.com", invoices: ["005"] },
+  { id: 5, name: "Nguyễn Văn E", phone: "0912345678", address: "654 Đường MNO, Quận 5, TP.HCM", mail: "vane@gmail.com", invoices: ["006"] },
 ];
 
 const suppliers = [
-  { id: 1, name: "Nhà cung cấp A", phone: "0912345678", address: "123 Đường ABC, Quận 1, TP.HCM" , mail: "A@company.com"},
-  { id: 2, name: "Nhà cung cấp B", phone: "0987654321", address: "456 Đường DEF, Quận 2, TP.HCM", mail: "B@company.com" },
-  { id: 3, name: "Nhà cung cấp C", phone: "0911122233", address: "789 Đường GHI, Quận 3, TP.HCM" , mail: "C@company.com" },
+  { id: 1, name: "Nhà cung cấp A", phone: "0912345678", address: "123 Đường ABC, Quận 1, TP.HCM", mail: "A@company.com", numbertax: "123456789", country: "Việt Nam", representative: "Nguyễn Văn A", phoneofrepresentative: "0923773211", notes: "Nhà cung cấp uy tín, chất lượng sản phẩm tốt." },
+  { id: 2, name: "Nhà cung cấp B", phone: "09372373727", address: "322 Đường Đỗ Bá, Quận Thanh Khê, TP Đà Nẵng", mail: "B@company.com", numbertax: "123456789", country: "Việt Nam", representative: "Nguyễn Văn B", phoneofrepresentative: "0923773211", notes: "Nhà cung cấp uy tín, chất lượng sản phẩm tốt." },
+  { id: 3, name: "Nhà cung cấp C", phone: "09382883832", address: "123 Nguyễn Huy Tưởng, Quận Liên Chiểu, TP Đà Nẵng", mail: "C@company.com", numbertax: "123456789", country: "Việt Nam", representative: "Nguyễn Văn C", phoneofrepresentative: "0923773211", notes: "Nhà cung cấp uy tín, chất lượng sản phẩm tốt." },
+
 ];
-export { invoices, items, productData, listEmployee, products, categories, customers, suppliers };
+
+const stockIn = [
+  {
+    id: "001",
+    date: "10/3/2024",
+    supplier: "Nhà cung cấp A",
+    products: [
+      { id: 1, name: "Tượng đồng cổ", unit: "Cái", quantity: 2, price: 1500000, type: "Đồng thau" },
+      { id: 2, name: "Đèn gốm Bát Tràng", unit: "Cái", quantity: 4, price: 500000, type: "Gốm sứ" },
+    ],
+    paid: true,
+    delivered: true,
+  },
+  {
+    id: "002",
+    date: "15/3/2024",
+    supplier: "Nhà cung cấp B",
+    products: [
+      { id: 3, name: "Mâm bát gỗ", unit: "Cái", quantity: 6, price: 700000, type: "Gỗ tự nhiên" },
+      { id: 4, name: "Tượng Phật đá", unit: "Cái", quantity: 1, price: 2000000, type: "Đá tự nhiên" },
+    ],
+    paid: false,
+    delivered: true,
+  },
+  {
+    id: "003",
+    date: "8/4/2024",
+    supplier: "Nhà cung cấp C",
+    products: [
+      { id: 1, name: "Tượng gỗ phong thủy", unit: "Cái", quantity: 5, price: 1200000, type: "Gỗ tự nhiên" },
+      { id: 2, name: "Bình gốm cổ", unit: "Cái", quantity: 3, price: 800000, type: "Gốm sứ" },
+    ],
+    paid: true,
+    delivered: false,
+  },
+  {
+    id: "004",
+    date: "12/4/2024",
+    supplier: "Nhà cung cấp D",
+    products: [
+      { id: 5, name: "Đĩa gốm men rạn", unit: "Cái", quantity: 10, price: 300000, type: "Gốm sứ" },
+      { id: 6, name: "Tượng gỗ hóa thạch", unit: "Cái", quantity: 2, price: 2500000, type: "Gỗ tự nhiên" },
+    ],
+    paid: false,
+    delivered: true,
+  },
+  {
+    id: "005",
+    date: "20/4/2024",
+    supplier: "Nhà cung cấp E",
+    products: [
+      { id: 7, name: "Tượng linh vật", unit: "Cái", quantity: 4, price: 1800000, type: "Đồng thau" },
+      { id: 8, name: "Đèn trang trí hiện đại", unit: "Cái", quantity: 5, price: 1000000, type: "Kim loại" },
+    ],
+    paid: true,
+    delivered: true,
+  },
+];
+
+const postOffice = [
+  { id: 1, name: "Bưu cục 1", address: "123 Đường ABC, Quận 1, TP.HCM", phone: "0912345678", mail: "viettelpostcn1@gmail.com", notes: "Bưu cục chính, phục vụ tất cả các dịch vụ." },
+  { id: 2, name: "Bưu cục 2", address: "456 Đường DEF, Quận 2, TP.HCM", phone: "0987654321", mail: "viettelpostcn2@gmail.com", notes: "Bưu cục phụ, phục vụ các dịch vụ chuyển phát nhanh." },
+  { id: 3, name: "Bưu cục 3", address: "789 Đường GHI, Quận 3, TP.HCM", phone: "0911122233", mail: "viettelpostcn3@gmail.com", notes: "Bưu cục phụ, phục vụ các dịch vụ chuyển phát tiết kiệm." },
+];
+
+const shipping = [
+  {
+    id: "001",
+    courier: "Viettel Post",
+    invoiceCode: "HD001",
+    senderPost: "0918361445",
+    receiverName: "Hương Giang",
+    phone: "0918361445",
+    address: "8/23 Trần Xuân Lê",
+    province: "Đà Nẵng",
+    district: "Thanh Khê",
+    ward: "Hoà Khê",
+    sendTime: "10/3/2025",
+    estimatedDelivery: "16/3/2025",
+    size: "10×6×5",
+    weight: "120g",
+    shippingFee: "50.000 VND",
+    codFee: "550.000 VND",
+    payer: "Người nhận hàng (COD)",
+    status: "Đang giao hàng",
+    note: "Không có",
+  },
+  {
+    id: "002",
+    courier: "Giao hàng nhanh",
+    invoiceCode: "HD002",
+    senderPost: "0918361445",
+    receiverName: "Hương Giang",
+    phone: "0918361445",
+    address: "8/23 Trần Xuân Lê",
+    province: "Đà Nẵng",
+    district: "Thanh Khê",
+    ward: "Hoà Khê",
+    sendTime: "10/3/2025 12:00:00PM",
+    estimatedDelivery: "16/3/2025 2:00:00PM",
+    size: "10×6×5",
+    weight: "120g",
+    shippingFee: "50.000 VND",
+    codFee: "550.000 VND",
+    payer: "Người nhận hàng (COD)",
+    status: "Đang giao hàng",
+    note: "Không có",
+  },
+  {
+    id: "003",
+    courier: "VNPost",
+    invoiceCode: "HD003",
+    senderPost: "0918361445",
+    receiverName: "Hương Giang",
+    phone: "0918361445",
+    address: "8/23 Trần Xuân Lê",
+    province: "Đà Nẵng",
+    district: "Thanh Khê",
+    ward: "Hoà Khê",
+    sendTime: "10/3/2025 3:00:00PM",
+    estimatedDelivery: "16/3/2025 5:00:00PM",
+    size: "10×6×5",
+    weight: "120g",
+    shippingFee: "50.000 VND",
+    codFee: "550.000 VND",
+    payer: "Người nhận hàng (COD)",
+    status: "Đang giao hàng",
+    note: "",
+  },
+  {
+    id: "004",
+    courier: "Viettel Post",
+    invoiceCode: "HD004",
+    senderPost: "0918361445",
+    receiverName: "Hương Giang",
+    phone: "0918361445",
+    address: "8/23 Trần Xuân Lê",
+    province: "Đà Nẵng",
+    district: "Thanh Khê",
+    ward: "Hoà Khê",
+    sendTime: "10/3/2025 12:00:00PM",
+    estimatedDelivery: "16/3/2025 12:00:00PM",
+    size: "10×6×5",
+    weight: "120g",
+    shippingFee: "50.000 VND",
+    codFee: "550.000 VND",
+    payer: "Người nhận hàng (COD)",
+    status: "Đã giao hàng",
+    note: "",
+  },
+
+];
+
+const promotions = [
+  {
+    id: 1,
+    name: "Giảm giá 10% cho đơn hàng từ 500.000 VND",
+    startDate: "2024-04-01",
+    endDate: "2025-01-31",
+    discount: "10%",
+    minPurchase: "500.000 VND",
+    status: "Đang áp dụng",
+    stock: 100,
+    product: "Tất cả sản phẩm",
+  },
+  {
+    id: 2,
+    name: "Giảm giá 20% cho sản phẩm Gốm sứ",
+    startDate: "2025-02-01",
+    endDate: "2025-02-28",
+    discount: "20%",
+    minPurchase: "Không yêu cầu",
+    status: "Đang áp dụng",
+    stock: 50,
+    product: "Gốm sứ",
+  },
+  {
+    id: 3,
+    name: "Giảm giá 15% cho đơn hàng từ 1.000.000 VND",
+    startDate: "2025-03-01",
+    endDate: "2025-03-31",
+    discount: "15%",
+    minPurchase: "1.000.000 VND",
+    status: "Sắp hết hạn",
+    stock: 30,
+    product: "Tất cả sản phẩm",
+  },
+  {
+    id: 4,
+    name: "Giảm giá 5% cho sản phẩm Tranh nghệ thuật",
+    startDate: "2025-04-01",
+    endDate: "2025-04-30",
+    discount: "5%",
+    minPurchase: "Không yêu cầu",
+    status: "Sắp hết hạn",
+    stock: 20,
+    product: "Tranh nghệ thuật",
+  },
+];
+const employees = [
+  {
+    id: 1,
+    name: "Nguyễn Văn A",
+    phone: "0912345678",
+    mail: "A@gmail.com",
+    address: "123 Đường ABC, Quận 1, TP.HCM",
+    role: "Nhân viên"
+  }, 
+  {
+    id: 2,
+    name: "Trần Thị B",
+    phone: "0987654321",
+    mail: "B@gmail.com",
+    address: "456 Đường DEF, Quận 2, TP.HCM",
+    role: "Quản lý"
+  }
+
+];
+export { invoices, items, productData, listEmployee, products, categories, customers, suppliers, stockIn, postOffice, shipping, promotions, employees };

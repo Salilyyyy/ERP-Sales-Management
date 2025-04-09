@@ -12,6 +12,7 @@ import Profile from "../../assets/img/profile-icon.svg";
 import Logout from "../../assets/img/logout-icon.svg";
 import Logo from "../../assets/img/logo.png";
 import DownIcon from "../../assets/img/down-icon.svg";
+import EmployeeIcon from "../../assets/img/employee.svg";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
@@ -35,7 +36,6 @@ const Sidebar = () => {
         else if (path.includes("/setting")) setActiveItem("setting");
         else if (path.includes("/profile")) setActiveItem("profile");
 
-        // Auto-open submenu if child is active
         if (path.includes("/product") || path.includes("/categories")) {
             setOpenSubmenu("product");
         } else if (path.includes("/supplier-list") || path.includes("/stock-history")) {
@@ -53,6 +53,14 @@ const Sidebar = () => {
         setActiveItem(item);
         navigate(path);
     };
+    const handleLogout = () => {
+        localStorage.removeItem("token"); 
+    
+        navigate("/login");
+    
+        alert("Bạn đã đăng xuất.");
+      };
+    
 
     return (
         <div className="sidebar">
@@ -68,6 +76,15 @@ const Sidebar = () => {
                     <div className="menu-no">
                         <img className="icon" src={DashboardIcon} alt="Dashboard" />
                         <span>Tổng quan</span>
+                    </div>
+                </li>
+                <li
+                    className={`menu-item ${activeItem === "employee" ? "active" : ""}`}
+                    onClick={() => handleItemClick("employee", "/employee")}
+                >
+                    <div className="menu-no">
+                        <img className="icon" src={EmployeeIcon} alt="Employee" />
+                        <span>Nhân viên</span>
                     </div>
                 </li>
                 <li
@@ -216,13 +233,14 @@ const Sidebar = () => {
                 </li>
                 <li
                     className={`menu-item logout ${activeItem === "logout" ? "active" : ""}`}
-                    onClick={() => handleItemClick("logout", "/logout")}
+                    onClick={handleLogout}
                 >
                     <div className="menu-no">
                         <img className="icon" src={Logout} alt="Logout" />
                         <span>Đăng xuất</span>
                     </div>
                 </li>
+
             </div>
         </div>
     );

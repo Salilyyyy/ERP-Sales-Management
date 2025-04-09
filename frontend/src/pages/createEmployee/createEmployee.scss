@@ -1,0 +1,126 @@
+.create-employee {
+    width: 75%;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #163020;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+     
+      .back{
+        display: flex;
+        cursor: pointer;
+      }
+     
+      h2 {
+        margin-left: 450px;
+        color: #d32f2f;
+      }
+    }
+  
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin: 20px;
+      button {
+        width: 100px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-left: 10px;
+        display: flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 5px;
+        justify-content: center;
+        
+  
+        img {
+          width: 16px;
+          height: 16px;
+          margin-right: 5px;
+          color: #fff;
+        }
+      }
+  
+      .delete {
+        background: #FF3F3F;
+        color: #fff;
+      }
+  
+      .create {
+        background: #FBFADA;
+        color: #163020;
+        border: solid 1px #163020;
+      }
+  
+      
+    }
+
+    .form-card {
+        background-color: #f6f8eb;
+        margin-top: 20px;
+        padding: 30px;
+        border-radius: 10px;
+
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 20px;
+
+            .avatar {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-bottom: 8px;
+            }
+
+            .add-photo {
+                color: #436850;
+                font-size: 14px;
+                font-style: italic;
+                cursor: pointer;
+            }
+        }
+
+        .form-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+
+            .form-group {
+                display: flex;
+                flex-direction: row;
+
+                label {
+                    width: 200px;
+                    font-weight: 500;
+                    margin-bottom: 5px;
+                    display: flex;
+                    margin-left: 30%;
+                }
+
+                input, select {
+                    width: 250px;
+                    padding: 8px 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                }
+
+                select{
+                    width: 270px;
+                }
+            }
+        }
+    }
+}

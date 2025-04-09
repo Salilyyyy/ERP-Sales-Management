@@ -1,19 +1,20 @@
 .sidebar {
     width: 250px;
     background-color: #f8f6ef;
-    height: 94vh;
-    padding: 20px;
+    height: 97vh;
+    padding: 10px 20px;
     border-right: 1px solid #ddd;
     display: flex;
     flex-direction: column;
     margin-right: 50px;
+    border-radius: 20px;
   
     .logo {
         display: flex;
         align-items: center;
         justify-content: flex-start;
         padding: 10px;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
   
         .logoIcon {
             width: 50px;

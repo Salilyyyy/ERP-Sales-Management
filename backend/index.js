@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors'); // ✅ Thêm dòng này
+const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bodyParser = require('body-parser');
 const swaggerUi = require('swagger-ui-express');
@@ -9,7 +9,6 @@ const { authenticateToken } = require('./middleware/auth');
 const prisma = new PrismaClient();
 const app = express();
 
-// ✅ Cấu hình CORS trước các middleware khác
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true

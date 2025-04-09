@@ -24,7 +24,6 @@ const CreateInvoice = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [invoiceList, setInvoiceList] = useState([]);
 
   const addProductToInvoice = () => {
     if (!selectedProduct) {

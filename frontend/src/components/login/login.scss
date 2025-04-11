@@ -59,6 +59,16 @@
         }
       }
   
+      .error-message {
+        color: #dc3545;
+        font-size: 14px;
+        margin-bottom: 15px;
+        padding: 8px;
+        background-color: #fde8e8;
+        border-radius: 4px;
+        text-align: left;
+      }
+
       .login-button {
         background: #3b4d35;
         color: white;
@@ -70,12 +80,17 @@
         cursor: pointer;
         transition: 0.3s;
   
-        &:hover {
+        &:hover:not(:disabled) {
           background: #FBFADA;
           color: #000;
+        }
+
+        &:disabled {
+          background: #cccccc;
+          cursor: not-allowed;
+          opacity: 0.7;
         }
       }
     }
       
   }
-  

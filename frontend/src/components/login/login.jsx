@@ -6,6 +6,7 @@ import passwordIcon from "../../assets/img/password-icon.svg";
 import eyeOpen from "../../assets/img/eye.svg";
 import eyeClosed from "../../assets/img/close-eye.svg";
 
+import AuthRepository from "../../api/apiAuth"; 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -20,31 +21,16 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
+      const response = await AuthRepository.login(email, password);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("Đăng nhập thành công:", data);
+      if (response?.token) {
         alert("Đăng nhập thành công");
-
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
         navigate("/dashboard");
       } else {
-        console.error("Lỗi đăng nhập:", data.error);
-        alert(data.error || "Đăng nhập thất bại");
-
+        alert(response?.error || "Đăng nhập thất bại");
       }
     } catch (error) {
-      console.error("Lỗi khi gửi yêu cầu:", error);
+      console.error("Lỗi khi đăng nhập:", error);
       if (!navigator.onLine) {
         alert("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
       } else {

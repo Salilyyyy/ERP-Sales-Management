@@ -16,25 +16,26 @@ try {
 }
 
 const app = express();
-const port = process.env.PORT || 10000;
+const port = process.env.PORT;
 
-// CORS cấu hình cho frontend local và Vercel
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://erp-sales-management.vercel.app',
-    'https://erp-system-api.vercel.app'
+    'https://erp-sales-management.onrender.com'
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
 app.use(bodyParser.json());
 
-
+// Swagger Docs
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -61,22 +62,22 @@ const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
 // Public route
-app.use('/api/auth', authRouter);
+app.use('/auth', authRouter);
 
 // Protected routes
-app.use('/api/promotions', authenticateToken, promotionsRouter);
-app.use('/api/invoices', authenticateToken, invoicesRouter);
-app.use('/api/invoice-details', authenticateToken, invoiceDetailsRouter);
-app.use('/api/products', authenticateToken, productsRouter);
-app.use('/api/product-categories', authenticateToken, productCategoriesRouter);
-app.use('/api/suppliers', authenticateToken, suppliersRouter);
-app.use('/api/customers', authenticateToken, customersRouter);
-app.use('/api/shipments', authenticateToken, shipmentsRouter);
-app.use('/api/post-offices', authenticateToken, postOfficesRouter);
-app.use('/api/users', authenticateToken, usersRouter);
-app.use('/api/stockins', authenticateToken, stockinsRouter);
-app.use('/api/detail-stockins', authenticateToken, detailStockinsRouter);
-app.use('/api/test', testRouter);
+app.use('/promotions', authenticateToken, promotionsRouter);
+app.use('/invoices', authenticateToken, invoicesRouter);
+app.use('/invoice-details', authenticateToken, invoiceDetailsRouter);
+app.use('/products', authenticateToken, productsRouter);
+app.use('/product-categories', authenticateToken, productCategoriesRouter);
+app.use('/suppliers', authenticateToken, suppliersRouter);
+app.use('/customers', authenticateToken, customersRouter);
+app.use('/shipments', authenticateToken, shipmentsRouter);
+app.use('/post-offices', authenticateToken, postOfficesRouter);
+app.use('/users', authenticateToken, usersRouter);
+app.use('/stockins', authenticateToken, stockinsRouter);
+app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
+app.use('/test', testRouter);
 
 // Khởi chạy server
 app.listen(port, () => {

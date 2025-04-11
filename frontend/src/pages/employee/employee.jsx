@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./employee.scss";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { employees } from "../../mock/mock";
 
 const Employee = () => {
     const navigate = useNavigate();
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -18,8 +21,8 @@ const Employee = () => {
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [filterType, setFilterType] = useState("all");
-    const [filterName, setFilterName] = useState("");
+    const [filterType] = useState("all");
+    const [filterName] = useState("");
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,14 +36,65 @@ const Employee = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa nhân viên");
-        setIsDropdownOpen(false);
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    const fetchEmployees = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('/api/users');
+            setEmployees(response.data);
+            setError(null);
+        } catch (err) {
+            setError("Không thể tải danh sách nhân viên");
+            console.error("Error fetching employees:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleExport = () => {
-        alert("Xuất danh sách nhân viên!");
-        setIsDropdownOpen(false);
+    const handleDelete = async () => {
+        if (selectedEmployees.length === 0) {
+            alert("Vui lòng chọn nhân viên để xóa");
+            return;
+        }
+
+        if (window.confirm("Bạn có chắc chắn muốn xóa những nhân viên đã chọn?")) {
+            try {
+                await Promise.all(
+                    selectedEmployees.map(id => 
+                        axios.delete(`/api/users/${id}`)
+                    )
+                );
+                fetchEmployees();
+                setSelectedEmployees([]);
+                setIsDropdownOpen(false);
+                alert("Xóa nhân viên thành công");
+            } catch (err) {
+                console.error("Error deleting employees:", err);
+                alert("Có lỗi xảy ra khi xóa nhân viên");
+            }
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const response = await axios.get('/api/users/export', {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'employees.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setIsDropdownOpen(false);
+        } catch (err) {
+            console.error("Error exporting employees:", err);
+            alert("Có lỗi xảy ra khi xuất danh sách");
+        }
     };
 
     const filteredEmployees = employees
@@ -116,7 +170,12 @@ const Employee = () => {
                 </div>
             </div>
             
-            <table className="order-table">
+            {loading ? (
+                <div className="loading">Đang tải...</div>
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : (
+                <table className="order-table">
                 <thead>
                     <tr>
                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
@@ -146,7 +205,8 @@ const Employee = () => {
                         </tr>
                     ))}
                 </tbody>
-            </table>
+                </table>
+            )}
 
             <div className="pagination-container">
                 <div className="pagination-left">

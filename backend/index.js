@@ -25,7 +25,7 @@ app.use((err, req, res, next) => {
 });
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://erp-system-api.vercel.app'],
+  origin: ['http://localhost:3000', 'https://erp-sales-management.vercel.app', 'https://erp-system-api.vercel.app'],
   credentials: true
 }));
 
@@ -33,8 +33,16 @@ app.use(bodyParser.json());
 
 const port = process.env.PORT || 5000;
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Swagger setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Clear require cache for auth router
+delete require.cache[require.resolve('./routes/auth')];
 
 // Routes
 const authRouter = require('./routes/auth');
@@ -53,22 +61,22 @@ const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
 // Public routes
-app.use('/auth', authRouter);
+app.use('/api/auth', authRouter);
 
 // Protected routes
-app.use('/promotions', authenticateToken, promotionsRouter);
-app.use('/invoices', authenticateToken, invoicesRouter);
-app.use('/invoice-details', authenticateToken, invoiceDetailsRouter);
-app.use('/products', authenticateToken, productsRouter);
-app.use('/product-categories', authenticateToken, productCategoriesRouter);
-app.use('/suppliers', authenticateToken, suppliersRouter);
-app.use('/customers', authenticateToken, customersRouter);
-app.use('/shipments', authenticateToken, shipmentsRouter);
-app.use('/post-offices', authenticateToken, postOfficesRouter);
-app.use('/users', authenticateToken, usersRouter);
-app.use('/stockins', authenticateToken, stockinsRouter);
-app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
-app.use('/test', testRouter);
+app.use('/api/promotions', authenticateToken, promotionsRouter);
+app.use('/api/invoices', authenticateToken, invoicesRouter);
+app.use('/api/invoice-details', authenticateToken, invoiceDetailsRouter);
+app.use('/api/products', authenticateToken, productsRouter);
+app.use('/api/product-categories', authenticateToken, productCategoriesRouter);
+app.use('/api/suppliers', authenticateToken, suppliersRouter);
+app.use('/api/customers', authenticateToken, customersRouter);
+app.use('/api/shipments', authenticateToken, shipmentsRouter);
+app.use('/api/post-offices', authenticateToken, postOfficesRouter);
+app.use('/api/users', authenticateToken, usersRouter);
+app.use('/api/stockins', authenticateToken, stockinsRouter);
+app.use('/api/detail-stockins', authenticateToken, detailStockinsRouter);
+app.use('/api/test', testRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

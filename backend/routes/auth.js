@@ -53,16 +53,16 @@ router.post('/login', loginValidation, async (req, res) => {
     const { email, password } = req.body;
     const result = await AuthService.login(email, password);
     res.status(200).json(result);
-    } catch (error) {
-      console.error("Login error:", error);
-      if (error.message === 'Invalid email or password') {
-        res.status(401).json({ error: error.message });
-      } else if (error.code === 'P2021' || error.code === 'P2002') {
-        // Prisma database errors
-        res.status(500).json({ error: 'Database connection error' });
-      } else {
-        res.status(500).json({ error: error.message || 'Internal server error' });
-      }
+  } catch (error) {
+    console.error("Login error:", error);
+    if (error.message === 'Invalid email or password') {
+      res.status(401).json({ error: error.message });
+    } else if (error.code === 'P2021' || error.code === 'P2002') {
+      // Prisma database errors
+      res.status(500).json({ error: 'Database connection error' });
+    } else {
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
   }
 });
 

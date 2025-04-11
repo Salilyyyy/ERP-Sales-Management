@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "backend/index.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "outputDirectory": "frontend/build",
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

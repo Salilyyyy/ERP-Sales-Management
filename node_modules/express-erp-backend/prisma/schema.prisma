@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Promotions {
+  ID         Int        @id @default(autoincrement())
+  name       String
+  dateCreate DateTime
+  dateEnd    DateTime
+  type       String
+  value      Float
+  minValue   Float
+  quantity   Int
+  Invoices   Invoices[]
+}
+
+model Invoices {
+  ID             Int              @id @default(autoincrement())
+  promotionID    Int
+  customerID     Int
+  exportTime     DateTime
+  paymentMethod  String
+  tax            Float
+  InvoiceDetails InvoiceDetails[]
+  Shipments      Shipments[]
+  Customers      Customers        @relation(fields: [customerID], references: [ID])
+  Promotions     Promotions       @relation(fields: [promotionID], references: [ID])
+}
+
+model InvoiceDetails {
+  ID        Int      @id @default(autoincrement())
+  invoiceID Int
+  productID Int
+  unitPrice Float
+  quantity  Int
+  notes     String?
+  Invoices  Invoices @relation(fields: [invoiceID], references: [ID])
+  Products  Products @relation(fields: [productID], references: [ID])
+}
+
+model Products {
+  ID                  Int               @id @default(autoincrement())
+  produceCategoriesID Int
+  unit                String
+  image               String?
+  name                String
+  weight              Float
+  length              Float
+  width               Float
+  height              Float
+  supplierID          Int
+  origin              String
+  inPrice             Float
+  outPrice            Float
+  quantity            Int
+  title               String
+  description         String?
+  InvoiceDetails      InvoiceDetails[]
+  DetailStockins      DetailStockins[]
+  ProductCategories   ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
+  Suppliers           Suppliers         @relation(fields: [supplierID], references: [ID])
+}
+
+model ProductCategories {
+  ID          Int        @id @default(autoincrement())
+  name        String
+  information String?
+  Products    Products[]
+}
+
+model Suppliers {
+  ID             Int        @id @default(autoincrement())
+  address        String
+  name           String
+  postalCode     String
+  phoneNumber    String
+  email          String
+  representative String
+  phoneNumberRep String
+  Products       Products[]
+}
+
+model Customers {
+  ID           Int        @id @default(autoincrement())
+  organization String?
+  name         String
+  tax          String?
+  phoneNumber  String
+  email        String
+  introduce    String?
+  postalCode   String
+  bonusPoints  Int
+  notes        String?
+  address      String
+  Invoices     Invoices[]
+}
+
+model Shipments {
+  ID            Int         @id @default(autoincrement())
+  invoiceID     Int
+  postOfficeID  Int
+  receiverName  String
+  receiverPhone String
+  sendTime      DateTime
+  receiveTime   DateTime
+  size          String
+  shippingCost  Float
+  payer         String
+  address       String
+  Invoices      Invoices    @relation(fields: [invoiceID], references: [ID])
+  PostOffices   PostOffices @relation(fields: [postOfficeID], references: [ID])
+}
+
+model PostOffices {
+  ID          Int         @id @default(autoincrement())
+  address     String
+  name        String
+  phoneNumber String
+  email       String
+  Shipments   Shipments[]
+}
+
+model Users {
+  ID           Int      @id @default(autoincrement())
+  address      String
+  image        String?
+  email        String   @unique
+  password     String
+  birthday     DateTime
+  phoneNumber  String
+  department   String
+  IdentityCard String
+  userType     String
+  createAt     DateTime
+  status       String
+}
+
+model Stockins {
+  ID             Int              @id @default(autoincrement())
+  stockinDate    DateTime
+  notes          String?
+  DetailStockins DetailStockins[]
+}
+
+model DetailStockins {
+  ID        Int      @id @default(autoincrement())
+  StockinID Int
+  productID Int
+  quantity  Int
+  unitPrice Float
+  Stockins  Stockins @relation(fields: [StockinID], references: [ID])
+  Products  Products @relation(fields: [productID], references: [ID])
+}

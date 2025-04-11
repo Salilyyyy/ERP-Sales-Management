@@ -1,0 +1,217 @@
+.invoice-container {
+  width: 75%;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #163020;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+   
+    .back{
+      display: flex;
+      cursor: pointer;
+    }
+   
+    h2 {
+      margin-left: 450px;
+      color: #d32f2f;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 20px;
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 5px;
+      
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+        color: #fff;
+      }
+    }
+
+    .delete {
+      background: #FF3F3F;
+      color: #fff;
+    }
+
+    .create {
+      background: #FBFADA;
+      color: #163020;
+      border: solid 1px #163020;
+    }
+
+    
+  }
+
+  .section {
+    padding: 15px;
+    background: #EEF0E5;
+    border-radius: 5px;
+      .section-1{
+        border-radius: 5px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+
+      }
+  }
+
+  .section-2 {
+    background: #EEF0E5;
+    padding: 0 15px;
+    border-radius: 5px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: row;
+    min-width: 200px;
+
+    label {
+      width: 40%;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #163020;
+      display: flex;
+      align-items: center;
+    }
+
+    input,
+    select {
+      width: 50%;
+      padding: 8px;
+      border: 1px solid #163020;
+      border-radius: 5px;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin: 5px 0 5px 0;
+
+    label {
+      font-weight: normal;
+    }
+  }
+
+  .btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+
+    img {
+      width: 16px;
+      height: 16px;
+      margin-right: 5px;
+    }
+  }
+
+  .btn-danger {
+    background: #FF3F3F;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #d32f2f;
+  }
+
+  .btn-success {
+    width: 30%;
+    background: #163020;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background: #0d1c12;
+  }
+
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: white;
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #163020;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #163020;
+      color: white;
+    }
+  }
+
+  .summary {
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 20px;
+
+    p {
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+    }
+
+    .total {
+      font-size: 18px;
+      color: #d32f2f;
+      font-weight: bold;
+      text-align: right;
+    }
+  }
+  .section-3, .section-4{
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin: 20px 0;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select {
+    box-sizing: border-box;
+  }
+
+  span {
+    display: inline-block;
+  }
+}

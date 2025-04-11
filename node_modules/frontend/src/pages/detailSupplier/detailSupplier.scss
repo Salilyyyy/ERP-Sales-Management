@@ -1,0 +1,146 @@
+$primary-color: #1a3300;
+$border-color: #ccc;
+$bg-light: #f5f5f5;
+$text-color: #1a3300;
+
+.detail-supplier-container {
+  width: 75%;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    
+
+    .back {
+      display: flex;
+      cursor: pointer;
+      align-items: center;
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+      }
+    }
+
+    h2 {
+      margin-left: 450px;
+      color: #d32f2f;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 20px;
+
+    button {
+      width: 100px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 5px;
+      justify-content: center;
+
+      img {
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
+      }
+    }
+
+    .delete {
+      background: #FF3F3F;
+      color: #fff;
+    }
+
+    .edit {
+      background: $primary-color;
+      color: #fff;
+    }
+
+    .print {
+      background: #E9762B;
+      color: #fff;
+    }
+  }
+
+  .detail-supplier-content {
+    padding: 20px;
+    background-color: #EEF0E5;
+    border-radius: 8px;
+    .supplier-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+
+      .info-row {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: space-between;
+        padding: 10px 0;
+
+        .info-item {
+          width: calc(50% - 10px);
+          display: flex;
+          justify-content: space-between;
+
+          .info-label {
+            font-weight: bold;
+            color: $text-color;
+            font-size: 14px;
+          }
+
+          .info-value, .info-value-id {
+            color: #555;
+            font-size: 14px;
+          }
+          .info-value-id {
+            font-weight: bold;
+            color: #d32f2f;
+          }
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 10px;
+
+    .actions {
+      flex-direction: column;
+      align-items: center;
+
+      button {
+        width: 90%;
+        margin: 5px 0;
+      }
+    }
+
+    .supplier-info {
+      .info-row {
+        flex-direction: column;
+
+        .info-item {
+          width: 100%;
+          border-bottom: 1px solid #f0f0f0;
+          padding-bottom: 8px;
+
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+  }
+}

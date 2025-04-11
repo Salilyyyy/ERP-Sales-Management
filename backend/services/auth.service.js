@@ -2,7 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { generateToken } = require('../utils/jwt');
 
-const prisma = new PrismaClient();
+let prisma;
+try {
+  prisma = new PrismaClient();
+} catch (error) {
+  console.error("Prisma client initialization error:", error);
+  throw new Error("Database connection error");
+}
 const SALT_ROUNDS = 10;
 
 class AuthService {
@@ -44,30 +50,35 @@ class AuthService {
   }
 
   static async login(email, password) {
-    // Find user by email
-    const user = await prisma.users.findUnique({
-      where: { email },
-    });
+    try {
+      // Find user by email
+      const user = await prisma.users.findUnique({
+        where: { email },
+      });
 
-    if (!user) {
-      throw new Error('Invalid email or password');
+      if (!user) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Generate token
+      const token = generateToken(user.ID);
+
+      // Return user data without password and include token
+      const { password: _, ...userWithoutPassword } = user;
+      return {
+        user: userWithoutPassword,
+        token,
+      };
+    } catch (error) {
+      console.error("Database operation error:", error);
+      throw error;
     }
-
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      throw new Error('Invalid email or password');
-    }
-
-    // Generate token
-    const token = generateToken(user.ID);
-
-    // Return user data without password and include token
-    const { password: _, ...userWithoutPassword } = user;
-    return {
-      user: userWithoutPassword,
-      token,
-    };
   }
 }
 

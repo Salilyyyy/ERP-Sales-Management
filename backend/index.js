@@ -6,8 +6,23 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const { authenticateToken } = require('./middleware/auth');
 
-const prisma = new PrismaClient();
+require('dotenv').config();
+
+let prisma;
+try {
+  prisma = new PrismaClient();
+} catch (error) {
+  console.error("Failed to initialize Prisma client:", error);
+  process.exit(1);
+}
+
 const app = express();
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
 
 app.use(cors({
   origin: ['http://localhost:3000', 'https://erp-system-api.vercel.app'],

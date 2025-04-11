@@ -39,12 +39,17 @@ const LoginPage = () => {
 
         navigate("/dashboard");
       } else {
-        console.error("Lỗi đăng nhập:", data.message);
-        alert(data.message || "Đăng nhập thất bại");
+        console.error("Lỗi đăng nhập:", data.error);
+        alert(data.error || "Đăng nhập thất bại");
+
       }
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu:", error);
-      alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+      if (!navigator.onLine) {
+        alert("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
+      } else {
+        alert("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+      }
     }
   };
 

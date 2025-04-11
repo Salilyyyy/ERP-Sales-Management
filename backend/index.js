@@ -5,7 +5,6 @@ const bodyParser = require('body-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const { authenticateToken } = require('./middleware/auth');
-
 require('dotenv').config();
 
 let prisma;
@@ -17,34 +16,35 @@ try {
 }
 
 const app = express();
+const port = process.env.PORT || 10000;
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
-
+// CORS cấu hình cho frontend local và Vercel
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://erp-sales-management.vercel.app', 'https://erp-system-api.vercel.app'],
+  origin: [
+    'http://localhost:3000',
+    'https://erp-sales-management.vercel.app',
+    'https://erp-system-api.vercel.app'
+  ],
   credentials: true
 }));
 
 app.use(bodyParser.json());
 
-const port = process.env.PORT || 5000;
 
-// Health check endpoint
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Swagger setup
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Middleware xử lý lỗi chung
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
 
-// Clear require cache for auth router
-delete require.cache[require.resolve('./routes/auth')];
-
-// Routes
+// Load routes
 const authRouter = require('./routes/auth');
 const promotionsRouter = require('./routes/promotions');
 const invoicesRouter = require('./routes/invoices');
@@ -60,7 +60,7 @@ const stockinsRouter = require('./routes/stockins');
 const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
-// Public routes
+// Public route
 app.use('/api/auth', authRouter);
 
 // Protected routes
@@ -78,6 +78,7 @@ app.use('/api/stockins', authenticateToken, stockinsRouter);
 app.use('/api/detail-stockins', authenticateToken, detailStockinsRouter);
 app.use('/api/test', testRouter);
 
+// Khởi chạy server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

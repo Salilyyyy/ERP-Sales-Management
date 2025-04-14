@@ -3,6 +3,13 @@ import axios from 'axios';
 class BaseRepository {
     constructor(endpoint = '') {
         this.baseURL = process.env.REACT_APP_API_URL;
+        // Debug environment variable loading
+        console.log('Environment:', process.env.NODE_ENV);
+        console.log('API URL from env:', process.env.REACT_APP_API_URL);
+        if (!process.env.REACT_APP_API_URL) {
+            console.error('REACT_APP_API_URL environment variable is not loaded!');
+            throw new Error('API URL not configured');
+        }
         this.endpoint = endpoint;
         this.api = axios.create({
             baseURL: this.baseURL,

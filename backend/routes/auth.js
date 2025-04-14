@@ -30,6 +30,7 @@ router.post('/register', registrationValidation, async (req, res) => {
     const result = await AuthService.register(req.body);
     res.status(201).json(result);
   } catch (error) {
+    console.error("Register error:", error);
     if (error.message === 'User with this email already exists') {
       res.status(409).json({ error: error.message });
     } else {

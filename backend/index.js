@@ -1,48 +1,25 @@
+// Load biến môi trường từ .env
+require('dotenv').config();
+
 const express = require('express');
-const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const { authenticateToken } = require('./middleware/auth');
-require('dotenv').config();
 
-let prisma;
-try {
-  prisma = new PrismaClient();
-} catch (error) {
-  console.error("Failed to initialize Prisma client:", error);
-  process.exit(1);
-}
-
+const prisma = new PrismaClient();
 const app = express();
-const port = process.env.PORT;
 
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://erp-sales-management.vercel.app',
-    'https://erp-sales-management.onrender.com',
-    'http://erp-sales-management.onrender.com'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
+// Swagger docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
-
+// ROUTES
 const authRouter = require('./routes/auth');
 const promotionsRouter = require('./routes/promotions');
 const invoicesRouter = require('./routes/invoices');
@@ -58,8 +35,11 @@ const stockinsRouter = require('./routes/stockins');
 const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
+// PUBLIC ROUTES
 app.use('/auth', authRouter);
+app.use('/test', testRouter);
 
+// PROTECTED ROUTES
 app.use('/promotions', authenticateToken, promotionsRouter);
 app.use('/invoices', authenticateToken, invoicesRouter);
 app.use('/invoice-details', authenticateToken, invoiceDetailsRouter);
@@ -72,12 +52,32 @@ app.use('/post-offices', authenticateToken, postOfficesRouter);
 app.use('/users', authenticateToken, usersRouter);
 app.use('/stockins', authenticateToken, stockinsRouter);
 app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
-app.use('/test', testRouter);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Global error handler – để log lỗi rõ ràng
+app.use((err, req, res, next) => {
+  console.error('💥 Server Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  });
 });
 
-app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Start server sau khi test database
+const port = process.env.PORT || 10000;
+
+async function startServer() {
+  try {
+    await prisma.$connect();
+    console.log('✅ Connected to database');
+
+    app.listen(port, () => {
+      console.log(`🚀 Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to connect to database:', error);
+    process.exit(1); // Stop if DB connection fails
+  }
+}
+
+startServer();
 
 module.exports = app;

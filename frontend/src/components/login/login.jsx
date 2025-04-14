@@ -1,17 +1,26 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./login.scss";
 import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
 import eyeOpen from "../../assets/img/eye.svg";
 import eyeClosed from "../../assets/img/close-eye.svg";
 
-import AuthRepository from "../../api/apiAuth"; 
+import AuthRepository from "../../api/apiAuth";
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (AuthRepository.isAuthenticated()) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
@@ -19,23 +28,27 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
       const response = await AuthRepository.login(email, password);
 
       if (response?.token) {
-        alert("Đăng nhập thành công");
-        navigate("/dashboard");
+        const redirectTo = location.state?.from?.pathname || "/dashboard";
+        navigate(redirectTo);
       } else {
-        alert(response?.error || "Đăng nhập thất bại");
+        setError(response?.error || "Đăng nhập thất bại");
       }
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
       if (!navigator.onLine) {
-        alert("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
+        setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
       } else {
-        alert("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+        setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,7 +92,10 @@ const LoginPage = () => {
             <a href="/forgot-password">Quên mật khẩu?</a>
           </div>
 
-          <button type="submit" className="login-button">Đăng nhập</button>
+          {error && <div className="error-message">{error}</div>}
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
         </form>
       </div>
     </div>

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; 
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // In production, use environment variable
 const JWT_EXPIRES_IN = '24h';
 
 const generateToken = (userId) => {

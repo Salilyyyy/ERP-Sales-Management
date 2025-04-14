@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class BaseRepository {
     constructor(endpoint = '') {
-        this.baseURL = process.env.REACT_APP_API_URL;
+        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000';
         this.endpoint = endpoint;
         this.api = axios.create({
             baseURL: this.baseURL,
@@ -67,7 +67,8 @@ class BaseRepository {
 
     handleError(error) {
         if (error.response) {
-            return new Error(error.response.data.message || 'Đã xảy ra lỗi từ server.');
+            const errorMessage = error.response.data.error || error.response.data.message || 'Đã xảy ra lỗi từ server.';
+            return new Error(errorMessage);
         } else if (error.request) {
             return new Error('Không nhận được phản hồi từ server.');
         } else {

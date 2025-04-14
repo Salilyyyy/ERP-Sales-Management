@@ -2,24 +2,40 @@ import BaseRepository from './baseRepository';
 
 class AuthRepository extends BaseRepository {
     constructor() {
-        super('/auth'); 
+        super('/auth');
     }
 
     async login(email, password) {
-        const response = await this.post('/login', { email, password });
+        try {
+            const response = await this.post('/login', { email, password });
 
-        if (response.token) {
-            localStorage.setItem('auth_token', response.token);
-            localStorage.setItem('user', JSON.stringify(response.user));
+            if (response.token) {
+                localStorage.setItem('auth_token', response.token);
+                localStorage.setItem('user', JSON.stringify(response.user));
+                return response;
+            } else {
+                throw new Error('Invalid response from server');
+            }
+        } catch (error) {
+            if (error.response) {
+                throw new Error(error.response.data.error || 'Login failed');
+            } else if (error.request) {
+                throw new Error('No response from server');
+            } else {
+                throw error;
+            }
         }
-
-        return response;
     }
 
     async logout() {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user');
-        return true;
+        try {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            return true;
+        } catch (error) {
+            console.error('Logout error:', error);
+            throw new Error('Failed to logout');
+        }
     }
 
     getCurrentUser() {
@@ -32,4 +48,4 @@ class AuthRepository extends BaseRepository {
     }
 }
 
-export default new AuthRepository(); 
+export default new AuthRepository();

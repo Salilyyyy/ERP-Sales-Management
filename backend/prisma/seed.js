@@ -24,6 +24,7 @@ async function main() {
   await cleanDatabase();
   console.log('Database cleaned');
 
+  // Create Product Categories
   const productCategories = await Promise.all([
     prisma.productCategories.create({
       data: {
@@ -57,6 +58,7 @@ async function main() {
     }),
   ]);
 
+  // Create Suppliers
   const suppliers = await Promise.all([
     prisma.suppliers.create({
       data: {
@@ -115,6 +117,7 @@ async function main() {
     }),
   ]);
 
+  // Create Products
   const products = await Promise.all([
     prisma.products.create({
       data: {
@@ -208,6 +211,7 @@ async function main() {
     }),
   ]);
 
+  // Create Customers
   const customers = await Promise.all([
     prisma.customers.create({
       data: {
@@ -281,6 +285,7 @@ async function main() {
     }),
   ]);
 
+  // Create Users
   const users = await Promise.all([
     prisma.users.create({
       data: {
@@ -354,6 +359,7 @@ async function main() {
     }),
   ]);
 
+  // Create Post Offices
   const postOffices = await Promise.all([
     prisma.postOffices.create({
       data: {
@@ -397,6 +403,7 @@ async function main() {
     }),
   ]);
 
+  // Create Promotions
   const promotions = await Promise.all([
     prisma.promotions.create({
       data: {
@@ -455,6 +462,7 @@ async function main() {
     }),
   ]);
 
+  // Create Invoices
   const invoices = await Promise.all([
     prisma.invoices.create({
       data: {
@@ -503,6 +511,7 @@ async function main() {
     }),
   ]);
 
+  // Create Invoice Details
   const invoiceDetails = await Promise.all([
     prisma.invoiceDetails.create({
       data: {
@@ -551,6 +560,7 @@ async function main() {
     }),
   ]);
 
+  // Create Shipments
   const shipments = await Promise.all([
     prisma.shipments.create({
       data: {
@@ -624,6 +634,7 @@ async function main() {
     }),
   ]);
 
+  // Create Stock Ins
   const stockins = await Promise.all([
     prisma.stockins.create({
       data: {
@@ -657,6 +668,7 @@ async function main() {
     }),
   ]);
 
+  // Create Detail Stock Ins
   const detailStockins = await Promise.all([
     prisma.detailStockins.create({
       data: {
@@ -710,6 +722,7 @@ main()
     process.exit(1);
   })
   .finally(async () => {
+    // Clean up the database connection
     await prisma.$disconnect();
     console.log('Database connection closed');
   });

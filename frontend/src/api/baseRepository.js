@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class BaseRepository {
     constructor(endpoint = '') {
-        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000';
+        this.baseURL = process.env.REACT_APP_API_URL;
         this.endpoint = endpoint;
         this.api = axios.create({
             baseURL: this.baseURL,

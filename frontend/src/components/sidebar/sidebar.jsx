@@ -61,6 +61,7 @@ const Sidebar = () => {
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("auth_token");
         navigate("/login");
         alert("Bạn đã đăng xuất.");
     };

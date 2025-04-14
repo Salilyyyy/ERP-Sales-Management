@@ -4,10 +4,9 @@ const AuthService = require('../services/auth.service');
 
 const router = express.Router();
 
-// Validation middleware
 const registrationValidation = [
   body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }),
+  body('password').isLength({ min: 8 }),
   body('address').notEmpty(),
   body('phoneNumber').notEmpty(),
   body('department').notEmpty(),
@@ -21,10 +20,8 @@ const loginValidation = [
   body('password').notEmpty(),
 ];
 
-// Register endpoint
 router.post('/register', registrationValidation, async (req, res) => {
   try {
-    // Check validation results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -41,10 +38,8 @@ router.post('/register', registrationValidation, async (req, res) => {
   }
 });
 
-// Login endpoint
 router.post('/login', loginValidation, async (req, res) => {
   try {
-    // Check validation results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -58,12 +53,23 @@ router.post('/login', loginValidation, async (req, res) => {
     if (error.message === 'Invalid email or password') {
       res.status(401).json({ error: error.message });
     } else if (error.code === 'P2021' || error.code === 'P2002') {
-      // Prisma database errors
       res.status(500).json({ error: 'Database connection error' });
     } else {
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
+});
+
+router.get('/login', (req, res) => {
+  res.status(405).json({
+    message: 'This endpoint requires a POST request with JSON body. Please use POST /auth/login instead.'
+  });
+});
+
+router.get('/register', (req, res) => {
+  res.status(405).json({
+    message: 'This endpoint requires a POST request with JSON body. Please use POST /auth/register instead.'
+  });
 });
 
 module.exports = router;

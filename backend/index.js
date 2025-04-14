@@ -31,8 +31,7 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Swagger Docs
-app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 
 // Health check
 app.get('/health', (req, res) => {
@@ -83,5 +82,8 @@ app.use('/test', testRouter);
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+// Swagger Docs
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 module.exports = app;

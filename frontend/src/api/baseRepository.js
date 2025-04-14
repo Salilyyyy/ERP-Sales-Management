@@ -9,6 +9,8 @@ class BaseRepository {
             headers: {
                 'Content-Type': 'application/json',
             },
+            maxRedirects: 0, 
+            validateStatus: status => status < 500 
         });
 
         if (process.env.NODE_ENV === 'development') {

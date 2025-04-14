@@ -22,7 +22,8 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://erp-sales-management.vercel.app',
-    'https://erp-sales-management.onrender.com'
+    'https://erp-sales-management.onrender.com',
+    'http://erp-sales-management.onrender.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -33,18 +34,15 @@ app.use(bodyParser.json());
 
 
 
-// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Middleware xử lý lỗi chung
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// Load routes
 const authRouter = require('./routes/auth');
 const promotionsRouter = require('./routes/promotions');
 const invoicesRouter = require('./routes/invoices');
@@ -60,10 +58,8 @@ const stockinsRouter = require('./routes/stockins');
 const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
-// Public route
 app.use('/auth', authRouter);
 
-// Protected routes
 app.use('/promotions', authenticateToken, promotionsRouter);
 app.use('/invoices', authenticateToken, invoicesRouter);
 app.use('/invoice-details', authenticateToken, invoiceDetailsRouter);
@@ -78,12 +74,10 @@ app.use('/stockins', authenticateToken, stockinsRouter);
 app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
 app.use('/test', testRouter);
 
-// Khởi chạy server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// Swagger Docs
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 module.exports = app;

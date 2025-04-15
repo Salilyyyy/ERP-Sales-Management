@@ -71,7 +71,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete an invoice by ID
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {

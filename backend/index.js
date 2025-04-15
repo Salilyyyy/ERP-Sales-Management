@@ -1,4 +1,3 @@
-// Load biến môi trường từ .env
 require('dotenv').config();
 
 const express = require('express');
@@ -16,8 +15,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // ROUTES
 const authRouter = require('./routes/auth');
@@ -36,7 +33,7 @@ const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
 // PUBLIC ROUTES
-app.use('/auth', authRouter);
+app.use('/auth',authRouter);
 app.use('/test', testRouter);
 
 // PROTECTED ROUTES
@@ -53,7 +50,6 @@ app.use('/users', authenticateToken, usersRouter);
 app.use('/stockins', authenticateToken, stockinsRouter);
 app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
 
-// Global error handler – để log lỗi rõ ràng
 app.use((err, req, res, next) => {
   console.error('💥 Server Error:', err);
   res.status(err.status || 500).json({
@@ -61,7 +57,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server sau khi test database
 const port = process.env.PORT || 10000;
 
 async function startServer() {
@@ -74,10 +69,11 @@ async function startServer() {
     });
   } catch (error) {
     console.error('❌ Failed to connect to database:', error);
-    process.exit(1); // Stop if DB connection fails
+    process.exit(1);
   }
 }
-
+// Swagger docs
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 startServer();
 console.log("👉 DATABASE_URL:", process.env.DATABASE_URL);
 

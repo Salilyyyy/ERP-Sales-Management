@@ -8,7 +8,7 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { invoices } from "../../mock/mock";
+import InvoiceRepository from "../../api/apiInvoice";
 
 const Invoices = () => {
     const navigate = useNavigate();
@@ -19,6 +19,23 @@ const Invoices = () => {
     const [selectedInvoices, setSelectedInvoices] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [invoices, setInvoices] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchInvoices();
+    }, []);
+
+    const fetchInvoices = async () => {
+        try {
+            const data = await InvoiceRepository.getAll();
+            setInvoices(data);
+        } catch (error) {
+            console.error('Error fetching invoices:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -32,31 +49,40 @@ const Invoices = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa đơn hàng!");
+    const handleDelete = async () => {
+        try {
+            await Promise.all(selectedInvoices.map(id => InvoiceRepository.delete(id)));
+            setSelectedInvoices([]);
+            await fetchInvoices();
+            alert("Xóa đơn hàng thành công!");
+        } catch (error) {
+            console.error('Error deleting invoices:', error);
+            alert("Có lỗi xảy ra khi xóa đơn hàng!");
+        }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        alert("Xuất đơn hàng!");
+        // TODO: Implement export functionality
+        alert("Tính năng xuất đơn hàng đang được phát triển!");
         setIsDropdownOpen(false);
     };
 
     const filteredInvoices = invoices.filter((invoice) =>
-        invoice.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.id.toString().includes(searchQuery)
+        invoice.customerID?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+        invoice.ID?.toString().includes(searchQuery)
     );
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedInvoices(newSelectAll ? filteredInvoices.map(inv => inv.id) : []);
+        setSelectedInvoices(newSelectAll ? filteredInvoices.map(inv => inv.ID) : []);
     };
 
-    const handleSelectInvoice = (id) => {
-        let updatedSelection = selectedInvoices.includes(id)
-            ? selectedInvoices.filter((invoiceId) => invoiceId !== id)
-            : [...selectedInvoices, id];
+    const handleSelectInvoice = (ID) => {
+        let updatedSelection = selectedInvoices.includes(ID)
+            ? selectedInvoices.filter((invoiceId) => invoiceId !== ID)
+            : [...selectedInvoices, ID];
 
         setSelectedInvoices(updatedSelection);
         setSelectAll(updatedSelection.length === filteredInvoices.length);
@@ -127,20 +153,28 @@ const Invoices = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {paginatedInvoices.map((invoice) => (
-                        <tr key={invoice.id}>
+                    {loading ? (
+                        <tr>
+                            <td colSpan="8" style={{textAlign: "center"}}>Đang tải dữ liệu...</td>
+                        </tr>
+                    ) : paginatedInvoices.length === 0 ? (
+                        <tr>
+                            <td colSpan="8" style={{textAlign: "center"}}>Không có dữ liệu</td>
+                        </tr>
+                    ) : paginatedInvoices.map((invoice) => (
+                        <tr key={invoice.ID}>
                             <td>
-                                <input type="checkbox" checked={selectedInvoices.includes(invoice.id)} onChange={() => handleSelectInvoice(invoice.id)} />
+                                <input type="checkbox" checked={selectedInvoices.includes(invoice.ID)} onChange={() => handleSelectInvoice(invoice.ID)} />
                             </td>
-                            <td>{invoice.id}</td>
-                            <td>{invoice.date}</td>
-                            <td>{invoice.customer}</td>
-                            <td>{invoice.total}</td>
-                            <td>{invoice.paid ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
-                            <td>{invoice.delivered ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
+                            <td>{invoice.ID}</td>
+                            <td>{invoice.exportTime}</td>
+                            <td>{invoice.customerID}</td>
+                            <td>{invoice.total || 0} VND</td>
+                            <td>{invoice.paymentMethod ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
+                            <td>{invoice.shipped ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
                             <td className="action-buttons">
-                            <button className="btn-icon" onClick={() => navigate(`/invoice/${invoice.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                            <button className="btn-icon" onClick={() => navigate(`/invoice/${invoice.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${invoice.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

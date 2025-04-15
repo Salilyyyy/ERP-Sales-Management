@@ -5,24 +5,34 @@
     "description": "API documentation for Express ERP",
     "version": "1.0.0"
   },
-  "host": "localhost:3000",
+  "host": "https://erp-sales-management.onrender.com",
   "basePath": "/",
-  "schemes": ["http"],
-    "securityDefinitions": {
-      "BearerAuth": {
-        "type": "apiKey",
-        "name": "Authorization",
-        "in": "header",
-        "description": "JWT Token must be included with 'Bearer' prefix.\n\nFormat: Bearer your-jwt-token\nExample: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\n\nNote: The 'Bearer ' prefix is mandatory."
-      }
-    },
+  "schemes": [
+    "http"
+  ],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "JWT Token must be included with 'Bearer' prefix.\n\nFormat: Bearer your-jwt-token\nExample: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\n\nNote: The 'Bearer ' prefix is mandatory."
+    }
+  },
   "paths": {
     "/product-categories": {
       "get": {
-        "tags": ["Product Categories"],
+        "tags": [
+          "Product Categories"
+        ],
         "summary": "Returns the list of all product categories",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -59,11 +69,21 @@
         }
       },
       "post": {
-        "tags": ["Product Categories"],
+        "tags": [
+          "Product Categories"
+        ],
         "summary": "Create a new product category",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -82,7 +102,9 @@
                   "description": "Additional information"
                 }
               },
-              "required": ["name"]
+              "required": [
+                "name"
+              ]
             }
           }
         ],
@@ -118,10 +140,18 @@
     },
     "/product-categories/{id}": {
       "get": {
-        "tags": ["Product Categories"],
+        "tags": [
+          "Product Categories"
+        ],
         "summary": "Get product category by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -167,11 +197,21 @@
         }
       },
       "put": {
-        "tags": ["Product Categories"],
+        "tags": [
+          "Product Categories"
+        ],
         "summary": "Update product category by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -233,10 +273,18 @@
         }
       },
       "delete": {
-        "tags": ["Product Categories"],
+        "tags": [
+          "Product Categories"
+        ],
         "summary": "Delete product category by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -267,10 +315,18 @@
     },
     "/products": {
       "get": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Returns the list of all products",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -365,11 +421,21 @@
         }
       },
       "post": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Create a new product",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -535,10 +601,18 @@
     },
     "/products/{id}": {
       "get": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Get product by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -642,11 +716,21 @@
         }
       },
       "put": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Update product by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -805,10 +889,18 @@
         }
       },
       "delete": {
-        "tags": ["Products"],
+        "tags": [
+          "Products"
+        ],
         "summary": "Delete product by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -839,10 +931,18 @@
     },
     "/post-offices": {
       "get": {
-        "tags": ["Post Offices"],
+        "tags": [
+          "Post Offices"
+        ],
         "summary": "Returns the list of all post offices",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -887,11 +987,21 @@
         }
       },
       "post": {
-        "tags": ["Post Offices"],
+        "tags": [
+          "Post Offices"
+        ],
         "summary": "Create a new post office",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -918,7 +1028,12 @@
                   "description": "Email address"
                 }
               },
-              "required": ["address", "name", "phoneNumber", "email"]
+              "required": [
+                "address",
+                "name",
+                "phoneNumber",
+                "email"
+              ]
             }
           }
         ],
@@ -958,12 +1073,360 @@
         }
       }
     },
+    "/invoice": {
+      "get": {
+        "tags": [
+          "Invoice"
+        ],
+        "summary": "Returns the list of all invoices",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ID": {
+                    "type": "integer",
+                    "description": "Invoice ID"
+                  },
+                  "customerID": {
+                    "type": "integer",
+                    "description": "Customer ID"
+                  },
+                  "employeeID": {
+                    "type": "integer",
+                    "description": "Employee who created the invoice"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Date of invoice"
+                  },
+                  "totalAmount": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Total amount of the invoice"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Invoice"
+        ],
+        "summary": "Create a new invoice",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Invoice object to be created",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customerID": {
+                  "type": "integer"
+                },
+                "employeeID": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "format": "float"
+                }
+              },
+              "required": [
+                "customerID",
+                "employeeID",
+                "date",
+                "totalAmount"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invoice created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "customerID": {
+                  "type": "integer"
+                },
+                "employeeID": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      }
+    },
+    "/invoice/{id}": {
+      "get": {
+        "tags": [
+          "Invoice"
+        ],
+        "summary": "Get invoice by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice to fetch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "customerID": {
+                  "type": "integer"
+                },
+                "employeeID": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Invoice"
+        ],
+        "summary": "Update invoice by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice to update"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Updated invoice object",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customerID": {
+                  "type": "integer"
+                },
+                "employeeID": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice updated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "customerID": {
+                  "type": "integer"
+                },
+                "employeeID": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "totalAmount": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Invoice"
+        ],
+        "summary": "Delete invoice by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice to delete"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invoice deleted successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice not found"
+          }
+        }
+      }
+    },
     "/shipments": {
       "get": {
-        "tags": ["Shipments"],
+        "tags": [
+          "Shipments"
+        ],
         "summary": "Returns the list of all shipments",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1035,11 +1498,21 @@
         }
       },
       "post": {
-        "tags": ["Shipments"],
+        "tags": [
+          "Shipments"
+        ],
         "summary": "Create a new shipment",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -1166,10 +1639,18 @@
     },
     "/shipments/{id}": {
       "get": {
-        "tags": ["Shipments"],
+        "tags": [
+          "Shipments"
+        ],
         "summary": "Get shipment by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1250,11 +1731,21 @@
         }
       },
       "put": {
-        "tags": ["Shipments"],
+        "tags": [
+          "Shipments"
+        ],
         "summary": "Update shipment by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1378,10 +1869,18 @@
         }
       },
       "delete": {
-        "tags": ["Shipments"],
+        "tags": [
+          "Shipments"
+        ],
         "summary": "Delete shipment by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1410,12 +1909,354 @@
         }
       }
     },
+    "/invoice-detail": {
+      "get": {
+        "tags": [
+          "InvoiceDetail"
+        ],
+        "summary": "Returns the list of all invoice details",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ID": {
+                    "type": "integer",
+                    "description": "Invoice detail ID"
+                  },
+                  "invoiceID": {
+                    "type": "integer",
+                    "description": "ID of the invoice"
+                  },
+                  "itemID": {
+                    "type": "integer",
+                    "description": "ID of the item"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "description": "Quantity of item"
+                  },
+                  "unitPrice": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Unit price of item"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "InvoiceDetail"
+        ],
+        "summary": "Create a new invoice detail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Invoice detail object that needs to be added",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "invoiceID": {
+                  "type": "integer"
+                },
+                "itemID": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "format": "float"
+                }
+              },
+              "required": [
+                "invoiceID",
+                "itemID",
+                "quantity",
+                "unitPrice"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invoice detail created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "invoiceID": {
+                  "type": "integer"
+                },
+                "itemID": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      }
+    },
+    "/invoice-detail/{id}": {
+      "get": {
+        "tags": [
+          "InvoiceDetail"
+        ],
+        "summary": "Get invoice detail by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice detail to fetch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "invoiceID": {
+                  "type": "integer"
+                },
+                "itemID": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice detail not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "InvoiceDetail"
+        ],
+        "summary": "Update invoice detail by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice detail to update"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Updated invoice detail object",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "invoiceID": {
+                  "type": "integer"
+                },
+                "itemID": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice detail updated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "invoiceID": {
+                  "type": "integer"
+                },
+                "itemID": {
+                  "type": "integer"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "format": "float"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice detail not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "InvoiceDetail"
+        ],
+        "summary": "Delete invoice detail by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID of invoice detail to delete"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invoice detail deleted successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Invoice detail not found"
+          }
+        }
+      }
+    },
     "/suppliers": {
       "get": {
-        "tags": ["Suppliers"],
+        "tags": [
+          "Suppliers"
+        ],
         "summary": "Returns the list of all suppliers",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1472,11 +2313,21 @@
         }
       },
       "post": {
-        "tags": ["Suppliers"],
+        "tags": [
+          "Suppliers"
+        ],
         "summary": "Create a new supplier",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -1515,7 +2366,13 @@
                   "description": "Representative phone number"
                 }
               },
-              "required": ["address", "name", "postalCode", "phoneNumber", "email"]
+              "required": [
+                "address",
+                "name",
+                "postalCode",
+                "phoneNumber",
+                "email"
+              ]
             }
           }
         ],
@@ -1566,10 +2423,18 @@
     },
     "/suppliers/{id}": {
       "get": {
-        "tags": ["Suppliers"],
+        "tags": [
+          "Suppliers"
+        ],
         "summary": "Get supplier by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1635,11 +2500,21 @@
         }
       },
       "put": {
-        "tags": ["Suppliers"],
+        "tags": [
+          "Suppliers"
+        ],
         "summary": "Update supplier by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1736,10 +2611,18 @@
         }
       },
       "delete": {
-        "tags": ["Suppliers"],
+        "tags": [
+          "Suppliers"
+        ],
         "summary": "Delete supplier by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1770,10 +2653,18 @@
     },
     "/stockins": {
       "get": {
-        "tags": ["Stockins"],
+        "tags": [
+          "Stockins"
+        ],
         "summary": "Returns the list of all stockins",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1811,11 +2702,21 @@
         }
       },
       "post": {
-        "tags": ["Stockins"],
+        "tags": [
+          "Stockins"
+        ],
         "summary": "Create a new stockin",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -1835,7 +2736,9 @@
                   "description": "Additional notes"
                 }
               },
-              "required": ["stockinDate"]
+              "required": [
+                "stockinDate"
+              ]
             }
           }
         ],
@@ -1872,10 +2775,18 @@
     },
     "/stockins/{id}": {
       "get": {
-        "tags": ["Stockins"],
+        "tags": [
+          "Stockins"
+        ],
         "summary": "Get stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1922,11 +2833,21 @@
         }
       },
       "put": {
-        "tags": ["Stockins"],
+        "tags": [
+          "Stockins"
+        ],
         "summary": "Update stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -1990,10 +2911,18 @@
         }
       },
       "delete": {
-        "tags": ["Stockins"],
+        "tags": [
+          "Stockins"
+        ],
         "summary": "Delete stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2024,10 +2953,18 @@
     },
     "/detail-stockins": {
       "get": {
-        "tags": ["Detail Stockins"],
+        "tags": [
+          "Detail Stockins"
+        ],
         "summary": "Returns the list of all detail stockins",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2073,11 +3010,21 @@
         }
       },
       "post": {
-        "tags": ["Detail Stockins"],
+        "tags": [
+          "Detail Stockins"
+        ],
         "summary": "Create a new detail stockin",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -2105,7 +3052,12 @@
                   "description": "Price per unit"
                 }
               },
-              "required": ["StockinID", "productID", "quantity", "unitPrice"]
+              "required": [
+                "StockinID",
+                "productID",
+                "quantity",
+                "unitPrice"
+              ]
             }
           }
         ],
@@ -2148,10 +3100,18 @@
     },
     "/detail-stockins/{id}": {
       "get": {
-        "tags": ["Detail Stockins"],
+        "tags": [
+          "Detail Stockins"
+        ],
         "summary": "Get detail stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2206,11 +3166,21 @@
         }
       },
       "put": {
-        "tags": ["Detail Stockins"],
+        "tags": [
+          "Detail Stockins"
+        ],
         "summary": "Update detail stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2288,10 +3258,18 @@
         }
       },
       "delete": {
-        "tags": ["Detail Stockins"],
+        "tags": [
+          "Detail Stockins"
+        ],
         "summary": "Delete detail stockin by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2322,10 +3300,16 @@
     },
     "/auth/register": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Register a new user",
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -2421,10 +3405,16 @@
     },
     "/auth/login": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Login a user",
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -2445,7 +3435,10 @@
                   "description": "User password"
                 }
               },
-              "required": ["email", "password"]
+              "required": [
+                "email",
+                "password"
+              ]
             }
           }
         ],
@@ -2484,12 +3477,283 @@
         }
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Forgot password",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "User email to receive reset link",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              },
+              "required": [
+                "email"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reset link sent successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Password reset email sent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email format or missing email"
+          },
+          "404": {
+            "description": "Email not found"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Reset password",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Reset password data including token and new password",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": {
+                  "type": "string",
+                  "description": "Password reset token"
+                },
+                "newPassword": {
+                  "type": "string",
+                  "description": "New password"
+                }
+              },
+              "required": [
+                "token",
+                "newPassword"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password reset successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Password has been reset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token or missing data"
+          },
+          "401": {
+            "description": "Token expired or invalid"
+          }
+        }
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Verify email",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Token used to verify email",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": {
+                  "type": "string",
+                  "description": "Verification token sent to email"
+                }
+              },
+              "required": [
+                "token"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Email has been verified"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          },
+          "409": {
+            "description": "Email already verified"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Change password",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Current and new password",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "currentPassword": {
+                  "type": "string",
+                  "description": "User's current password"
+                },
+                "newPassword": {
+                  "type": "string",
+                  "description": "User's new password"
+                }
+              },
+              "required": [
+                "currentPassword",
+                "newPassword"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Password updated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Current password is incorrect or new password is invalid"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Change password",
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Successfully logged out"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      }
+    },
     "/users": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Returns the list of all users",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2561,11 +3825,21 @@
         }
       },
       "post": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Create a new user",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "in": "body",
@@ -2691,10 +3965,18 @@
     },
     "/users/{id}": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Get user by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2775,11 +4057,21 @@
         }
       },
       "put": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Update user by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2902,10 +4194,18 @@
         }
       },
       "delete": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Delete user by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2936,10 +4236,18 @@
     },
     "/post-offices/{id}": {
       "get": {
-        "tags": ["Post Offices"],
+        "tags": [
+          "Post Offices"
+        ],
         "summary": "Get post office by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2993,11 +4301,21 @@
         }
       },
       "put": {
-        "tags": ["Post Offices"],
+        "tags": [
+          "Post Offices"
+        ],
         "summary": "Update post office by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
-        "consumes": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3073,10 +4391,18 @@
         }
       },
       "delete": {
-        "tags": ["Post Offices"],
+        "tags": [
+          "Post Offices"
+        ],
         "summary": "Delete post office by ID",
-        "security": [{"BearerAuth": []}],
-        "produces": ["application/json"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3101,6 +4427,354 @@
           },
           "404": {
             "description": "Post office not found"
+          }
+        }
+      }
+    },
+    "/promotion": {
+      "get": {
+        "tags": [
+          "Promotion"
+        ],
+        "summary": "Returns the list of all promotions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ID": {
+                    "type": "integer"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "discountPercent": {
+                    "type": "number",
+                    "format": "float"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Promotion"
+        ],
+        "summary": "Create a new promotion",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "discountPercent": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "code",
+                "discountPercent",
+                "startDate",
+                "endDate"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Promotion created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "discountPercent": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          }
+        }
+      }
+    },
+    "/promotion/{id}": {
+      "get": {
+        "tags": [
+          "Promotion"
+        ],
+        "summary": "Get promotion by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "discountPercent": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Promotion not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Promotion"
+        ],
+        "summary": "Update promotion by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "discountPercent": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Promotion updated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "ID": {
+                  "type": "integer"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "discountPercent": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Promotion not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Promotion"
+        ],
+        "summary": "Delete promotion by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Promotion deleted successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized - No token provided"
+          },
+          "403": {
+            "description": "Forbidden - Invalid token"
+          },
+          "404": {
+            "description": "Promotion not found"
           }
         }
       }

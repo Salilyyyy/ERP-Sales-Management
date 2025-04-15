@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class BaseRepository {
     constructor(endpoint = '') {
-        this.baseURL = process.env.REACT_APP_API_URL;
+        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/api';
         // Debug environment variable loading
         console.log('Environment:', process.env.NODE_ENV);
         console.log('API URL from env:', process.env.REACT_APP_API_URL);

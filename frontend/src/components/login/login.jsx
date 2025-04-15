@@ -5,16 +5,19 @@ import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
 import eyeOpen from "../../assets/img/eye.svg";
 import eyeClosed from "../../assets/img/close-eye.svg";
-
 import AuthRepository from "../../api/apiAuth";
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [passwordVisible, setPasswordVisible] = useState(false);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   useEffect(() => {
     if (AuthRepository.isAuthenticated()) {
@@ -26,31 +29,52 @@ const LoginPage = () => {
     setPasswordVisible(!passwordVisible);
   };
 
+  const validateEmail = (value) => {
+    if (!value) setEmailError("Email không được để trống");
+    else if (!value.includes("@")) setEmailError("Email không đúng định dạng");
+    else setEmailError("");
+  };
+
+  const validatePassword = (value) => {
+    if (!value) setPasswordError("Mật khẩu không được để trống");
+    else setPasswordError("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    validateEmail(email);
+    validatePassword(password);
+
+    if (!email || !password || emailError || passwordError) return;
+
     setLoading(true);
-
     try {
-      const response = await AuthRepository.login(email, password);
-
-      if (response?.token) {
+      const res = await AuthRepository.login(email, password);
+      if (res?.token) {
         const redirectTo = location.state?.from?.pathname || "/dashboard";
         navigate(redirectTo);
-      } else {
-        setError(response?.error || "Đăng nhập thất bại");
       }
-    } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
+    } catch (err) {
+      console.error("Login error:", err);
+
       if (!navigator.onLine) {
         setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
-      } else {
+      } else if (err.message === "Invalid email or password") {
+        setError("Email hoặc mật khẩu không chính xác");
+      } else if (err.message === "Email and password are required") {
+        setError("Email hoặc mật khẩu không được để trống");
+      } else if (err.message.includes("Server connection failed")) {
         setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+      } else {
+        setError(err.message || "Có lỗi xảy ra. Vui lòng thử lại sau.");
       }
-    } finally {
       setLoading(false);
     }
-  };
+
+  }
+
 
   return (
     <div className="login-container">
@@ -63,10 +87,14 @@ const LoginPage = () => {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                validateEmail(e.target.value);
+              }}
               required
             />
           </div>
+          {emailError && <div className="input-error">{emailError}</div>}
 
           <div className="input-group">
             <img src={passwordIcon} alt="Password Icon" className="icon" />
@@ -74,7 +102,10 @@ const LoginPage = () => {
               type={passwordVisible ? "text" : "password"}
               placeholder="Mật khẩu"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                validatePassword(e.target.value);
+              }}
               required
             />
             <img
@@ -84,6 +115,7 @@ const LoginPage = () => {
               onClick={togglePasswordVisibility}
             />
           </div>
+          {passwordError && <div className="input-error">{passwordError}</div>}
 
           <div className="options">
             <label>

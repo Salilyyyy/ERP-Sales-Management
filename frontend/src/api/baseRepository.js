@@ -2,22 +2,20 @@ import axios from 'axios';
 
 class BaseRepository {
     constructor(endpoint = '') {
-        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/api';
-        // Debug environment variable loading
+        this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/';
         console.log('Environment:', process.env.NODE_ENV);
         console.log('API URL from env:', process.env.REACT_APP_API_URL);
         if (!process.env.REACT_APP_API_URL) {
             console.error('REACT_APP_API_URL environment variable is not loaded!');
             throw new Error('API URL not configured');
         }
+
         this.endpoint = endpoint;
         this.api = axios.create({
             baseURL: this.baseURL,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            maxRedirects: 0, 
-            validateStatus: status => status < 500 
+            headers: { 'Content-Type': 'application/json' },
+            maxRedirects: 0,
+            validateStatus: status => status < 500
         });
 
         if (process.env.NODE_ENV === 'development') {
@@ -74,8 +72,12 @@ class BaseRepository {
 
     handleError(error) {
         if (error.response) {
-            const errorMessage = error.response.data.error || error.response.data.message || 'Đã xảy ra lỗi từ server.';
-            return new Error(errorMessage);
+            const customError = new Error(
+                error.response.data.error || error.response.data.message || 'Đã xảy ra lỗi từ server.'
+            );
+            customError.status = error.response.status;
+            customError.data = error.response.data;
+            return customError;
         } else if (error.request) {
             return new Error('Không nhận được phản hồi từ server.');
         } else {

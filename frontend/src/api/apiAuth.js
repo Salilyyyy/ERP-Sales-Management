@@ -12,39 +12,34 @@ class AuthRepository extends BaseRepository {
             throw new Error('Email and password are required');
         }
 
-        if (typeof email !== 'string' || typeof password !== 'string') {
-            throw new Error('Email and password must be strings');
-        }
-
         try {
             const response = await this.post('/login', { email, password });
-
             if (!response || !response.token) {
                 throw new Error('Invalid response: Missing token');
             }
 
             this.setAuthData(response.token, response.user);
             return response;
+
         } catch (error) {
             if (error.response) {
-                const message = error.response.data?.error || 'Authentication failed';
-                throw new Error(`Login failed: ${message}`);
-            }
-            if (error.request) {
+                const serverMessage = error.response.data?.error || "Unknown server error";
+                const err = new Error(serverMessage);
+                err.status = error.response.status;
+                throw err;
+            } else {
                 throw new Error('Server connection failed. Please check your internet connection.');
             }
-            throw error;
         }
     }
 
-   
-    async logout() {
+    logout() {
         try {
             this.clearAuthData();
             return true;
         } catch (error) {
-            console.error('[Auth] Logout error:', error);
-            throw new Error('Failed to complete logout process');
+            console.error('[Auth] Lỗi đăng xuất:', error);
+            throw new Error('Không thể đăng xuất');
         }
     }
 
@@ -53,8 +48,8 @@ class AuthRepository extends BaseRepository {
             const userStr = localStorage.getItem(this.USER_KEY);
             return userStr ? JSON.parse(userStr) : null;
         } catch (error) {
-            console.error('[Auth] Error getting current user:', error);
-            this.clearAuthData(); 
+            console.error('[Auth] Lỗi khi lấy user:', error);
+            this.clearAuthData();
             return null;
         }
     }
@@ -67,18 +62,13 @@ class AuthRepository extends BaseRepository {
         return localStorage.getItem(this.TOKEN_KEY);
     }
 
-  
     setAuthData(token, user) {
-        if (!token || !user) {
-            throw new Error('Invalid authentication data');
-        }
-
         try {
             localStorage.setItem(this.TOKEN_KEY, token);
             localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         } catch (error) {
-            console.error('[Auth] Error storing auth data:', error);
-            throw new Error('Failed to store authentication data');
+            console.error('Lỗi lưu thông tin đăng nhập:', error);
+            throw new Error('Không thể lưu thông tin xác thực');
         }
     }
 

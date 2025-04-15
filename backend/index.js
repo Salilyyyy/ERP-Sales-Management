@@ -4,6 +4,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const compression = require('compression');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const { authenticateToken } = require('./middleware/auth');
@@ -11,10 +12,15 @@ const { authenticateToken } = require('./middleware/auth');
 const prisma = new PrismaClient();
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
+const corsOptions = {
+  origin: ['https://erp-sales-management.vercel.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+};
 
+app.use(cors(corsOptions));
+app.use(compression());
+app.use(bodyParser.json());
 
 // ROUTES
 const authRouter = require('./routes/auth');
@@ -32,8 +38,11 @@ const stockinsRouter = require('./routes/stockins');
 const detailStockinsRouter = require('./routes/detailStockins');
 const testRouter = require('./routes/test');
 
+// Swagger docs
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // PUBLIC ROUTES
-app.use('/auth',authRouter);
+app.use('/auth', authRouter);
 app.use('/test', testRouter);
 
 // PROTECTED ROUTES
@@ -50,13 +59,6 @@ app.use('/users', authenticateToken, usersRouter);
 app.use('/stockins', authenticateToken, stockinsRouter);
 app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
 
-app.use((err, req, res, next) => {
-  console.error('💥 Server Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
-  });
-});
-
 const port = process.env.PORT || 10000;
 
 async function startServer() {
@@ -72,9 +74,20 @@ async function startServer() {
     process.exit(1);
   }
 }
-// Swagger docs
-app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.use((err, req, res, next) => {
+  console.error('💥 Server Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error'
+  });
+});
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
 startServer();
-console.log("👉 DATABASE_URL:", process.env.DATABASE_URL);
 
 module.exports = app;

@@ -43,6 +43,14 @@
         }
       }
   
+      .input-error {
+        color: #dc3545;
+        font-size: 12px;
+        text-align: left;
+        margin-bottom: 10px;
+        padding-left: 10px;
+      }
+
       .options {
         display: flex;
         justify-content: space-between;

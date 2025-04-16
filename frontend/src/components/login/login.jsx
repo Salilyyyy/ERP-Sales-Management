@@ -1,111 +1,72 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import AuthRepository from "../../api/apiAuth";
 import "./login.scss";
 import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
-import eyeOpen from "../../assets/img/eye.svg";
-import eyeClosed from "../../assets/img/close-eye.svg";
+import eyeIcon from "../../assets/img/eye.svg";
+import closeEyeIcon from "../../assets/img/close-eye.svg";
 
-import AuthRepository from "../../api/apiAuth";
-const LoginPage = () => {
+const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-
-  // Check for saved credentials on component mount
-  useEffect(() => {
-    const savedCredentials = localStorage.getItem('rememberedCredentials');
-    if (savedCredentials) {
-      const { savedEmail, savedPassword } = JSON.parse(savedCredentials);
-      setEmail(savedEmail);
-      setPassword(savedPassword);
-      setRememberMe(true);
-    }
-  }, []);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       setEmailError("Email không được để trống");
+      return false;
     } else if (!emailRegex.test(email)) {
       setEmailError("Email không đúng định dạng");
+      return false;
     } else {
       setEmailError("");
+      return true;
     }
   };
 
   const validatePassword = (password) => {
     if (!password) {
       setPasswordError("Mật khẩu không được để trống");
-    } else if (password.length < 6) {
-      setPasswordError("Mật khẩu phải có ít nhất 6 ký tự");
+      return false;
     } else {
       setPasswordError("");
+      return true;
     }
-  };
-
-  useEffect(() => {
-    if (AuthRepository.isAuthenticated()) {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
-
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await AuthRepository.login(email, password);
+      const response = await AuthRepository.login(email, password);
+      console.log('Login response:', response);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error('Login error:', {
+        message: err.message,
+        details: err.details,
+        status: err.status
+      });
       
-      // Save credentials if remember me is checked
-      if (rememberMe) {
-        localStorage.setItem('rememberedCredentials', JSON.stringify({
-          savedEmail: email,
-          savedPassword: password
-        }));
-      } else {
-        localStorage.removeItem('rememberedCredentials');
-      }
-
-      const redirectTo = location.state?.from?.pathname || "/dashboard";
-      navigate(redirectTo);
-    } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
-      // Handle specific error types from apiAuth
-      switch (error.message) {
-        case 'EMAIL_PASSWORD_INVALID':
-          setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
-          break;
-        case 'USER_NOT_FOUND':
-          setError("Tài khoản không tồn tại");
-          break;
-        case 'ACCOUNT_LOCKED':
-          setError("Tài khoản đã bị khóa. Vui lòng liên hệ admin");
-          break;
-        case 'ACCOUNT_NOT_VERIFIED':
-          setError("Tài khoản chưa được xác thực. Vui lòng kiểm tra email");
-          break;
-        case 'NETWORK_ERROR':
-          setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn");
-          break;
-        case 'SERVER_ERROR':
-          setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau");
-          break;
-        default:
-          setError("Đã xảy ra lỗi không xác định. Vui lòng thử lại sau");
-      }
+      // Use the API error message directly
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -134,7 +95,7 @@ const LoginPage = () => {
           <div className="input-group">
             <img src={passwordIcon} alt="Password Icon" className="icon" />
             <input
-              type={passwordVisible ? "text" : "password"}
+              type={showPassword ? "text" : "password"}
               placeholder="Mật khẩu"
               value={password}
               onChange={(e) => {
@@ -144,28 +105,30 @@ const LoginPage = () => {
               required
             />
             <img
-              src={passwordVisible ? eyeOpen : eyeClosed}
+              src={showPassword ? closeEyeIcon : eyeIcon}
               alt="Toggle Password"
-              className="icon toggle-password"
-              onClick={togglePasswordVisibility}
+              className="toggle-password"
+              onClick={() => setShowPassword(!showPassword)}
             />
           </div>
           {passwordError && <div className="validation-message">{passwordError}</div>}
 
-          <div className="options">
-            <label>
-              <input 
-                type="checkbox" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              /> Nhớ mật khẩu
-            </label>
-            <a href="/forgot-password">Quên mật khẩu?</a>
-          </div>
+          {error && (
+            <div className="error-message">
+              <p>{error}</p>
+            </div>
+          )}
 
-          {error && <div className="error-message">{error}</div>}
-          <button type="submit" className="login-button" disabled={loading}>
+          <button type="submit" className="submit-button" disabled={loading}>
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+
+          <button
+            type="button"
+            className="forgot-password-button"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Quên mật khẩu?
           </button>
         </form>
       </div>
@@ -173,4 +136,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Login;

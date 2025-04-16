@@ -21,10 +21,9 @@ router.post('/forgot-password',
 
       const result = await AuthService.requestPasswordReset(email);
       
-      // Return success response with Mailtrap preview URL
       res.json({
         success: true,
-        message: 'Email đặt lại mật khẩu đã được gửi',
+        message: 'Email đặt lại mật khẩu đã được gửi. Mời kiểm tra hộp thư của bạn.',
         previewUrl: result.debug?.previewUrl
       });
     } catch (error) {

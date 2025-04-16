@@ -21,8 +21,26 @@ class BaseRepository {
         this.api.interceptors.response.use(
             (response) => response,
             (error) => {
-                const message = error.response?.data?.error || error.message || 'Đã xảy ra lỗi không xác định';
-                return Promise.reject(new Error(message));
+                // Log the complete error for debugging
+                console.error('API Error:', {
+                    status: error.response?.status,
+                    error: error.response?.data?.error,
+                    details: error.response?.data?.details,
+                    message: error.message
+                });
+
+                // Create enhanced error with API response details
+                const enhancedError = new Error(error.response?.data?.error || error.message);
+                enhancedError.status = error.response?.status;
+                enhancedError.details = error.response?.data?.details;
+                enhancedError.originalError = error;
+
+                // For 404 and other status codes, use the error message from the API
+                if (error.response?.data?.error) {
+                    enhancedError.message = error.response.data.error;
+                }
+
+                return Promise.reject(enhancedError);
             }
         );
     }
@@ -32,23 +50,39 @@ class BaseRepository {
     }
 
     async get(path = '', params = {}) {
-        const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-        return response.data;
+        try {
+            const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 
     async post(path = '', data = {}) {
-        const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
-        return response.data;
+        try {
+            const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 
     async put(path = '', data = {}) {
-        const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
-        return response.data;
+        try {
+            const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 
     async delete(path = '') {
-        const response = await this.api.delete(this.endpoint + this.normalizePath(path));
-        return response.data;
+        try {
+            const response = await this.api.delete(this.endpoint + this.normalizePath(path));
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 }
 

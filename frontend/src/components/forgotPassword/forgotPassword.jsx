@@ -41,25 +41,21 @@ const ForgotPassword = () => {
 
     try {
       const result = await AuthRepository.requestPasswordReset(email);
+      console.log('Password reset response:', result);
+      
       setSuccess(true);
-      if (result.debug?.previewUrl) {
-        setPreviewUrl(result.debug.previewUrl);
+      if (result.previewUrl) {
+        setPreviewUrl(result.previewUrl);
       }
-    } catch (error) {
-      console.error("Lỗi khi yêu cầu đặt lại mật khẩu:", error);
-      switch (error.message) {
-        case 'USER_NOT_FOUND':
-          setError("Email không tồn tại trong hệ thống");
-          break;
-        case 'EMAIL_NOT_VERIFIED':
-          setError("Email chưa được xác thực");
-          break;
-        case 'NETWORK_ERROR':
-          setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn");
-          break;
-        default:
-          setError("Đã xảy ra lỗi. Vui lòng thử lại sau");
-      }
+    } catch (err) {
+      console.error('Password reset error:', {
+        message: err.message,
+        details: err.details,
+        status: err.status
+      });
+      
+      // Use the API error message directly
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -85,7 +81,11 @@ const ForgotPassword = () => {
               />
             </div>
             {emailError && <div className="validation-message">{emailError}</div>}
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div className="error-message">
+                <p>{error}</p>
+              </div>
+            )}
             <button type="submit" className="submit-button" disabled={loading}>
               {loading ? "Đang gửi..." : "Gửi yêu cầu"}
             </button>

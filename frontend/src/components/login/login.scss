@@ -43,12 +43,12 @@
         }
       }
   
-      .input-error {
+      .validation-message {
         color: #dc3545;
         font-size: 12px;
         text-align: left;
-        margin-bottom: 10px;
-        padding-left: 10px;
+        margin: -10px 0 15px 0;
+        padding-left: 33px;
       }
 
       .options {

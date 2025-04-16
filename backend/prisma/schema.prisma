@@ -139,6 +139,8 @@ model Users {
   userType     String
   createAt     DateTime
   status       String
+  resetToken   String?
+  resetTokenExpiry DateTime?
 }
 
 model Stockins {

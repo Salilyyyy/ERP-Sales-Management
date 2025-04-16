@@ -3,78 +3,108 @@ import BaseRepository from './baseRepository';
 class AuthRepository extends BaseRepository {
     constructor() {
         super('/auth');
-        this.TOKEN_KEY = 'auth_token';
-        this.USER_KEY = 'user';
     }
 
     async login(email, password) {
-        if (!email || !password) {
-            throw new Error('Email and password are required');
-        }
-
         try {
             const response = await this.post('/login', { email, password });
-            if (!response || !response.token) {
-                throw new Error('Invalid response: Missing token');
+            if (response.token) {
+                localStorage.setItem('auth_token', response.token);
+                localStorage.setItem('user', JSON.stringify(response.user));
             }
-
-            this.setAuthData(response.token, response.user);
             return response;
-
         } catch (error) {
-            if (error.response) {
-                const serverMessage = error.response.data?.error || "Unknown server error";
-                const err = new Error(serverMessage);
-                err.status = error.response.status;
-                throw err;
+            // Handle specific error cases from baseRepository
+            const errorMessage = error.message;
+            if (errorMessage.includes('Invalid email or password')) {
+                throw new Error('EMAIL_PASSWORD_INVALID');
+            } else if (errorMessage.includes('User not found')) {
+                throw new Error('USER_NOT_FOUND');
+            } else if (errorMessage.includes('Account is locked')) {
+                throw new Error('ACCOUNT_LOCKED');
+            } else if (errorMessage.includes('Account is not verified')) {
+                throw new Error('ACCOUNT_NOT_VERIFIED');
+            } else if (!navigator.onLine) {
+                throw new Error('NETWORK_ERROR');
             } else {
-                throw new Error('Server connection failed. Please check your internet connection.');
+                throw new Error('SERVER_ERROR');
             }
         }
     }
 
-    logout() {
+    async logout() {
         try {
-            this.clearAuthData();
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
             return true;
         } catch (error) {
-            console.error('[Auth] Lỗi đăng xuất:', error);
-            throw new Error('Không thể đăng xuất');
+            console.error('Logout error:', error);
+            throw new Error('Failed to logout');
         }
     }
 
     getCurrentUser() {
-        try {
-            const userStr = localStorage.getItem(this.USER_KEY);
-            return userStr ? JSON.parse(userStr) : null;
-        } catch (error) {
-            console.error('[Auth] Lỗi khi lấy user:', error);
-            this.clearAuthData();
-            return null;
-        }
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
     }
 
     isAuthenticated() {
-        return !!this.getToken();
+        return !!localStorage.getItem('auth_token');
     }
 
-    getToken() {
-        return localStorage.getItem(this.TOKEN_KEY);
-    }
-
-    setAuthData(token, user) {
+    async requestPasswordReset(email) {
         try {
-            localStorage.setItem(this.TOKEN_KEY, token);
-            localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+            const response = await this.post('/forgot-password', { email });
+            return response;
         } catch (error) {
-            console.error('Lỗi lưu thông tin đăng nhập:', error);
-            throw new Error('Không thể lưu thông tin xác thực');
+            const errorMessage = error.message;
+            if (errorMessage.includes('User not found')) {
+                throw new Error('USER_NOT_FOUND');
+            } else if (errorMessage.includes('Email not verified')) {
+                throw new Error('EMAIL_NOT_VERIFIED');
+            } else if (!navigator.onLine) {
+                throw new Error('NETWORK_ERROR');
+            } else {
+                throw new Error('SERVER_ERROR');
+            }
         }
     }
 
-    clearAuthData() {
-        localStorage.removeItem(this.TOKEN_KEY);
-        localStorage.removeItem(this.USER_KEY);
+    async resetPassword(token, newPassword) {
+        try {
+            const response = await this.post('/reset-password', {
+                token,
+                newPassword
+            });
+            return response;
+        } catch (error) {
+            const errorMessage = error.message;
+            if (errorMessage.includes('Invalid or expired token')) {
+                throw new Error('INVALID_RESET_TOKEN');
+            } else if (errorMessage.includes('Password too weak')) {
+                throw new Error('WEAK_PASSWORD');
+            } else if (!navigator.onLine) {
+                throw new Error('NETWORK_ERROR');
+            } else {
+                throw new Error('SERVER_ERROR');
+            }
+        }
+    }
+
+    async verifyResetToken(token) {
+        try {
+            const response = await this.get(`/verify-reset-token/${token}`);
+            return response;
+        } catch (error) {
+            const errorMessage = error.message;
+            if (errorMessage.includes('Invalid or expired token')) {
+                throw new Error('INVALID_RESET_TOKEN');
+            } else if (!navigator.onLine) {
+                throw new Error('NETWORK_ERROR');
+            } else {
+                throw new Error('SERVER_ERROR');
+            }
+        }
     }
 }
 

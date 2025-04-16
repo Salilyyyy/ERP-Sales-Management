@@ -3,45 +3,26 @@ import axios from 'axios';
 class BaseRepository {
     constructor(endpoint = '') {
         this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/';
-        console.log('Environment:', process.env.NODE_ENV);
-        console.log('API URL from env:', process.env.REACT_APP_API_URL);
-        if (!process.env.REACT_APP_API_URL) {
-            console.error('REACT_APP_API_URL environment variable is not loaded!');
-            throw new Error('API URL not configured');
-        }
-
         this.endpoint = endpoint;
+
         this.api = axios.create({
             baseURL: this.baseURL,
             headers: { 'Content-Type': 'application/json' },
-            maxRedirects: 0,
-            validateStatus: status => status < 500
         });
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Base URL:', this.baseURL);
-            console.log('Endpoint:', this.endpoint);
-        }
-
-        this.api.interceptors.request.use(
-            (config) => {
-                const token = localStorage.getItem('auth_token');
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                if (process.env.NODE_ENV === 'development') {
-                    console.log('Final Request URL:', config.baseURL + config.url);
-                }
-                return config;
-            },
-            (error) => Promise.reject(error)
-        );
+        this.api.interceptors.request.use((config) => {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            return config;
+        });
 
         this.api.interceptors.response.use(
             (response) => response,
             (error) => {
-                console.error('API Error:', error.response || error.message);
-                return Promise.reject(this.handleError(error));
+                const message = error.response?.data?.error || error.message || 'Đã xảy ra lỗi không xác định';
+                return Promise.reject(new Error(message));
             }
         );
     }
@@ -68,21 +49,6 @@ class BaseRepository {
     async delete(path = '') {
         const response = await this.api.delete(this.endpoint + this.normalizePath(path));
         return response.data;
-    }
-
-    handleError(error) {
-        if (error.response) {
-            const customError = new Error(
-                error.response.data.error || error.response.data.message || 'Đã xảy ra lỗi từ server.'
-            );
-            customError.status = error.response.status;
-            customError.data = error.response.data;
-            return customError;
-        } else if (error.request) {
-            return new Error('Không nhận được phản hồi từ server.');
-        } else {
-            return new Error(`Lỗi: ${error.message}`);
-        }
     }
 }
 

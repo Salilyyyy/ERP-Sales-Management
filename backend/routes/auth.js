@@ -7,116 +7,134 @@ const { PrismaClient } = require('@prisma/client');
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.get('/me', authenticateToken, async (req, res) => {
-  try {
-    const user = await prisma.users.findUnique({
-      where: { ID: req.user.id },
-      select: {
-        ID: true,
-        email: true,
-        address: true,
-        phoneNumber: true,
-        department: true,
-        IdentityCard: true,
-        userType: true,
-        birthday: true,
-        status: true,
-        createAt: true,
-      },
-    });
+router.post('/forgot-password', 
+  [body('email').isEmail().normalizeEmail()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      const { email } = req.body;
+      console.log('Processing password reset request for:', email);
+
+      const result = await AuthService.requestPasswordReset(email);
+      
+      // Return success response with Mailtrap preview URL
+      res.json({
+        success: true,
+        message: 'Email đặt lại mật khẩu đã được gửi',
+        previewUrl: result.debug?.previewUrl
+      });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      
+      if (error.message === 'User not found') {
+        return res.status(404).json({ 
+          error: 'Email không tồn tại trong hệ thống' 
+        });
+      }
+
+      return res.status(500).json({ 
+        error: 'Đã xảy ra lỗi khi gửi email',
+        details: error.message
+      });
     }
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
 });
 
-router.get('/users', authenticateToken, async (req, res) => {
-  try {
-    const requestingUser = await prisma.users.findUnique({
-      where: { ID: req.user.id },
-    });
+router.post('/reset-password',
+  [
+    body('token').notEmpty(),
+    body('newPassword').isLength({ min: 6 })
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-    if (requestingUser.userType !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Admin only.' });
+      const { token, newPassword } = req.body;
+      const result = await AuthService.resetPassword(token, newPassword);
+      res.json(result);
+    } catch (error) {
+      console.error('Reset password error:', error);
+      
+      if (error.message === 'Invalid or expired reset token') {
+        return res.status(400).json({ 
+          error: 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn' 
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Đã xảy ra lỗi khi đặt lại mật khẩu' 
+      });
     }
-
-    const users = await prisma.users.findMany({
-      select: {
-        ID: true,
-        email: true,
-        address: true,
-        phoneNumber: true,
-        department: true,
-        IdentityCard: true,
-        userType: true,
-        birthday: true,
-        status: true,
-        createAt: true,
-      },
-    });
-
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
 });
 
-const registrationValidation = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }),
-  body('address').notEmpty(),
-  body('phoneNumber').notEmpty(),
-  body('department').notEmpty(),
-  body('IdentityCard').notEmpty(),
-  body('userType').notEmpty(),
-  body('birthday').isISO8601().toDate(),
-];
+router.post('/login', 
+  [
+    body('email').isEmail().normalizeEmail(),
+    body('password').notEmpty()
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-const loginValidation = [
-  body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty(),
-];
-
-router.post('/register', registrationValidation, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      const { email, password } = req.body;
+      const result = await AuthService.login(email, password);
+      res.json(result);
+    } catch (error) {
+      console.error('Login error:', error);
+      
+      if (error.message === 'Invalid email or password') {
+        return res.status(401).json({ 
+          error: 'Email hoặc mật khẩu không đúng' 
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Đã xảy ra lỗi khi đăng nhập' 
+      });
     }
-
-    const result = await AuthService.register(req.body);
-    res.status(201).json(result);
-  } catch (error) {
-    if (error.message === 'User with this email already exists') {
-      res.status(409).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
 });
 
-router.post('/login', loginValidation, async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+router.post('/register',
+  [
+    body('email').isEmail().normalizeEmail(),
+    body('password').isLength({ min: 6 }),
+    body('phoneNumber').notEmpty(),
+    body('department').notEmpty(),
+    body('IdentityCard').notEmpty(),
+    body('userType').notEmpty(),
+    body('birthday').isISO8601().toDate(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-    const { email, password } = req.body;
-    const result = await AuthService.login(email, password);
-    res.status(200).json(result);
-  } catch (error) {
-    if (error.message === 'Invalid email or password') {
-      res.status(401).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: 'Internal server error' });
+      const result = await AuthService.register(req.body);
+      res.status(201).json(result);
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      if (error.message === 'User with this email already exists') {
+        return res.status(409).json({ 
+          error: 'Email đã được sử dụng' 
+        });
+      }
+      
+      res.status(500).json({ 
+        error: 'Đã xảy ra lỗi khi đăng ký' 
+      });
     }
-  }
 });
 
 module.exports = router;

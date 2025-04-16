@@ -5,19 +5,51 @@ import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
 import eyeOpen from "../../assets/img/eye.svg";
 import eyeClosed from "../../assets/img/close-eye.svg";
-import AuthRepository from "../../api/apiAuth";
 
+import AuthRepository from "../../api/apiAuth";
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Check for saved credentials on component mount
+  useEffect(() => {
+    const savedCredentials = localStorage.getItem('rememberedCredentials');
+    if (savedCredentials) {
+      const { savedEmail, savedPassword } = JSON.parse(savedCredentials);
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError("Email không được để trống");
+    } else if (!emailRegex.test(email)) {
+      setEmailError("Email không đúng định dạng");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError("Mật khẩu không được để trống");
+    } else if (password.length < 6) {
+      setPasswordError("Mật khẩu phải có ít nhất 6 ký tự");
+    } else {
+      setPasswordError("");
+    }
+  };
 
   useEffect(() => {
     if (AuthRepository.isAuthenticated()) {
@@ -29,52 +61,55 @@ const LoginPage = () => {
     setPasswordVisible(!passwordVisible);
   };
 
-  const validateEmail = (value) => {
-    if (!value) setEmailError("Email không được để trống");
-    else if (!value.includes("@")) setEmailError("Email không đúng định dạng");
-    else setEmailError("");
-  };
-
-  const validatePassword = (value) => {
-    if (!value) setPasswordError("Mật khẩu không được để trống");
-    else setPasswordError("");
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    validateEmail(email);
-    validatePassword(password);
-
-    if (!email || !password || emailError || passwordError) return;
-
     setLoading(true);
-    try {
-      const res = await AuthRepository.login(email, password);
-      if (res?.token) {
-        const redirectTo = location.state?.from?.pathname || "/dashboard";
-        navigate(redirectTo);
-      }
-    } catch (err) {
-      console.error("Login error:", err);
 
-      if (!navigator.onLine) {
-        setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn.");
-      } else if (err.message === "Invalid email or password") {
-        setError("Email hoặc mật khẩu không chính xác");
-      } else if (err.message === "Email and password are required") {
-        setError("Email hoặc mật khẩu không được để trống");
-      } else if (err.message.includes("Server connection failed")) {
-        setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+    try {
+      await AuthRepository.login(email, password);
+      
+      // Save credentials if remember me is checked
+      if (rememberMe) {
+        localStorage.setItem('rememberedCredentials', JSON.stringify({
+          savedEmail: email,
+          savedPassword: password
+        }));
       } else {
-        setError(err.message || "Có lỗi xảy ra. Vui lòng thử lại sau.");
+        localStorage.removeItem('rememberedCredentials');
       }
+
+      const redirectTo = location.state?.from?.pathname || "/dashboard";
+      navigate(redirectTo);
+    } catch (error) {
+      console.error("Lỗi khi đăng nhập:", error);
+      // Handle specific error types from apiAuth
+      switch (error.message) {
+        case 'EMAIL_PASSWORD_INVALID':
+          setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
+          break;
+        case 'USER_NOT_FOUND':
+          setError("Tài khoản không tồn tại");
+          break;
+        case 'ACCOUNT_LOCKED':
+          setError("Tài khoản đã bị khóa. Vui lòng liên hệ admin");
+          break;
+        case 'ACCOUNT_NOT_VERIFIED':
+          setError("Tài khoản chưa được xác thực. Vui lòng kiểm tra email");
+          break;
+        case 'NETWORK_ERROR':
+          setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn");
+          break;
+        case 'SERVER_ERROR':
+          setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau");
+          break;
+        default:
+          setError("Đã xảy ra lỗi không xác định. Vui lòng thử lại sau");
+      }
+    } finally {
       setLoading(false);
     }
-
-  }
-
+  };
 
   return (
     <div className="login-container">
@@ -94,7 +129,7 @@ const LoginPage = () => {
               required
             />
           </div>
-          {emailError && <div className="input-error">{emailError}</div>}
+          {emailError && <div className="validation-message">{emailError}</div>}
 
           <div className="input-group">
             <img src={passwordIcon} alt="Password Icon" className="icon" />
@@ -115,11 +150,15 @@ const LoginPage = () => {
               onClick={togglePasswordVisibility}
             />
           </div>
-          {passwordError && <div className="input-error">{passwordError}</div>}
+          {passwordError && <div className="validation-message">{passwordError}</div>}
 
           <div className="options">
             <label>
-              <input type="checkbox" /> Nhớ mật khẩu
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              /> Nhớ mật khẩu
             </label>
             <a href="/forgot-password">Quên mật khẩu?</a>
           </div>

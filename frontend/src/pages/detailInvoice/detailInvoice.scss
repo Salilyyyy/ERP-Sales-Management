@@ -57,6 +57,16 @@
         background: #E9762B;
         color: #fff;
       }
+
+      .save {
+        background: #4CAF50;
+        color: #fff;
+      }
+
+      .cancel {
+        background: #757575;
+        color: #fff;
+      }
     }
   
     .order-info {
@@ -71,13 +81,28 @@
         color: #d32f2f;
       }
   
-      .info-grid {
+    .info-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
         margin-top: 10px;
         justify-items: start;
         margin: 20px;
+
+        select, textarea {
+          margin-left: 10px;
+          padding: 4px 8px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          background-color: #fff;
+          min-width: 150px;
+        }
+
+        textarea {
+          width: calc(100% - 10px);
+          resize: vertical;
+          min-height: 60px;
+        }
       }
     }
   
@@ -125,4 +150,3 @@
       }
     }
   }
-  

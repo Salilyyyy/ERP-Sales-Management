@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Promotions {
   ID         Int        @id @default(autoincrement())
   name       String
@@ -31,6 +30,8 @@ model Invoices {
   Shipments      Shipments[]
   Customers      Customers        @relation(fields: [customerID], references: [ID])
   Promotions     Promotions       @relation(fields: [promotionID], references: [ID])
+  isPaid          Boolean          @default(false)
+  isDelivery      Boolean          @default(false) 
 }
 
 model InvoiceDetails {
@@ -45,7 +46,7 @@ model InvoiceDetails {
 }
 
 model Products {
-  ID                  Int               @id @default(autoincrement())
+  ID                  Int                @id @default(autoincrement())
   produceCategoriesID Int
   unit                String
   image               String?
@@ -63,9 +64,10 @@ model Products {
   description         String?
   InvoiceDetails      InvoiceDetails[]
   DetailStockins      DetailStockins[]
-  ProductCategories   ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
-  Suppliers           Suppliers         @relation(fields: [supplierID], references: [ID])
+  productCategory     ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
+  supplier            Suppliers         @relation(fields: [supplierID], references: [ID])
 }
+
 
 model ProductCategories {
   ID          Int        @id @default(autoincrement())
@@ -84,6 +86,7 @@ model Suppliers {
   representative String
   phoneNumberRep String
   Products       Products[]
+  Stockins      Stockins[]
 }
 
 model Customers {
@@ -147,8 +150,11 @@ model Stockins {
   ID             Int              @id @default(autoincrement())
   stockinDate    DateTime
   notes          String?
+  supplierID     Int              
+  supplier       Suppliers        @relation(fields: [supplierID], references: [ID])
   DetailStockins DetailStockins[]
 }
+
 
 model DetailStockins {
   ID        Int      @id @default(autoincrement())

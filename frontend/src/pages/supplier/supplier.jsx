@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./supplier.scss";
 import { useNavigate } from "react-router-dom";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -7,30 +7,65 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { suppliers } from "../../mock/mock";  // Sửa từ 'categories' thành 'suppliers'
+import supplierApi from "../../api/apiSupplier";
 
 const Suppliers = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [suppliers, setSuppliers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const handleDelete = () => {
-        alert("Xóa nhà cung cấp");
-        setIsDropdownOpen(false);
+    useEffect(() => {
+        fetchSuppliers();
+    }, []);
+
+    const fetchSuppliers = async () => {
+        try {
+            setLoading(true);
+            const data = await supplierApi.getAll();
+            setSuppliers(data);
+            setError(null);
+        } catch (err) {
+            setError('Failed to fetch suppliers');
+            console.error('Error fetching suppliers:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleExport = () => {
-        alert("Xuất danh sách nhà cung cấp!");
-        setIsDropdownOpen(false);
+    const handleDelete = async (id) => {
+        if (window.confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này?")) {
+            try {
+                await supplierApi.delete(id);
+                await fetchSuppliers(); // Refresh the list
+                setIsDropdownOpen(false);
+            } catch (err) {
+                console.error('Error deleting supplier:', err);
+                alert('Failed to delete supplier');
+            }
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            // You can implement export functionality here
+            alert("Xuất danh sách nhà cung cấp!");
+            setIsDropdownOpen(false);
+        } catch (err) {
+            console.error('Error exporting suppliers:', err);
+            alert('Failed to export suppliers');
+        }
     };
 
     const filteredSuppliers = suppliers.filter((supplier) =>
         supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        supplier.id.toString().includes(searchQuery)
+        supplier.ID.toString().includes(searchQuery)
     );
 
     const totalPages = Math.ceil(filteredSuppliers.length / rowsPerPage);
@@ -43,6 +78,14 @@ const Suppliers = () => {
             setCurrentPage(page);
         }
     };
+
+    if (loading) {
+        return <div className="suppliers-container">Loading suppliers...</div>;
+    }
+
+    if (error) {
+        return <div className="suppliers-container">Error: {error}</div>;
+    }
 
     return (
         <div className="suppliers-container">
@@ -95,17 +138,17 @@ const Suppliers = () => {
                 </thead>
                 <tbody>
                     {paginatedSuppliers.map((supplier) => (
-                        <tr key={supplier.id}>
-                            <td>{supplier.id}</td>
+                        <tr key={supplier.ID}>
+                            <td>{supplier.ID}</td>
                             <td>{supplier.name}</td>
-                            <td>{supplier.phone}</td>
-                            <td>{supplier.mail} </td>
+                            <td>{supplier.phoneNumber}</td>
+                            <td>{supplier.email}</td>
                             <td>{supplier.address}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.id}`)}>
+                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}`)}>
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
-                                <button className="btn-icon">
+                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}/edit`)}>
                                     <img src={editIcon} alt="Sửa" /> Sửa
                                 </button>
                             </td>

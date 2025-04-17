@@ -7,7 +7,8 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { products } from "../../mock/mock";
+import productApi from "../../api/apiProduct";
+import productCategoryApi from "../../api/apiProductCategory";
 
 const Product = () => {
     const navigate = useNavigate();
@@ -20,6 +21,38 @@ const Product = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("all");
     const [filterName, setFilterName] = useState("");
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]); // Initialize with empty array
+
+    useEffect(() => {
+        fetchProducts();
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await productCategoryApi.getAll();
+            setCategories(Array.isArray(response) ? response : []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            setCategories([]); // Ensure categories is always an array
+        }
+    };
+
+    const fetchProducts = async () => {
+        try {
+            setLoading(true);
+            const response = await productApi.getAll();
+            const productsList = Array.isArray(response) ? response : [];
+            setProducts(productsList);
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            setProducts([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,8 +66,26 @@ const Product = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa sản phẩm");
+    const handleDelete = async () => {
+        if (selectedProducts.length === 0) {
+            alert("Vui lòng chọn sản phẩm cần xóa!");
+            return;
+        }
+
+        if (window.confirm("Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?")) {
+            try {
+                for (const id of selectedProducts) {
+                    await productApi.delete(id);
+                }
+                await fetchProducts();
+                setSelectedProducts([]);
+                setSelectAll(false);
+                alert("Xóa sản phẩm thành công!");
+            } catch (error) {
+                console.error('Error deleting products:', error);
+                alert("Có lỗi xảy ra khi xóa sản phẩm!");
+            }
+        }
         setIsDropdownOpen(false);
     };
 
@@ -46,15 +97,15 @@ const Product = () => {
     const filteredProducts = products
         .filter((product) =>
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.id.toString().includes(searchQuery)
+            product.ID.toString().includes(searchQuery)
         )
-        .filter((product) => (filterType === "all" ? true : product.type === filterType))
+        .filter((product) => (filterType === "all" ? true : String(product.produceCategoriesID) === String(filterType)))
         .filter((product) => product.name.toLowerCase().includes(filterName.toLowerCase()));
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedProducts(newSelectAll ? filteredProducts.map(p => p.id) : []);
+        setSelectedProducts(newSelectAll ? filteredProducts.map(p => p.ID) : []);
     };
 
     const handleSelectProduct = (id) => {
@@ -121,8 +172,8 @@ const Product = () => {
                         onChange={(e) => setFilterType(e.target.value)}
                     >
                         <option value="all">Tất cả loại</option>
-                        {[...new Set(products.map(p => p.type))].map(type => (
-                            <option key={type} value={type}>{type}</option>
+                        {categories.map(category => (
+                            <option key={category.ID} value={String(category.ID)}>{category.name}</option>
                         ))}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
@@ -159,18 +210,20 @@ const Product = () => {
                 </thead>
                 <tbody>
                     {paginatedProducts.map((product) => (
-                        <tr key={product.id}>
-                            <td><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={() => handleSelectProduct(product.id)} /></td>
-                            <td>{product.id}</td>
+                        <tr key={product.ID}>
+                            <td><input type="checkbox" checked={selectedProducts.includes(product.ID)} onChange={() => handleSelectProduct(product.ID)} /></td>
+                            <td>{product.ID}</td>
                             <td>{product.name}</td>
-                            <td>{product.category}</td>
+                            <td>
+                                {categories.find(c => String(c.ID) === String(product.produceCategoriesID))?.name || 'Không xác định'}
+                            </td>
                             <td>{`${product.width} cm × ${product.height} cm × ${product.length} cm`}</td>
-                            <td>{product.price}</td>
-                            <td>{product.inventory}</td>
+                            <td>{product.outPrice}</td>
+                            <td>{product.quantity}</td>
                             <td><img src={product.image} alt={product.name} className="product-img" /></td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/product/${product.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/edit-product/${product.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

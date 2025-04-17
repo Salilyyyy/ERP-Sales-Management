@@ -7,19 +7,39 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { customers } from "../../mock/mock"; 
+import CustomerRepository from "../../api/apiCustomer";
 
 const Customer = () => {
     const navigate = useNavigate();
+    const [customers, setCustomers] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectAll, setSelectAll] = useState(false);
-    const [selectedCustomers, setSelectedCustomers] = useState([]);  
+    const [selectedCustomers, setSelectedCustomers] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("all");
     const [filterName, setFilterName] = useState("");
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                setIsLoading(true);
+                const data = await CustomerRepository.getAll();
+                setCustomers(data);
+                setError(null);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCustomers();
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,45 +53,76 @@ const Customer = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa khách hàng");
-        setIsDropdownOpen(false);
-    };
+    if (isLoading) {
+        return <div className="customer-container">Loading...</div>;
+    }
 
-    const handleExport = () => {
-        alert("Xuất danh sách khách hàng!");
-        setIsDropdownOpen(false);
-    };
+    if (error) {
+        return <div className="customer-container">Error: {error}</div>;
+    }
 
     const filteredCustomers = customers
-    .filter((customer) =>
-        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.id.toString().includes(searchQuery)
-    )
-    .filter((customer) => 
-        filterType === "all" ? true : customer.id === parseInt(filterType)
-    )
-    .filter((customer) => customer.name.toLowerCase().includes(filterName.toLowerCase()));
-
-    const handleSelectAll = () => {
-        const newSelectAll = !selectAll;
-        setSelectAll(newSelectAll);
-        setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.id) : []);  
-    };
-
-    const handleSelectCustomer = (id) => {
-        let updatedSelection = selectedCustomers.includes(id)
-            ? selectedCustomers.filter((customerId) => customerId !== id)
-            : [...selectedCustomers, id];
-
-        setSelectedCustomers(updatedSelection);
-        setSelectAll(updatedSelection.length === filteredCustomers.length);  
-    };
+        .filter((customer) =>
+            customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            customer.ID.toString().includes(searchQuery)
+        )
+        .filter((customer) =>
+            filterType === "all" ? true : customer.ID === parseInt(filterType)
+        )
+        .filter((customer) => customer.name.toLowerCase().includes(filterName.toLowerCase()));
 
     const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex); 
+    const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+    const handleDelete = async () => {
+        if (selectedCustomers.length === 0) {
+            alert("Vui lòng chọn khách hàng cần xóa");
+            return;
+        }
+        try {
+            await CustomerRepository.deleteMultiple(selectedCustomers);
+            const updatedCustomers = await CustomerRepository.getAll();
+            setCustomers(updatedCustomers);
+            setSelectedCustomers([]);
+            setSelectAll(false);
+            alert("Xóa khách hàng thành công");
+        } catch (error) {
+            alert("Xóa khách hàng thất bại: " + error.message);
+        }
+        setIsDropdownOpen(false);
+    };
+
+    const handleExport = async () => {
+        try {
+            const data = await CustomerRepository.export();
+            const url = window.URL.createObjectURL(new Blob([data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'customers.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            alert("Xuất danh sách thất bại: " + error.message);
+        }
+        setIsDropdownOpen(false);
+    };
+
+    const handleSelectAll = () => {
+        const newSelectAll = !selectAll;
+        setSelectAll(newSelectAll);
+        setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
+    };
+
+    const handleSelectCustomer = (id) => {
+        const updatedSelection = selectedCustomers.includes(id)
+            ? selectedCustomers.filter((customerId) => customerId !== id)
+            : [...selectedCustomers, id];
+        setSelectedCustomers(updatedSelection);
+        setSelectAll(updatedSelection.length === filteredCustomers.length);
+    };
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
@@ -80,8 +131,8 @@ const Customer = () => {
     };
 
     return (
-        <div className="customer-container">  
-            <h2 className="title">Danh sách khách hàng</h2>  
+        <div className="customer-container">
+            <h2 className="title">Danh sách khách hàng</h2>
 
             <div className="top-actions">
                 <div className="search-container">
@@ -96,7 +147,7 @@ const Customer = () => {
                 </div>
 
                 <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-customer")}>Thêm mới</button>  
+                    <button className="btn add" onClick={() => navigate("/create-customer")}>Thêm mới</button>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                             Hành động
@@ -115,6 +166,7 @@ const Customer = () => {
                     </div>
                 </div>
             </div>
+
             <div className="filter">
                 <div className="select-wrapper">
                     <select
@@ -123,7 +175,7 @@ const Customer = () => {
                         onChange={(e) => setFilterType(e.target.value)}
                     >
                         <option value="all">Mã khách hàng</option>
-                        {[...new Set(customers.map(c => c.id))].map(type => (  
+                        {[...new Set(customers.map(c => c.ID))].map(type => (
                             <option key={type} value={type}>{type}</option>
                         ))}
                     </select>
@@ -135,8 +187,8 @@ const Customer = () => {
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
                     >
-                        <option value="">Tên khách hàng</option>  
-                        {[...new Set(customers.map(c => c.name))].map(name => (  
+                        <option value="">Tên khách hàng</option>
+                        {[...new Set(customers.map(c => c.name))].map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
@@ -150,26 +202,26 @@ const Customer = () => {
                     <tr>
                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
                         <th>Mã</th>
-                        <th>Tên khách hàng</th>  
+                        <th>Tên khách hàng</th>
                         <th>Điện thoại</th>
                         <th>Email</th>
-                        <th>Đơn mua</th> {/* This column now shows the number of orders */}
+                        <th>Đơn mua</th>
                         <th>Địa chỉ</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {paginatedCustomers.map((customer) => (  
-                        <tr key={customer.id}>
-                            <td><input type="checkbox" checked={selectedCustomers.includes(customer.id)} onChange={() => handleSelectCustomer(customer.id)} /></td>
-                            <td>{customer.id}</td>
-                            <td>{customer.name}</td>  
-                            <td>{customer.phone}</td>  
-                            <td>{customer.mail}</td>  
-                            <td>{customer.invoices.length}</td> 
-                            <td>{customer.address}</td>  
+                    {paginatedCustomers.map((customer) => (
+                        <tr key={customer.ID}>
+                            <td><input type="checkbox" checked={selectedCustomers.includes(customer.ID)} onChange={() => handleSelectCustomer(customer.ID)} /></td>
+                            <td>{customer.ID}</td>
+                            <td>{customer.name}</td>
+                            <td>{customer.phoneNumber}</td>
+                            <td>{customer.email}</td>
+                            <td>{customer.Invoices?.length || 0}</td>
+                            <td>{customer.address}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                 <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
@@ -184,7 +236,7 @@ const Customer = () => {
                         <option value={10}>10 hàng</option>
                         <option value={15}>15 hàng</option>
                     </select>
-                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} trong tổng số {filteredCustomers.length} khách hàng</span>  
+                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} trong tổng số {filteredCustomers.length} khách hàng</span>
                 </div>
                 <div className="pagination">
                     <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>

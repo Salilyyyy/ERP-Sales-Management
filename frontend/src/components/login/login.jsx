@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthRepository from "../../api/apiAuth";
 import "./login.scss";
@@ -16,6 +16,18 @@ const Login = () => {
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Check for remembered credentials on component mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    const rememberedPassword = localStorage.getItem('rememberedPassword');
+    if (rememberedEmail && rememberedPassword) {
+      setEmail(rememberedEmail);
+      setPassword(rememberedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -57,6 +69,16 @@ const Login = () => {
     try {
       const response = await AuthRepository.login(email, password);
       console.log('Login response:', response);
+      
+      // Save credentials if remember me is checked
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+      }
+
       navigate("/dashboard");
     } catch (err) {
       console.error('Login error:', {
@@ -65,7 +87,6 @@ const Login = () => {
         status: err.status
       });
       
-      // Use the API error message directly
       setError(err.message);
     } finally {
       setLoading(false);
@@ -113,6 +134,18 @@ const Login = () => {
           </div>
           {passwordError && <div className="validation-message">{passwordError}</div>}
 
+          <div className="options">
+            <label className="remember-me">
+              <input 
+                type="checkbox" 
+                checked={rememberMe} 
+                onChange={(e) => setRememberMe(e.target.checked)}
+              /> 
+              Nhớ mật khẩu
+            </label>
+            <a href="/forgot-password">Quên mật khẩu?</a>
+          </div>
+
           {error && (
             <div className="error-message">
               <p>{error}</p>
@@ -123,13 +156,6 @@ const Login = () => {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
 
-          <button
-            type="button"
-            className="forgot-password-button"
-            onClick={() => navigate("/forgot-password")}
-          >
-            Quên mật khẩu?
-          </button>
         </form>
       </div>
     </div>

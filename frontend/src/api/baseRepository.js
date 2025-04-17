@@ -7,13 +7,22 @@ class BaseRepository {
 
         this.api = axios.create({
             baseURL: this.baseURL,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            // Add timeout
+            timeout: 5000
         });
 
         this.api.interceptors.request.use((config) => {
             const token = localStorage.getItem('auth_token');
             if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
+                // Ensure token format is correct
+                const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+                config.headers.Authorization = formattedToken;
+                console.log('Setting Authorization header:', formattedToken);
+            } else {
+                console.warn('No auth token found in localStorage');
             }
             return config;
         });
@@ -29,13 +38,18 @@ class BaseRepository {
                     message: error.message
                 });
 
-                // Create enhanced error with API response details
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    console.error('Authentication error:', error.response?.data);
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login';
+                    return Promise.reject(new Error('Unauthorized - Please log in again'));
+                }
+
                 const enhancedError = new Error(error.response?.data?.error || error.message);
                 enhancedError.status = error.response?.status;
                 enhancedError.details = error.response?.data?.details;
                 enhancedError.originalError = error;
 
-                // For 404 and other status codes, use the error message from the API
                 if (error.response?.data?.error) {
                     enhancedError.message = error.response.data.error;
                 }
@@ -51,7 +65,12 @@ class BaseRepository {
 
     async get(path = '', params = {}) {
         try {
+            console.log('Making GET request to:', this.endpoint + this.normalizePath(path));
+            console.log('With params:', params);
+            console.log('Auth token:', localStorage.getItem('auth_token'));
+            
             const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
+            console.log('Response:', response);
             return response.data;
         } catch (error) {
             throw error;

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import "./invoices.scss";
 import { useNavigate } from "react-router-dom";
+import "./invoices.scss";
+
 import checkIcon from "../../assets/img/tick-icon.svg";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
@@ -8,34 +9,40 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
+
 import InvoiceRepository from "../../api/apiInvoice";
+import AuthRepository from "../../api/apiAuth";
 
 const Invoices = () => {
     const navigate = useNavigate();
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectAll, setSelectAll] = useState(false);
-    const [selectedInvoices, setSelectedInvoices] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const [selectAll, setSelectAll] = useState(false);
+    const [selectedInvoices, setSelectedInvoices] = useState([]);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     useEffect(() => {
-        fetchInvoices();
-    }, []);
-
-    const fetchInvoices = async () => {
-        try {
-            const data = await InvoiceRepository.getAll();
-            setInvoices(data);
-        } catch (error) {
-            console.error('Error fetching invoices:', error);
-        } finally {
-            setLoading(false);
+        if (!AuthRepository.isAuthenticated()) {
+            navigate("/login");
         }
-    };
+    }, [navigate]);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            fetchInvoices();
+        }, searchQuery ? 500 : 0);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery, currentPage, rowsPerPage]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -44,54 +51,70 @@ const Invoices = () => {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const fetchInvoices = async () => {
+        setLoading(true);
+        try {
+            const response = await InvoiceRepository.getAll({
+                page: currentPage,
+                limit: rowsPerPage,
+                customerID: searchQuery || undefined,
+                sortBy: 'ID',
+                sortOrder: 'desc',
+            });
+
+            if (response.success && Array.isArray(response.data)) {
+                setInvoices(response.data);
+                setTotalItems(response.pagination.total || 0);
+                setError(null);
+            } else {
+                setInvoices([]);
+                setError("Dữ liệu không hợp lệ");
+            }
+        } catch (error) {
+            console.error("Lỗi khi lấy hóa đơn:", error);
+            setInvoices([]);
+            setError("Không thể kết nối đến máy chủ");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSelectAll = () => {
+        const checked = !selectAll;
+        setSelectAll(checked);
+        setSelectedInvoices(checked ? invoices.map((inv) => inv.id) : []);
+    };
+
+    const handleSelectInvoice = (id) => {
+        const updated = selectedInvoices.includes(id)
+            ? selectedInvoices.filter((invID) => invID !== id)
+            : [...selectedInvoices, id];
+        setSelectedInvoices(updated);
+        setSelectAll(updated.length === invoices.length);
+    };
 
     const handleDelete = async () => {
         try {
-            await Promise.all(selectedInvoices.map(id => InvoiceRepository.delete(id)));
-            setSelectedInvoices([]);
-            await fetchInvoices();
+            await Promise.all(selectedInvoices.map((id) => InvoiceRepository.delete(id)));
             alert("Xóa đơn hàng thành công!");
+            setSelectedInvoices([]);
+            fetchInvoices();
         } catch (error) {
-            console.error('Error deleting invoices:', error);
-            alert("Có lỗi xảy ra khi xóa đơn hàng!");
+            console.error("Xóa lỗi:", error);
+            alert("Không thể xóa đơn hàng!");
         }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        // TODO: Implement export functionality
-        alert("Tính năng xuất đơn hàng đang được phát triển!");
+        alert("Tính năng xuất đơn hàng đang phát triển.");
         setIsDropdownOpen(false);
     };
 
-    const filteredInvoices = invoices.filter((invoice) =>
-        invoice.customerID?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.ID?.toString().includes(searchQuery)
-    );
-
-    const handleSelectAll = () => {
-        const newSelectAll = !selectAll;
-        setSelectAll(newSelectAll);
-        setSelectedInvoices(newSelectAll ? filteredInvoices.map(inv => inv.ID) : []);
-    };
-
-    const handleSelectInvoice = (ID) => {
-        let updatedSelection = selectedInvoices.includes(ID)
-            ? selectedInvoices.filter((invoiceId) => invoiceId !== ID)
-            : [...selectedInvoices, ID];
-
-        setSelectedInvoices(updatedSelection);
-        setSelectAll(updatedSelection.length === filteredInvoices.length);
-    };
-
-    const totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(totalItems / rowsPerPage);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
@@ -105,24 +128,25 @@ const Invoices = () => {
 
             <div className="top-actions">
                 <div className="search-container">
-                    <img src={searchIcon} alt="Tìm kiếm" className="search-icon" />
+                    <img src={searchIcon} alt="Search" className="search-icon" />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm ..."
                         className="search-bar"
+                        placeholder="Tìm kiếm ..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+
                 <div className="button">
-                <button className="btn add" onClick={() => navigate("/create-invoice")}>Thêm mới</button>
+                    <button className="btn add" onClick={() => navigate("/create-invoice")}>
+                        Thêm mới
+                    </button>
 
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động
-                            <img src={downIcon} alt="▼" className="icon-down" />
+                            Hành động <img src={downIcon} alt="▼" />
                         </button>
-
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
                                 <li className="dropdown-item" onClick={handleDelete}>
@@ -140,9 +164,7 @@ const Invoices = () => {
             <table className="order-table">
                 <thead>
                     <tr>
-                        <th>
-                            <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
-                        </th>
+                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
                         <th>Mã</th>
                         <th>Thời gian</th>
                         <th>Khách hàng</th>
@@ -154,30 +176,38 @@ const Invoices = () => {
                 </thead>
                 <tbody>
                     {loading ? (
-                        <tr>
-                            <td colSpan="8" style={{textAlign: "center"}}>Đang tải dữ liệu...</td>
+                        <tr key="loading-row">
+                            <td colSpan="8" className="text-center">Đang tải dữ liệu...</td>
                         </tr>
-                    ) : paginatedInvoices.length === 0 ? (
-                        <tr>
-                            <td colSpan="8" style={{textAlign: "center"}}>Không có dữ liệu</td>
+                    ) : error ? (
+                        <tr key="error-row">
+                            <td colSpan="8" className="text-center error">{error}</td>
                         </tr>
-                    ) : paginatedInvoices.map((invoice) => (
-                        <tr key={invoice.ID}>
-                            <td>
-                                <input type="checkbox" checked={selectedInvoices.includes(invoice.ID)} onChange={() => handleSelectInvoice(invoice.ID)} />
-                            </td>
-                            <td>{invoice.ID}</td>
-                            <td>{invoice.exportTime}</td>
-                            <td>{invoice.customerID}</td>
-                            <td>{invoice.total || 0} VND</td>
-                            <td>{invoice.paymentMethod ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
-                            <td>{invoice.shipped ? <img src={checkIcon} alt="✔" className="icon-check" /> : ""}</td>
-                            <td className="action-buttons">
-                            <button className="btn-icon" onClick={() => navigate(`/invoice/${invoice.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${invoice.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
-                            </td>
+                    ) : invoices.length === 0 ? (
+                        <tr key="empty-row">
+                            <td colSpan="8" className="text-center">Không có dữ liệu</td>
                         </tr>
-                    ))}
+                    ) : (
+                        invoices.map((inv) => (
+                            <tr key={inv.id}>
+                                <td><input type="checkbox" checked={selectedInvoices.includes(inv.id)} onChange={() => handleSelectInvoice(inv.id)} /></td>
+                                <td>{inv.id}</td>
+                                <td>{inv.createdAt ? new Date(inv.createdAt).toLocaleString("vi-VN") : "N/A"}</td>
+                                <td>{inv.customerName}</td>
+                                <td>{Number(inv.totalAmount).toLocaleString("vi-VN")} VND</td>
+                                <td>{inv.isPaid && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
+                                <td>{inv.isDelivered && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
+                                <td className="action-buttons">
+                                    <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
+                                        <img src={viewIcon} alt="Xem" /> Xem
+                                    </button>
+                                    <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${inv.id}`)}>
+                                        <img src={editIcon} alt="Sửa" /> Sửa
+                                    </button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
 
@@ -188,16 +218,24 @@ const Invoices = () => {
                         <option value={10}>10 hàng</option>
                         <option value={15}>15 hàng</option>
                     </select>
-                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredInvoices.length)} trong tổng số {filteredInvoices.length} đơn hàng</span>
+                    <span>
+                        Hiển thị {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, totalItems)} trên {totalItems}
+                    </span>
                 </div>
+
                 <div className="pagination">
                     <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
-                    {Array.from({ length: totalPages }, (_, index) => (
-                        <button key={index + 1} className={`btn-page ${currentPage === index + 1 ? "active" : ""}`} onClick={() => handlePageChange(index + 1)}>{index + 1}</button>
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                            key={`page-${i + 1}`}
+                            className={`btn-page ${currentPage === i + 1 ? "active" : ""}`}
+                            onClick={() => handlePageChange(i + 1)}
+                        >
+                            {i + 1}
+                        </button>
                     ))}
                     <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
                 </div>
-
             </div>
         </div>
     );

@@ -8,9 +8,14 @@ class AuthRepository extends BaseRepository {
     async login(email, password) {
         try {
             const response = await this.post('/login', { email, password });
+            console.log('Login response:', response);
             if (response.token) {
-                localStorage.setItem('auth_token', response.token);
+                // Store token with Bearer prefix
+                localStorage.setItem('auth_token', `Bearer ${response.token}`);
                 localStorage.setItem('user', JSON.stringify(response.user));
+                console.log('Auth token stored:', localStorage.getItem('auth_token'));
+            } else {
+                console.error('No token in login response');
             }
             return response;
         } catch (error) {
@@ -34,7 +39,6 @@ class AuthRepository extends BaseRepository {
                 status: error.status
             });
             
-            // Pass the error through without modification
             throw error;
         }
     }
@@ -73,7 +77,9 @@ class AuthRepository extends BaseRepository {
     }
 
     isAuthenticated() {
-        return !!localStorage.getItem('auth_token');
+        const token = localStorage.getItem('auth_token');
+        console.log('Checking authentication, token:', token);
+        return !!token;
     }
 }
 

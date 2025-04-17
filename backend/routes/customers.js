@@ -42,7 +42,11 @@ router.post('/', async (req, res) => {
 // Get all customers
 router.get('/', async (req, res) => {
   try {
-    const customers = await prisma.customers.findMany();
+    const customers = await prisma.customers.findMany({
+      include: {
+        Invoices: true
+      }
+    });
     res.status(200).json(customers);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -55,6 +59,9 @@ router.get('/:id', async (req, res) => {
   try {
     const customer = await prisma.customers.findUnique({
       where: { ID: parseInt(id) },
+      include: {
+        Invoices: true
+      }
     });
     if (customer) {
       res.status(200).json(customer);
@@ -111,6 +118,40 @@ router.delete('/:id', async (req, res) => {
       where: { ID: parseInt(id) },
     });
     res.status(204).end();
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete multiple customers
+router.post('/delete-multiple', async (req, res) => {
+  const { ids } = req.body;
+  try {
+    await prisma.$transaction(
+      ids.map(id => 
+        prisma.customers.delete({
+          where: { ID: parseInt(id) }
+        })
+      )
+    );
+    res.status(204).end();
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Export customers
+router.get('/export', async (req, res) => {
+  try {
+    const customers = await prisma.customers.findMany({
+      include: {
+        Invoices: true
+      }
+    });
+    
+    // Send data as JSON for now
+    // In a real implementation, you would format this as an Excel/CSV file
+    res.status(200).json(customers);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

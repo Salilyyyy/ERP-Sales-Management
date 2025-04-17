@@ -5,33 +5,42 @@ class InvoiceRepository extends BaseRepository {
         super('/invoices');
     }
 
-    async getAll() {
+    handleError(error, fallbackMessage = 'Operation failed') {
+        if (error.response) {
+            throw new Error(error.response.data.error || fallbackMessage);
+        } else if (error.request) {
+            throw new Error('No response from server');
+        } else {
+            throw error;
+        }
+    }
+
+    async getAll(params = {}) {
         try {
-            const response = await this.get();
-            return response;
+            const response = await this.get('', {
+                page: params.page || 1,
+                limit: params.limit || 10,
+                customerID: params.customerID,
+                startDate: params.startDate,
+                endDate: params.endDate,
+                paymentMethod: params.paymentMethod,
+                sortBy: params.sortBy || 'exportTime',
+                sortOrder: params.sortOrder || 'desc'
+            });
+
+            const formattedData = response.data?.map(this.formatInvoiceResponse);
+            return { ...response, data: formattedData };
         } catch (error) {
-            if (error.response) {
-                throw new Error(error.response.data.error || 'Failed to fetch invoices');
-            } else if (error.request) {
-                throw new Error('No response from server');
-            } else {
-                throw error;
-            }
+            this.handleError(error, 'Failed to fetch invoices');
         }
     }
 
     async getById(id) {
         try {
             const response = await this.get(`/${id}`);
-            return response;
+            return response; // Return full response without formatting
         } catch (error) {
-            if (error.response) {
-                throw new Error(error.response.data.error || 'Failed to fetch invoice');
-            } else if (error.request) {
-                throw new Error('No response from server');
-            } else {
-                throw error;
-            }
+            this.handleError(error, 'Failed to fetch invoice');
         }
     }
 
@@ -40,13 +49,7 @@ class InvoiceRepository extends BaseRepository {
             const response = await this.post('', data);
             return response;
         } catch (error) {
-            if (error.response) {
-                throw new Error(error.response.data.error || 'Failed to create invoice');
-            } else if (error.request) {
-                throw new Error('No response from server');
-            } else {
-                throw error;
-            }
+            this.handleError(error, 'Failed to create invoice');
         }
     }
 
@@ -55,29 +58,27 @@ class InvoiceRepository extends BaseRepository {
             const response = await this.put(`/${id}`, data);
             return response;
         } catch (error) {
-            if (error.response) {
-                throw new Error(error.response.data.error || 'Failed to update invoice');
-            } else if (error.request) {
-                throw new Error('No response from server');
-            } else {
-                throw error;
-            }
+            this.handleError(error, 'Failed to update invoice');
+        }
+    }
+    async delete(id) {
+        try {
+            const response = await super.delete(`/${id}`);
+            return response;
+        } catch (error) {
+            this.handleError(error, 'Failed to delete invoice');
         }
     }
 
-    async delete(id) {
-        try {
-            const response = await this.delete(`/${id}`);
-            return response;
-        } catch (error) {
-            if (error.response) {
-                throw new Error(error.response.data.error || 'Failed to delete invoice');
-            } else if (error.request) {
-                throw new Error('No response from server');
-            } else {
-                throw error;
-            }
-        }
+    formatInvoiceResponse(invoice) {
+        return {
+            id: invoice.ID,
+            createdAt: invoice.exportTime,
+            customerName: invoice.Customers?.name || 'Không xác định',
+            totalAmount: parseFloat(invoice.totalAmount).toFixed(2), 
+            isPaid: !!invoice.isPaid, 
+            isDelivered: !!invoice.isDelivery 
+        };
     }
 }
 

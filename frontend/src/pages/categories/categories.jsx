@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./categories.scss";
 import { useNavigate } from "react-router-dom";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -7,16 +7,36 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { categories } from "../../mock/mock";
+import ProductCategoryRepository from "../../api/apiProductCategory";
 
 const Categories = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [categories, setCategories] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-const dropdownRef = useRef(null);
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                setIsLoading(true);
+                const data = await ProductCategoryRepository.getAll();
+                setCategories(data);
+                setError(null);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     const handleDelete = () => {
         alert("Xóa loại sản phẩm");
@@ -30,7 +50,8 @@ const dropdownRef = useRef(null);
 
     const filteredCategories = categories.filter((category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        category.id.toString().includes(searchQuery)
+        category.ID.toString().includes(searchQuery) ||
+        (category.information && category.information.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
 
@@ -38,12 +59,20 @@ const dropdownRef = useRef(null);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
-    
+
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
     };
+
+    if (isLoading) {
+        return <div className="categories-container">Loading...</div>;
+    }
+
+    if (error) {
+        return <div className="categories-container">Error: {error}</div>;
+    }
 
     return (
         <div className="categories-container">
@@ -61,7 +90,7 @@ const dropdownRef = useRef(null);
                     />
                 </div>
                 <div className="button">
-                <button className="btn add" onClick={() => navigate("/create-category")}>Thêm mới</button>
+                    <button className="btn add" onClick={() => navigate("/create-category")}>Thêm mới</button>
 
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
@@ -88,22 +117,18 @@ const dropdownRef = useRef(null);
                     <tr>
                         <th>Mã</th>
                         <th>Loại sản phẩm</th>
-                        <th>Màu sắc</th>
-                        <th>Kích thước</th>
-                        <th>Tồn kho</th>
+                        <th>Mô tả</th>
                         <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     {paginatedCategories.map((category) => (
-                        <tr key={category.id}>
-                            <td>{category.id}</td>
+                        <tr key={category.ID}>
+                            <td>{category.ID}</td>
                             <td>{category.name}</td>
-                            <td>{category.color}</td>
-                            <td>{category.width} cm x {category.height} cm x {category.length} cm</td>
-                            <td>{category.inventory}</td>
+                            <td>{category.information}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/category/${category.id}`)}>
+                                <button className="btn-icon" onClick={() => navigate(`/category/${category.ID}`)}>
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
                                 <button className="btn-icon">

@@ -106,11 +106,13 @@ router.post('/register',
   [
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 }),
+    body('name').notEmpty().trim(),
     body('phoneNumber').notEmpty(),
     body('department').notEmpty(),
     body('IdentityCard').notEmpty(),
     body('userType').notEmpty(),
     body('birthday').isISO8601().toDate(),
+    body('address').notEmpty().trim(),
   ],
   async (req, res) => {
     try {

@@ -7,7 +7,19 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { promotions } from "../../mock/mock";
+import apiPromotion from "../../api/apiPromotion";
+
+const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
 
 const Promotion = () => {
     const navigate = useNavigate();
@@ -20,6 +32,23 @@ const Promotion = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [startDateFilter, setStartDateFilter] = useState("");
     const [endDateFilter, setEndDateFilter] = useState("");
+    const [promotions, setPromotions] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchPromotions();
+    }, []);
+
+    const fetchPromotions = async () => {
+        try {
+            const response = await apiPromotion.getAll();
+            setPromotions(response);
+        } catch (error) {
+            console.error("Failed to fetch promotions:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,9 +62,17 @@ const Promotion = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa khuyến mãi");
-        setIsDropdownOpen(false);
+    const handleDelete = async () => {
+        try {
+            for (const id of selectedPromotions) {
+                await apiPromotion.delete(id);
+            }
+            await fetchPromotions();
+            setSelectedPromotions([]);
+            setIsDropdownOpen(false);
+        } catch (error) {
+            console.error("Failed to delete promotions:", error);
+        }
     };
 
     const handleExport = () => {
@@ -46,11 +83,11 @@ const Promotion = () => {
     const filteredPromotions = promotions
         .filter(promotion =>
             promotion.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            promotion.id.toString().includes(searchQuery)
+            promotion.ID.toString().includes(searchQuery)
         )
         .filter(promotion => {
-            const promoStart = new Date(promotion.startDate);
-            const promoEnd = new Date(promotion.endDate);
+            const promoStart = new Date(promotion.dateCreate);
+            const promoEnd = new Date(promotion.dateEnd);
             const from = startDateFilter ? new Date(startDateFilter) : null;
             const to = endDateFilter ? new Date(endDateFilter) : null;
 
@@ -62,7 +99,7 @@ const Promotion = () => {
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedPromotions(newSelectAll ? filteredPromotions.map(p => p.id) : []);
+        setSelectedPromotions(newSelectAll ? filteredPromotions.map(p => p.ID) : []);
     };
 
     const handleSelectPromotion = (id) => {
@@ -150,65 +187,71 @@ const Promotion = () => {
                 </div>
             </div>
 
-            <table className="promotion-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                        <th>Mã khuyến mãi</th>
-                        <th>Tên khuyến mãi</th>
-                        <th>Ngày bắt đầu</th>
-                        <th>Ngày kết thúc</th>
-                        <th>Giá trị khuyến mãi</th>
-                        <th>Giá trị tối thiểu</th>
-                        <th>Số lượng</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {paginatedPromotions.map((promotion) => (
-                        <tr key={promotion.id}>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedPromotions.includes(promotion.id)}
-                                    onChange={() => handleSelectPromotion(promotion.id)}
-                                />
-                            </td>
-                            <td>{promotion.id}</td>
-                            <td>{promotion.name}</td>
-                            <td>{promotion.startDate}</td>
-                            <td>{promotion.endDate}</td>
-                            <td>{promotion.discount}</td>
-                            <td>{promotion.minPurchase}</td>
-                            <td>{promotion.stock}</td>
-                            <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {loading ? (
+                <div className="loading">Loading...</div>
+            ) : (
+                <>
+                    <table className="promotion-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                                <th>ID</th>
+                                <th>Tên khuyến mãi</th>
+                                <th>Ngày bắt đầu</th>
+                                <th>Ngày kết thúc</th>
+                                <th>Giá trị khuyến mãi</th>
+                                <th>Giá trị tối thiểu</th>
+                                <th>Số lượng</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedPromotions.map((promotion) => (
+                                <tr key={promotion.ID}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedPromotions.includes(promotion.ID)}
+                                            onChange={() => handleSelectPromotion(promotion.ID)}
+                                        />
+                                    </td>
+                                    <td>{promotion.ID}</td>
+                                    <td>{promotion.name}</td>
+                                    <td>{formatDateTime(promotion.dateCreate)}</td>
+                                    <td>{formatDateTime(promotion.dateEnd)}</td>
+                                    <td>{promotion.value}</td>
+                                    <td>{promotion.minValue}</td>
+                                    <td>{promotion.quantity}</td>
+                                    <td className="action-buttons">
+                                        <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                        <button className="btn-icon" onClick={() => navigate(`/edit-promotion/${promotion.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
 
-            <div className="pagination-container">
-                <div className="pagination-left">
-                    <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                        <option value={5}>5 hàng</option>
-                        <option value={10}>10 hàng</option>
-                        <option value={15}>15 hàng</option>
-                    </select>
-                    <span>
-                        Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredPromotions.length)} trong tổng số {filteredPromotions.length} khuyến mãi
-                    </span>
-                </div>
-                <div className="pagination">
-                    <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
-                    {Array.from({ length: totalPages }, (_, index) => (
-                        <button key={index + 1} className={`btn-page ${currentPage === index + 1 ? "active" : ""}`} onClick={() => handlePageChange(index + 1)}>{index + 1}</button>
-                    ))}
-                    <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
-                </div>
-            </div>
+                    <div className="pagination-container">
+                        <div className="pagination-left">
+                            <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
+                                <option value={5}>5 hàng</option>
+                                <option value={10}>10 hàng</option>
+                                <option value={15}>15 hàng</option>
+                            </select>
+                            <span>
+                                Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredPromotions.length)} trong tổng số {filteredPromotions.length} khuyến mãi
+                            </span>
+                        </div>
+                        <div className="pagination">
+                            <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
+                            {Array.from({ length: totalPages }, (_, index) => (
+                                <button key={index + 1} className={`btn-page ${currentPage === index + 1 ? "active" : ""}`} onClick={() => handlePageChange(index + 1)}>{index + 1}</button>
+                            ))}
+                            <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

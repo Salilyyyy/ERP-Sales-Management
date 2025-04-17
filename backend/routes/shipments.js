@@ -32,6 +32,14 @@ router.post('/', async (req, res) => {
         payer,
         address,
       },
+      include: {
+        Invoices: true,
+        PostOffices: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
     res.status(201).json(shipment);
   } catch (error) {
@@ -42,7 +50,16 @@ router.post('/', async (req, res) => {
 // Get all shipments
 router.get('/', async (req, res) => {
   try {
-    const shipments = await prisma.shipments.findMany();
+    const shipments = await prisma.shipments.findMany({
+      include: {
+        Invoices: true,
+        PostOffices: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
     res.status(200).json(shipments);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -55,6 +72,14 @@ router.get('/:id', async (req, res) => {
   try {
     const shipment = await prisma.shipments.findUnique({
       where: { ID: parseInt(id) },
+      include: {
+        Invoices: true,
+        PostOffices: {
+          select: {
+            name: true
+          }
+        }
+      },
     });
     if (shipment) {
       res.status(200).json(shipment);
@@ -95,6 +120,14 @@ router.put('/:id', async (req, res) => {
         shippingCost,
         payer,
         address,
+      },
+      include: {
+        Invoices: true,
+        PostOffices: {
+          select: {
+            name: true
+          }
+        }
       },
     });
     res.status(200).json(shipment);

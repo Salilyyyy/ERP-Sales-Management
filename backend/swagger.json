@@ -5,7 +5,7 @@
     "description": "API documentation for Express ERP",
     "version": "1.0.0"
   },
-  "host": "https://erp-sales-management.onrender.com",
+  "host": "localhost:10000",
   "basePath": "/",
   "schemes": [
     "http"
@@ -3329,6 +3329,10 @@
                   "format": "password",
                   "description": "User password (min 6 characters)"
                 },
+                "name": {
+                  "type": "string",
+                  "description": "User full name"
+                },
                 "address": {
                   "type": "string",
                   "description": "User address"
@@ -3358,6 +3362,7 @@
               "required": [
                 "email",
                 "password",
+                "name",
                 "address",
                 "phoneNumber",
                 "department",

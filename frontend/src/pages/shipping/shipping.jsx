@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import moment from "moment";
 import "./shipping.scss";
 import { useNavigate } from "react-router-dom";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -7,7 +8,8 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { shipping } from "../../mock/mock"; // đảm bảo bạn import đúng
+import apiShipping from "../../api/apiShipping";
+import apiInvoice from "../../api/apiInvoice";
 
 const Shipping = () => {
     const navigate = useNavigate();
@@ -18,8 +20,98 @@ const Shipping = () => {
     const [selectedShippings, setSelectedShippings] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [filterType, setFilterType] = useState("all");
+    const [filterType, setFilterType] = useState("");
     const [filterName, setFilterName] = useState("");
+    const [shippingData, setShippingData] = useState([]);
+    const [invoiceData, setInvoiceData] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            // Create timeout promises
+            const timeoutPromise = (ms) => new Promise((_, reject) =>
+                setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
+            );
+
+            // Create fetch promises with 10s timeout
+            const fetchShipping = Promise.race([
+                apiShipping.getAll(),
+                timeoutPromise(10000)
+            ]);
+
+            const fetchInvoices = Promise.race([
+                apiInvoice.getAll(),
+                timeoutPromise(10000)
+            ]);
+
+            // Execute both promises with individual timeout handling
+            const [shippingResponse, invoicesResponse] = await Promise.all([
+                fetchShipping,
+                fetchInvoices
+            ]);
+
+            // Create a map of invoice IDs to invoice data
+            console.log('Raw invoices response:', invoicesResponse);
+            const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : invoicesResponse?.data || [];
+            console.log('Processed invoices:', invoices);
+            const invoiceMap = {};
+            invoices.forEach(invoice => {
+                if (invoice?.id) {
+                    invoiceMap[invoice.id] = invoice;
+                }
+            });
+            console.log('Created invoice map:', invoiceMap);
+            setInvoiceData(invoiceMap);
+            console.log('Raw shipping response:', shippingResponse);
+            const shippings = Array.isArray(shippingResponse) ? shippingResponse : shippingResponse?.data || [];
+            console.log('Processed shipping data:', shippings);
+            setShippingData(shippings);
+            console.log('State updated with shipping data:', shippings.length, 'records');
+            setError(null);
+        } catch (err) {
+            const errorMessage = err.message.includes('timed out')
+                ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
+                : err.message;
+            setError(errorMessage);
+            console.error("Failed to fetch data:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchShippingData = async () => {
+        try {
+            setIsLoading(true);
+            const timeoutPromise = (ms) => new Promise((_, reject) =>
+                setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
+            );
+
+            const response = await Promise.race([
+                apiShipping.getAll(),
+                timeoutPromise(10000)
+            ]);
+            console.log('Raw shipping response:', response);
+            const shippings = Array.isArray(response) ? response : response?.data || [];
+            console.log('Processed shipping data:', shippings);
+            setShippingData(shippings);
+            console.log('State updated with shipping data:', shippings.length, 'records');
+            setError(null);
+        } catch (err) {
+            const errorMessage = err.message.includes('timed out')
+                ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
+                : err.message;
+            setError(errorMessage);
+            console.error("Failed to fetch shipping data:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,8 +125,25 @@ const Shipping = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa vận chuyển");
+    const handleDelete = async () => {
+        if (selectedShippings.length === 0) {
+            alert("Vui lòng chọn vận đơn để xóa");
+            return;
+        }
+
+        if (window.confirm("Bạn có chắc chắn muốn xóa các vận đơn đã chọn?")) {
+            try {
+                for (const id of selectedShippings) {
+                    await apiShipping.delete(id);
+                }
+                await fetchShippingData();
+                setSelectedShippings([]);
+                setSelectAll(false);
+                alert("Xóa vận đơn thành công");
+            } catch (err) {
+                alert("Xóa vận đơn thất bại: " + err.message);
+            }
+        }
         setIsDropdownOpen(false);
     };
 
@@ -43,24 +152,40 @@ const Shipping = () => {
         setIsDropdownOpen(false);
     };
 
-    const filteredShippings = shipping
-        .filter((ship) =>
-        (ship?.receiverName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            ship?.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            ship?.invoiceCode?.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
-        .filter((ship) =>
-            filterType === "all" ? true : ship?.id === filterType
-        )
-        .filter((ship) =>
-            filterName === "" ? true : ship?.receiverName?.toLowerCase().includes(filterName.toLowerCase())
-        );
+    if (isLoading) {
+        return <div className="loading">Đang tải dữ liệu...</div>;
+    }
+
+    if (error) {
+        return <div className="error">Lỗi: {error}</div>;
+    }
+
+    console.log('Starting filtering with shippingData:', shippingData);
+    const filteredShippings = (shippingData || [])
+        .filter((ship) => {
+            const searchMatch = ship?.receiverName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                ship?.ID?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
+                ship?.invoiceID?.toString().toLowerCase().includes(searchQuery.toLowerCase());
+            return searchMatch;
+        })
+        .filter((ship) => {
+            const shipId = ship?.ID?.toString();
+            const selectedId = filterType?.toString();
+            const typeMatch = filterType === "" ? true : shipId === selectedId;
+            console.log('Filtering by type:', { shipId, filterType: selectedId, matches: typeMatch });
+            return typeMatch;
+        })
+        .filter((ship) => {
+            const nameMatch = filterName === "" ? true : ship?.receiverName?.toLowerCase().includes(filterName.toLowerCase());
+            return nameMatch;
+        });
+    console.log('Final filtered shippings:', filteredShippings);
 
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedShippings(newSelectAll ? filteredShippings.map(ship => ship.id) : []);
+        setSelectedShippings(newSelectAll ? filteredShippings.map(ship => ship.ID) : []);
     };
 
     const handleSelectShipping = (id) => {
@@ -125,12 +250,16 @@ const Shipping = () => {
                     <select
                         className="filter-type"
                         value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
+                        onChange={(e) => {
+                            console.log('Selected filter type:', e.target.value);
+                            setFilterType(e.target.value);
+                        }}
                     >
-                        <option value="all">Mã đơn hàng</option>
-                        {[...new Set(shipping.map(ship => ship.id))].map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
+                        <option value="">Chọn mã đơn hàng</option>
+                        {[...new Set(shippingData.map(ship => ship.ID))].sort().map(type => {
+                            console.log('Adding option:', { type, value: type?.toString() });
+                            return <option key={type} value={type?.toString()}>{type?.toString()}</option>;
+                        })}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
@@ -141,13 +270,13 @@ const Shipping = () => {
                         onChange={(e) => setFilterName(e.target.value)}
                     >
                         <option value="">Người nhận</option>
-                        {[...new Set(shipping.map(ship => ship.customerName))].map(name => (
+                        {[...new Set(shippingData.map(ship => ship.receiverName))].map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>Xóa lọc</button>
+                <button className="reset-filter" onClick={() => { setFilterType(""); setFilterName(""); }}>Xóa lọc</button>
             </div>
 
             <table className="order-table">
@@ -166,18 +295,18 @@ const Shipping = () => {
                 </thead>
                 <tbody>
                     {paginatedShippings.map((ship) => (
-                        <tr key={ship.id}>
-                            <td><input type="checkbox" checked={selectedShippings.includes(ship.id)} onChange={() => handleSelectShipping(ship.id)} /></td>
-                            <td>{ship.id}</td>
-                            <td>{ship.courier}</td>
+                        <tr key={ship.ID}>
+                            <td><input type="checkbox" checked={selectedShippings.includes(ship.ID)} onChange={() => handleSelectShipping(ship.ID)} /></td>
+                            <td>{ship.ID}</td>
+                            <td>{ship.PostOffices?.name || "Không xác định"}</td>
                             <td>{ship.receiverName}</td>
-                            <td>{ship.invoiceCode}</td>
-                            <td>{ship.sendTime}</td>
-                            <td>{ship.estimatedDelivery}</td>
-                            <td>{ship.status}</td>
+                            <td>{ship.invoiceID}</td>
+                            <td>{ship.sendTime ? moment(ship.sendTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
+                            <td>{ship.receiveTime ? moment(ship.receiveTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
+                            <td>{ship.payer}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/shipping/edit/${ship.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

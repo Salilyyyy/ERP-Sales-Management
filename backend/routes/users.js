@@ -5,8 +5,13 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 const router = express.Router();
-
 const SALT_ROUNDS = 10;
+
+// Kiểm tra ID hợp lệ
+const isValidId = (id) => {
+  const num = Number(id);
+  return !isNaN(num) && Number.isInteger(num) && num > 0;
+};
 
 // Validation middleware
 const userValidation = [
@@ -32,19 +37,18 @@ router.post('/', userValidation, async (req, res) => {
     department,
     IdentityCard,
     userType,
-    createAt,
     status,
   } = req.body;
+
   try {
-    // Check validation results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Hash password if provided
+    let hashedPassword = null;
     if (password) {
-      req.body.password = await bcrypt.hash(password, SALT_ROUNDS);
+      hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     }
 
     const user = await prisma.users.create({
@@ -52,7 +56,7 @@ router.post('/', userValidation, async (req, res) => {
         address,
         image,
         email,
-        password: req.body.password,
+        password: hashedPassword,
         birthday,
         phoneNumber,
         department,
@@ -63,7 +67,6 @@ router.post('/', userValidation, async (req, res) => {
       },
     });
 
-    // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
     res.status(201).json(userWithoutPassword);
   } catch (error) {
@@ -98,9 +101,15 @@ router.get('/', async (req, res) => {
 // Get a single user by ID
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
+  if (!isValidId(id)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
   try {
     const user = await prisma.users.findUnique({
-      where: { ID: parseInt(id) },
+      where: {
+        ID: Number(id),
+      },
       select: {
         ID: true,
         address: true,
@@ -115,6 +124,7 @@ router.get('/:id', async (req, res) => {
         status: true,
       },
     });
+
     if (user) {
       res.status(200).json(user);
     } else {
@@ -128,36 +138,26 @@ router.get('/:id', async (req, res) => {
 // Update a user by ID
 router.put('/:id', userValidation, async (req, res) => {
   const { id } = req.params;
-  const {
-    address,
-    image,
-    email,
-    password,
-    birthday,
-    phoneNumber,
-    department,
-    IdentityCard,
-    userType,
-    createAt,
-    status,
-  } = req.body;
+  if (!isValidId(id)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
   try {
-    // Check validation results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Hash password if provided
-    if (password) {
-      req.body.password = await bcrypt.hash(password, SALT_ROUNDS);
+    const updateData = { ...req.body };
+
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
     }
 
-    const updateData = { ...req.body };
-    delete updateData.createAt; // Prevent createAt from being updated
+    delete updateData.createAt; // Ngăn cập nhật trường createAt
 
     const user = await prisma.users.update({
-      where: { ID: parseInt(id) },
+      where: { ID: Number(id) },
       data: updateData,
       select: {
         ID: true,
@@ -173,6 +173,7 @@ router.put('/:id', userValidation, async (req, res) => {
         status: true,
       },
     });
+
     res.status(200).json(user);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -182,9 +183,13 @@ router.put('/:id', userValidation, async (req, res) => {
 // Delete a user by ID
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  if (!isValidId(id)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
   try {
     await prisma.users.delete({
-      where: { ID: parseInt(id) },
+      where: { ID: Number(id) },
     });
     res.status(204).end();
   } catch (error) {

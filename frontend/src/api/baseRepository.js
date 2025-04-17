@@ -38,7 +38,9 @@ class BaseRepository {
                     message: error.message
                 });
 
-                if (error.response?.status === 401 || error.response?.status === 403) {
+                // Only redirect for auth errors if we're not already on the login page
+                if ((error.response?.status === 401 || error.response?.status === 403) && 
+                    !window.location.pathname.includes('login')) {
                     console.error('Authentication error:', error.response?.data);
                     localStorage.removeItem('auth_token');
                     window.location.href = '/login';

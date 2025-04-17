@@ -131,6 +131,7 @@ model PostOffices {
 
 model Users {
   ID           Int      @id @default(autoincrement())
+  name         String
   address      String
   image        String?
   email        String   @unique

@@ -7,7 +7,7 @@ import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
-import { postOffice } from "../../mock/mock"; 
+import postOfficeRepository from "../../api/apiPostOffice";
 
 const PostOffice = () => {
     const navigate = useNavigate();
@@ -20,6 +20,23 @@ const PostOffice = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("all");
     const [filterName, setFilterName] = useState("");
+    const [postOffices, setPostOffices] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchPostOffices();
+    }, []);
+
+    const fetchPostOffices = async () => {
+        try {
+            const response = await postOfficeRepository.getAll();
+            setPostOffices(response);
+            setLoading(false);
+        } catch (error) {
+            console.error("Failed to fetch post offices:", error);
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,8 +50,23 @@ const PostOffice = () => {
         };
     }, []);
 
-    const handleDelete = () => {
-        alert("Xóa bưu cục");
+    const handleDelete = async () => {
+        if (selectedPostOffices.length === 0) {
+            alert("Vui lòng chọn bưu cục cần xóa!");
+            return;
+        }
+
+        if (window.confirm("Bạn có chắc chắn muốn xóa các bưu cục đã chọn?")) {
+            try {
+                await Promise.all(selectedPostOffices.map(id => postOfficeRepository.delete(id)));
+                await fetchPostOffices();
+                setSelectedPostOffices([]);
+                alert("Xóa bưu cục thành công!");
+            } catch (error) {
+                console.error("Failed to delete post offices:", error);
+                alert("Xóa bưu cục thất bại!");
+            }
+        }
         setIsDropdownOpen(false);
     };
 
@@ -43,26 +75,26 @@ const PostOffice = () => {
         setIsDropdownOpen(false);
     };
 
-    const filteredPostOffices = postOffice
+    const filteredPostOffices = postOffices
     .filter((office) =>
         office.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        office.id.toString().includes(searchQuery)
+        office.ID.toString().includes(searchQuery)
     )
     .filter((office) => 
-        filterType === "all" ? true : office.id === parseInt(filterType)
+        filterType === "all" ? true : office.ID === parseInt(filterType)
     )
     .filter((office) => office.name.toLowerCase().includes(filterName.toLowerCase()));
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedPostOffices(newSelectAll ? filteredPostOffices.map(c => c.id) : []);  
+        setSelectedPostOffices(newSelectAll ? filteredPostOffices.map(c => c.ID) : []);  
     };
 
-    const handleSelectPostOffice = (id) => {
-        let updatedSelection = selectedPostOffices.includes(id)
-            ? selectedPostOffices.filter((officeId) => officeId !== id)
-            : [...selectedPostOffices, id];
+    const handleSelectPostOffice = (ID) => {
+        let updatedSelection = selectedPostOffices.includes(ID)
+            ? selectedPostOffices.filter((officeId) => officeId !== ID)
+            : [...selectedPostOffices, ID];
 
         setSelectedPostOffices(updatedSelection);
         setSelectAll(updatedSelection.length === filteredPostOffices.length);  
@@ -123,8 +155,8 @@ const PostOffice = () => {
                         onChange={(e) => setFilterType(e.target.value)}
                     >
                         <option value="all">Mã bưu cục</option>
-                        {[...new Set(postOffice.map(c => c.id))].map(type => (  
-                            <option key={type} value={type}>{type}</option>
+                        {[...new Set(postOffices.map(c => c.ID))].sort((a, b) => a - b).map(id => (
+                            <option key={id} value={id}>{id}</option>
                         ))}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
@@ -136,7 +168,7 @@ const PostOffice = () => {
                         onChange={(e) => setFilterName(e.target.value)}
                     >
                         <option value="">Tên bưu cục</option>  
-                        {[...new Set(postOffice.map(c => c.name))].map(name => (  
+                        {[...new Set(postOffices.map(c => c.name))].map(name => (  
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
@@ -145,7 +177,10 @@ const PostOffice = () => {
                 <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>Xóa lọc</button>
             </div>
 
-            <table className="order-table">
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải dữ liệu...</div>
+            ) : (
+                <table className="order-table">
                 <thead>
                     <tr>
                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
@@ -158,20 +193,21 @@ const PostOffice = () => {
                 </thead>
                 <tbody>
                     {paginatedPostOffices.map((office) => (  
-                        <tr key={office.id}>
-                            <td><input type="checkbox" checked={selectedPostOffices.includes(office.id)} onChange={() => handleSelectPostOffice(office.id)} /></td>
-                            <td>{office.id}</td>
+                        <tr key={office.ID}>
+                            <td><input type="checkbox" checked={selectedPostOffices.includes(office.ID)} onChange={() => handleSelectPostOffice(office.ID)} /></td>
+                            <td>{office.ID}</td>
                             <td>{office.name}</td>  
-                            <td>{office.phone}</td>  
+                            <td>{office.phoneNumber}</td>  
                             <td>{office.address}</td>  
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/edit-postOffice/${office.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
-            </table>
+                </table>
+            )}
 
             <div className="pagination-container">
                 <div className="pagination-left">

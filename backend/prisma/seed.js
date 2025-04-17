@@ -289,6 +289,7 @@ async function main() {
   const users = await Promise.all([
     prisma.users.create({
       data: {
+        name: 'Admin User',
         address: '123 Admin Street, New York, NY',
         email: 'admin@company.com',
         password: 'hashed_password_1', // In real app, use proper password hashing
@@ -303,6 +304,7 @@ async function main() {
     }),
     prisma.users.create({
       data: {
+        name: 'Manager User',
         address: '456 Manager Ave, New York, NY',
         email: 'manager@company.com',
         password: 'hashed_password_2',
@@ -317,6 +319,7 @@ async function main() {
     }),
     prisma.users.create({
       data: {
+        name: 'Sales Staff',
         address: '789 Staff Road, New York, NY',
         email: 'staff1@company.com',
         password: 'hashed_password_3',
@@ -331,6 +334,7 @@ async function main() {
     }),
     prisma.users.create({
       data: {
+        name: 'Inventory Staff',
         address: '321 Employee Lane, New York, NY',
         email: 'staff2@company.com',
         password: 'hashed_password_4',
@@ -345,6 +349,7 @@ async function main() {
     }),
     prisma.users.create({
       data: {
+        name: 'Customer Service Staff',
         address: '654 Worker Blvd, New York, NY',
         email: 'staff3@company.com',
         password: 'hashed_password_5',
@@ -640,30 +645,35 @@ async function main() {
       data: {
         stockinDate: new Date(),
         notes: 'Initial stock',
+        supplierID: suppliers[0].ID,
       },
     }),
     prisma.stockins.create({
       data: {
         stockinDate: new Date(),
         notes: 'Monthly restock',
+        supplierID: suppliers[1].ID,
       },
     }),
     prisma.stockins.create({
       data: {
         stockinDate: new Date(),
         notes: 'Emergency restock',
+        supplierID: suppliers[2].ID,
       },
     }),
     prisma.stockins.create({
       data: {
         stockinDate: new Date(),
         notes: 'Seasonal stock',
+        supplierID: suppliers[3].ID,
       },
     }),
     prisma.stockins.create({
       data: {
         stockinDate: new Date(),
         notes: 'Special order',
+        supplierID: suppliers[4].ID,
       },
     }),
   ]);

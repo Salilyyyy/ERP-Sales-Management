@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import authApi from "../../api/apiAuth";
 import "./sidebar.scss";
 import DashboardIcon from "../../assets/img/Dashboard-icon.svg";
 import InvoiceIcon from "../../assets/img/Invoice-icon.svg";
@@ -20,10 +21,26 @@ const Sidebar = () => {
     const location = useLocation();
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const [activeItem, setActiveItem] = useState("");
+    const [userRole, setUserRole] = useState("");
 
-    // Lấy userType từ localStorage
-    const user = JSON.parse(localStorage.getItem("user"));
-    const userType = user?.userType || "";
+    useEffect(() => {
+        const currentUser = authApi.getCurrentUser();
+        if (currentUser) {
+            setUserRole(currentUser.userType || "");
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const currentUser = authApi.getCurrentUser();
+            setUserRole(currentUser?.userType || "");
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
 
     useEffect(() => {
         const path = location.pathname;
@@ -58,12 +75,15 @@ const Sidebar = () => {
         navigate(path);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("auth_token");
-        navigate("/login");
-        alert("Bạn đã đăng xuất.");
+    const handleLogout = async () => {
+        try {
+            await authApi.logout();
+            navigate("/login");
+            alert("Bạn đã đăng xuất.");
+        } catch (error) {
+            console.error("Lỗi đăng xuất:", error);
+            alert("Có lỗi khi đăng xuất!");
+        }
     };
 
     return (
@@ -83,7 +103,7 @@ const Sidebar = () => {
                     </div>
                 </li>
 
-                {(userType === "manager" || userType === "admin") && (
+                {(userRole === "manager" || userRole === "admin") && (
                     <li
                         className={`menu-item ${activeItem === "employee" ? "active" : ""}`}
                         onClick={() => handleItemClick("employee", "/employee")}

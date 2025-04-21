@@ -38,7 +38,7 @@ class InvoiceRepository extends BaseRepository {
     async getById(id) {
         try {
             const response = await this.get(`/${id}`);
-            return response; // Return full response without formatting
+            return response; 
         } catch (error) {
             this.handleError(error, 'Failed to fetch invoice');
         }
@@ -77,7 +77,7 @@ class InvoiceRepository extends BaseRepository {
             customerName: invoice.Customers?.name || 'Không xác định',
             totalAmount: parseFloat(invoice.totalAmount).toFixed(2), 
             isPaid: !!invoice.isPaid, 
-            isDelivered: !!invoice.isDelivery 
+            isDelivery: !!invoice.isDelivery 
         };
     }
 }

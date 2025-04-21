@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { userApi } from "../../api/apiUser";
 import "./createEmployee.scss";
 
 import userIcon from "../../assets/img/avatar.png";
@@ -32,7 +33,12 @@ const CreateEmployee = () => {
         setSelectedCity("");
         setSelectedDistrict("");
         setSelectedWard("");
-        setFormData({});
+        setFormData({
+            userType: "employee",
+            status: "ACTIVE",
+            password: "password123"
+        });
+        setErrors({});
     };
 
     // Location selection
@@ -44,7 +50,13 @@ const CreateEmployee = () => {
     const [selectedDistrict, setSelectedDistrict] = useState("");
     const [selectedWard, setSelectedWard] = useState("");
 
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState({
+        userType: "employee",
+        status: "ACTIVE",
+        password: "password123" 
+    });
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         axios.get("https://provinces.open-api.vn/api/?depth=1")
@@ -87,8 +99,53 @@ const CreateEmployee = () => {
                 <button className="delete" onClick={resetForm}>
                     <img src={deleteIcon} alt="Xóa" /> Xóa
                 </button>
-                <button className="create">
-                    <img src={createIcon} alt="Tạo" /> Tạo
+                <button className="create" onClick={async () => {
+                    // Validate form
+                    const newErrors = {};
+                    if (!formData.email?.trim()) newErrors.email = "Email is required";
+                    if (!formData.name?.trim()) newErrors.name = "Name is required";
+                    if (!formData.address?.trim()) newErrors.address = "Address is required";
+                    if (!formData.phoneNumber?.trim()) newErrors.phoneNumber = "Phone number is required";
+                    if (!formData.department?.trim()) newErrors.department = "Department is required";
+                    if (!formData.IdentityCard?.trim()) newErrors.IdentityCard = "Identity card is required";
+                    if (!formData.birthday) newErrors.birthday = "Birthday is required";
+
+                    if (Object.keys(newErrors).length > 0) {
+                        setErrors(newErrors);
+                        alert("Please fill in all required fields");
+                        return;
+                    }
+
+                    try {
+                        setLoading(true);
+                        // Get the selected location names instead of codes
+                        const selectedCityName = cities.find(c => c.code === parseInt(selectedCity))?.name || '';
+                        const selectedDistrictName = districts.find(d => d.code === parseInt(selectedDistrict))?.name || '';
+                        const selectedWardName = wards.find(w => w.code === parseInt(selectedWard))?.name || '';
+                        
+                        // Combine address components
+                        const fullAddress = [
+                            formData.address,
+                            selectedWardName,
+                            selectedDistrictName,
+                            selectedCityName
+                        ].filter(Boolean).join(', ');
+
+                        const dataToSend = {
+                            ...formData,
+                            address: fullAddress,
+                            image: previewImage !== userIcon ? previewImage : null
+                        };
+                        await userApi.createUser(dataToSend);
+                        navigate("/employee");
+                    } catch (error) {
+                        console.error("Error creating employee:", error);
+                        alert(error.response?.data?.error || "Failed to create employee. Please try again.");
+                    } finally {
+                        setLoading(false);
+                    }
+                }}>
+                    <img src={createIcon} alt="Tạo" /> {loading ? "Đang xử lý..." : "Tạo"}
                 </button>
             </div>
 
@@ -116,25 +173,59 @@ const CreateEmployee = () => {
                         <input
                             type="text"
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className={errors.name ? "error" : ""}
                         />
                     </div>
 
                     <div className="form-group">
                         <label>Chức vụ</label>
                         <select
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
+                            className={errors.userType ? "error" : ""}
                         >
                             <option value="">Chọn chức vụ</option>
-                            <option value="management">Quản lý</option>
+                            <option value="admin">Quản lý</option>
                             <option value="employee">Nhân viên</option>
                         </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Phòng ban</label>
+                        <select
+                            onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                            className={errors.department ? "error" : ""}
+                        >
+                            <option value="">Chọn phòng ban</option>
+                            <option value="sales">Kinh doanh</option>
+                            <option value="accounting">Kế toán</option>
+                            <option value="wavehouse">Kho</option>
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Ngày sinh</label>
+                        <input
+                            type="date"
+                            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                            className={errors.birthday ? "error" : ""}
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label>Số CMND/CCCD</label>
+                        <input
+                            type="text"
+                            onChange={(e) => setFormData({ ...formData, IdentityCard: e.target.value })}
+                            className={errors.IdentityCard ? "error" : ""}
+                        />
                     </div>
 
                     <div className="form-group">
                         <label>Số điện thoại</label>
                         <input
                             type="text"
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                            className={errors.phoneNumber ? "error" : ""}
                         />
                     </div>
 
@@ -143,14 +234,27 @@ const CreateEmployee = () => {
                         <input
                             type="email"
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className={errors.email ? "error" : ""}
                         />
                     </div>
 
                     <div className="form-group">
-                        <label>Địa chỉ</label>
+                        <label>Mật khẩu</label>
+                        <input
+                            type="password"
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            className={errors.password ? "error" : ""}
+                            placeholder="Mặc định: password123"
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label>Địa chỉ (Số nhà, tên đường)</label>
                         <input
                             type="text"
+                            placeholder="Nhập số nhà, tên đường"
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            className={errors.address ? "error" : ""}
                         />
                     </div>
 

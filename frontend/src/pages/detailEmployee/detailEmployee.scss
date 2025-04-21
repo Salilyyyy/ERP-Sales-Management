@@ -76,12 +76,30 @@ $text-color: #1a3300;
             border-radius: 50%;
             object-fit: cover;
             background-color: #e0e0e0;
+            transition: opacity 0.3s;
+
+            &.uploading {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
         }
 
         .add-photo {
             margin-top: 8px;
             color: #6c757d;
             font-size: 14px;
+        }
+
+        .edit-photo {
+            margin-top: 8px;
+            color: #163020;
+            font-size: 12px;
+            font-style: italic;
+            cursor: pointer;
+            
+            &:hover {
+                text-decoration: underline;
+            }
         }
     }
 
@@ -107,6 +125,27 @@ $text-color: #1a3300;
             span {
                 color: #000;
                 text-align: right;
+            }
+
+            input, select {
+                width: 200px;
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+                background-color: white;
+                color: #333;
+
+                &:focus {
+                    outline: none;
+                    border-color: #163020;
+                    box-shadow: 0 0 3px rgba(22, 48, 32, 0.3);
+                }
+            }
+
+            select {
+              width: 220px;
+                cursor: pointer;
             }
         }
     }

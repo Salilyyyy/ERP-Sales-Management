@@ -14,9 +14,32 @@ class UserApi extends BaseRepository {
 
   getAllUsers = async () => {
     try {
+      console.log('Making getAllUsers request');
       const response = await this.get(`${this.route}`);
-      return response.data;
+      console.log('getAllUsers raw response:', response);
+
+      if (!response) {
+        console.log('No response data, returning empty array');
+        return [];
+      }
+
+      // Convert single object to array if needed
+      let users = Array.isArray(response) ? response : [response];
+      console.log('Processed users array:', users);
+
+      users.forEach(user => {
+        console.log('User data:', {
+          ID: user.ID,
+          name: user.name,
+          email: user.email,
+          userType: user.userType,
+          department: user.department,
+        });
+      });
+
+      return users;
     } catch (error) {
+      console.error('Error in getAllUsers:', error);
       throw error;
     }
   };

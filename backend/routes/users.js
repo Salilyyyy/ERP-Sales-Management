@@ -17,6 +17,7 @@ const isValidId = (id) => {
 const userValidation = [
   body('email').isEmail().normalizeEmail(),
   body('password').optional().isLength({ min: 6 }),
+  body('name').notEmpty(),
   body('address').notEmpty(),
   body('phoneNumber').notEmpty(),
   body('department').notEmpty(),
@@ -28,6 +29,7 @@ const userValidation = [
 // Create a new user
 router.post('/', userValidation, async (req, res) => {
   const {
+    name,
     address,
     image,
     email,
@@ -53,6 +55,7 @@ router.post('/', userValidation, async (req, res) => {
 
     const user = await prisma.users.create({
       data: {
+        name,
         address,
         image,
         email,
@@ -80,6 +83,7 @@ router.get('/', async (req, res) => {
     const users = await prisma.users.findMany({
       select: {
         ID: true,
+        name: true,
         address: true,
         image: true,
         email: true,
@@ -122,6 +126,7 @@ router.get('/:id', async (req, res) => {
         userType: true,
         createAt: true,
         status: true,
+        name: true,
       },
     });
 
@@ -154,13 +159,14 @@ router.put('/:id', userValidation, async (req, res) => {
       updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
     }
 
-    delete updateData.createAt; // Ngăn cập nhật trường createAt
+    delete updateData.createAt;
 
     const user = await prisma.users.update({
       where: { ID: Number(id) },
       data: updateData,
       select: {
         ID: true,
+        name: true,
         address: true,
         image: true,
         email: true,

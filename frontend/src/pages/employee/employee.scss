@@ -105,6 +105,53 @@ $text-color: #1a3300;
             }
         }
     }
+
+    .filter {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    
+        .select-wrapper {
+            position: relative;
+            
+            select {
+                padding: 10px 15px;
+                font-size: 14px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+                background-color: #fff;
+                color: #333;
+                cursor: pointer;
+                appearance: none; /* Tắt style mặc định của select */
+                transition: border-color 0.3s ease;
+                width: 180px;
+            }
+    
+            .icon-down {
+                position: absolute;
+                top: 50%;
+                right: 10px;
+                transform: translateY(-50%);
+                width: 12px;
+                height: 12px;
+                pointer-events: none; 
+            }
+        }
+    
+        .reset-filter {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+    
+            &:hover {
+                background-color: #ddd;
+            }
+        }
+    }
     
     .dropdown {
         position: relative;
@@ -184,6 +231,11 @@ $text-color: #1a3300;
             background-color: transparent;
             border: none;
             margin: 10px;
+        }
+        .btn-icon:hover {
+            border-bottom: #1a3300 1px solid;
+            border-radius: 5px;
+            cursor: pointer;
         }
     }
 

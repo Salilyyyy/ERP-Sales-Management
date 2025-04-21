@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./employee.scss";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { userApi } from "../../api/apiUser";
+import AuthRepository from "../../api/apiAuth";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -21,8 +22,9 @@ const Employee = () => {
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [filterType] = useState("all");
-    const [filterName] = useState("");
+    const [filterType, setFilterType] = useState("all");
+    const [filterDepartment, setFilterDepartment] = useState("");
+    const [currentUserRole, setCurrentUserRole] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -37,14 +39,55 @@ const Employee = () => {
     }, []);
 
     useEffect(() => {
-        fetchEmployees();
+        getCurrentUserAndEmployees();
     }, []);
 
-    const fetchEmployees = async () => {
+    const getCurrentUserAndEmployees = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('/api/users');
-            setEmployees(response.data);
+
+            const currentUser = AuthRepository.getCurrentUser();
+            console.log('Current user from AuthRepository:', currentUser);
+            
+            const userType = currentUser?.userType;
+            console.log('Extracted userType:', userType);
+            
+            setCurrentUserRole(userType);
+
+            const users = await userApi.getAllUsers();
+            console.log('Users received:', users);
+            
+            // Prepare the data based on user role
+            let filteredUsers;
+            console.log('Raw users data:', users);
+            
+            // Default to 'unknown' if userType is null/undefined
+            const normalizedUserType = (userType || 'unknown').toLowerCase();
+            const allUsers = Array.isArray(users) ? users : [users];
+
+            if (normalizedUserType === 'admin') {
+                console.log('Admin role - showing all users');
+                filteredUsers = allUsers;
+            } else if (normalizedUserType === 'manager') {
+                console.log('Manager role - filtering staff only');
+                filteredUsers = allUsers.filter(user => {
+                    const isStaff = user.userType?.toLowerCase() === 'staff';
+                    console.log(`User ${user.email}: userType=${user.userType}, isStaff=${isStaff}`);
+                    return isStaff;
+                });
+            } else if (normalizedUserType === 'staff') {
+                console.log('Staff role - showing no data');
+                filteredUsers = [];
+            } else {
+                console.log('Unknown role - showing no data');
+                filteredUsers = [];
+            }
+            
+            console.log('Filtered users to display:', filteredUsers);
+
+            console.log('Setting filtered users:', filteredUsers);
+            setEmployees(filteredUsers);
+
             setError(null);
         } catch (err) {
             setError("Không thể tải danh sách nhân viên");
@@ -63,11 +106,11 @@ const Employee = () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa những nhân viên đã chọn?")) {
             try {
                 await Promise.all(
-                    selectedEmployees.map(id => 
-                        axios.delete(`/api/users/${id}`)
+                    selectedEmployees.map(id =>
+                        userApi.deleteUser(id)
                     )
                 );
-                fetchEmployees();
+                getCurrentUserAndEmployees();
                 setSelectedEmployees([]);
                 setIsDropdownOpen(false);
                 alert("Xóa nhân viên thành công");
@@ -80,7 +123,7 @@ const Employee = () => {
 
     const handleExport = async () => {
         try {
-            const response = await axios.get('/api/users/export', {
+            const response = await userApi.get(`${userApi.route}/export`, {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -97,20 +140,36 @@ const Employee = () => {
         }
     };
 
-    const filteredEmployees = employees
-    .filter((employee) =>
-        employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        employee.id.toString().includes(searchQuery)
-    )
-    .filter((employee) => 
-        filterType === "all" ? true : employee.id === parseInt(filterType)
-    )
-    .filter((employee) => employee.name.toLowerCase().includes(filterName.toLowerCase()));
+    useEffect(() => {
+        console.log('Employees data changed:', employees);
+    }, [employees]);
+
+    const filteredEmployees = React.useMemo(() => {
+        console.log('Filtering employees:', employees);
+        return employees
+            .filter((employee) => {
+                // Search by email, ID, or name
+                const searchMatch = !searchQuery || 
+                    employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    employee.ID?.toString().includes(searchQuery) ||
+                    (employee.name && employee.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+                // Filter by userType
+                const typeMatch = filterType === "all" || employee.userType === filterType;
+
+                // Filter by department
+                const departmentMatch = !filterDepartment || 
+                    employee.department === filterDepartment;
+
+                return searchMatch && typeMatch && departmentMatch;
+            })
+            .sort((a, b) => a.ID - b.ID); // Sort by ID from lowest to highest
+    }, [employees, searchQuery, filterType, filterDepartment]);
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedEmployees(newSelectAll ? filteredEmployees.map(e => e.id) : []);
+        setSelectedEmployees(newSelectAll ? filteredEmployees.map(e => e.ID) : []);
     };
 
     const handleSelectEmployee = (id) => {
@@ -169,42 +228,74 @@ const Employee = () => {
                     </div>
                 </div>
             </div>
-            
+
+            <div className="filter">
+                <div className="select-wrapper">
+                    <select
+                        className="filter-type"
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                    >
+                        <option value="all">Chức vụ</option>
+                        {[...new Set(employees.map(e => e.userType))].map(type => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </select>
+                    <img src={downIcon} alt="▼" className="icon-down" />
+                </div>
+                <div className="select-wrapper">
+                    <select
+                        className="filter-department"
+                        value={filterDepartment}
+                        onChange={(e) => setFilterDepartment(e.target.value)}
+                    >
+                        <option value="">Phòng ban</option>
+                        {[...new Set(employees.map(e => e.department))].map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                    </select>
+                    <img src={downIcon} alt="▼" className="icon-down" />
+                </div>
+                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterDepartment(""); }}>
+                    Xóa lọc
+                </button>
+            </div>
+
             {loading ? (
                 <div className="loading">Đang tải...</div>
             ) : error ? (
                 <div className="error">{error}</div>
             ) : (
                 <table className="order-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                        <th>Mã nhân viên</th>
-                        <th>Tên nhân viên</th>
-                        <th>Chức vụ</th>
-                        <th>Điện thoại</th>
-                        <th>Email</th>
-                        <th>Địa chỉ</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {paginatedEmployees.map((employee) => (
-                        <tr key={employee.id}>
-                            <td><input type="checkbox" checked={selectedEmployees.includes(employee.id)} onChange={() => handleSelectEmployee(employee.id)} /></td>
-                            <td>{employee.id}</td>
-                            <td>{employee.name}</td>
-                            <td>{employee.role}</td>
-                            <td>{employee.phone}</td>
-                            <td>{employee.mail}</td>
-                            <td>{employee.address}</td>
-                            <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/employee/${employee.id}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
-                            </td>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                            <th>Mã nhân viên</th>
+                            <th>Tên nhân viên</th>
+                            <th>Chức vụ</th>
+                            <th>Phòng ban</th>
+                            <th>Điện thoại</th>
+                            <th>Email</th>
+                            <th>Hành động</th>
                         </tr>
-                    ))}
-                </tbody>
+                    </thead>
+                    <tbody>
+                        {paginatedEmployees.map((user) => (
+                            <tr key={user.ID}>
+                                <td><input type="checkbox" checked={selectedEmployees.includes(user.ID)} onChange={() => handleSelectEmployee(user.ID)} /></td>
+                                <td>{user.ID}</td>
+                                <td>{user.name|| "N/A"}</td>
+                                <td>{user.userType}</td>
+                                <td>{user.department}</td>
+                                <td>{user.phoneNumber}</td>
+                                <td>{user.email}</td>
+                                <td className="action-buttons">
+                                    <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                    <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             )}
 

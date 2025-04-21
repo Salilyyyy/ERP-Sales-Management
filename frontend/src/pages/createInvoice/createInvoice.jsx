@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import apiInvoice from "../../api/apiInvoice";
+import apiCustomer from "../../api/apiCustomer";
+import apiProduct from "../../api/apiProduct";
 import "./createInvoice.scss";
-import { productData, listEmployee } from "../../mock/mock";
+import { listEmployee } from "../../mock/mock";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
@@ -10,6 +13,16 @@ import cancelIcon from "../../assets/img/cancel-icon.svg";
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
+  const [customers, setCustomers] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [note, setNote] = useState("");
+  const [isPaid, setIsPaid] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -21,6 +34,8 @@ const CreateInvoice = () => {
   const [selectedWard, setSelectedWard] = useState("");
 
   const [invoiceItems, setInvoiceItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -39,18 +54,27 @@ const CreateInvoice = () => {
       name: selectedProduct.name,
       unit: selectedProduct.unit || "N/A",
       quantity: quantity,
-      price: selectedProduct.price,
-      total: selectedProduct.price * quantity,
+      price: selectedProduct.outPrice,
+      total: selectedProduct.outPrice * quantity,
     };
     setInvoiceItems([...invoiceItems, newItem]);
   };
 
-  const handleProductChange = (e) => {
-    const selectedProductId = Number(e.target.value);
-    const product = productData[selectedCategory]?.find(
-      (product) => product.id === selectedProductId
-    );
-    setSelectedProduct(product || null);
+  const handleProductChange = async (e) => {
+    const selectedProductId = e.target.value;
+    if (!selectedProductId) {
+      setSelectedProduct(null);
+      return;
+    }
+    
+    try {
+      const product = await apiProduct.getById(selectedProductId);
+      setSelectedProduct(product);
+    } catch (error) {
+      console.error("Error fetching product details:", error);
+      alert("Không thể lấy thông tin sản phẩm");
+      setSelectedProduct(null);
+    }
   };
   const resetForm = () => {
     setSelectedEmployee("");
@@ -65,21 +89,138 @@ const CreateInvoice = () => {
     setPaymentMethod("");
     setDiscountRate(0);
     setVatRate(5);
-    document.querySelectorAll('input[type="text"], input[type="number"], select').forEach(input => {
-      input.value = "";
-    });
+    setCustomerName("");
+    setCustomerPhone("");
+    setRecipientName("");
+    setRecipientPhone("");
+    setRecipientAddress("");
+    setNote("");
+    setIsPaid(false);
+    setSelectedCustomerId("");
+    setIsNewCustomer(false);
   };
 
-  const handleCategoryChange = (e) => {
-    const selectedCategory = e.target.value;
-    setSelectedCategory(selectedCategory);
+  const handleCreateInvoice = async () => {
+    try {
+      let customerId = selectedCustomerId;
+
+      // Create new customer if needed
+      if (isNewCustomer) {
+        if (!customerName || !customerPhone) {
+          alert("Vui lòng nhập đầy đủ thông tin khách hàng mới");
+          return;
+        }
+        const newCustomer = await apiCustomer.create({
+          name: customerName,
+          phoneNumber: customerPhone
+        });
+        customerId = newCustomer.id;
+      }
+
+      const invoiceData = {
+        customerId,
+        recipientName,
+        recipientPhone,
+        recipientAddress,
+        note,
+        isPaid,
+        isDelivery: shippingOption === "ship",
+        paymentMethod,
+        employeeName: selectedEmployee,
+        items: invoiceItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        province: provinces.find(p => p.code === selectedProvince)?.name || "",
+        district: districts.find(d => d.code === selectedDistrict)?.name || "",
+        ward: wards.find(w => w.code === selectedWard)?.name || "",
+        vat: vatRate,
+        discount: discountRate,
+        totalAmount: grandTotal
+      };
+
+      await apiInvoice.create(invoiceData);
+      navigate("/invoices");
+    } catch (error) {
+      alert(error.message || "Có lỗi xảy ra khi tạo hóa đơn");
+    }
+  };
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiProduct.getAll();
+        setCategories(response);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleCategoryChange = async (e) => {
+    const categoryId = e.target.value;
+    setSelectedCategory(categoryId);
     setSelectedProduct(null);
+    
+    if (categoryId) {
+      try {
+        const response = await apiProduct.getAll({ produceCategoriesID: categoryId });
+        setProducts(response);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts([]);
+      }
+    } else {
+      setProducts([]);
+    }
   };
 
   const removeItem = (indexToRemove) => {
     setInvoiceItems(invoiceItems.filter((_, index) => index !== indexToRemove));
   };
 
+
+  // Fetch customers list
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await apiCustomer.getAll();
+        setCustomers(response.data || []);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  // Handle customer selection
+  const handleCustomerChange = (e) => {
+    const value = e.target.value;
+    if (value === "new") {
+      setIsNewCustomer(true);
+      setSelectedCustomerId("");
+      setCustomerName("");
+      setCustomerPhone("");
+      setRecipientName("");
+      setRecipientPhone("");
+      setRecipientAddress("");
+    } else {
+      setIsNewCustomer(false);
+      setSelectedCustomerId(value);
+      const selectedCustomer = customers.find(c => c.id.toString() === value);
+      if (selectedCustomer) {
+        setCustomerName(selectedCustomer.name);
+        setCustomerPhone(selectedCustomer.phoneNumber || '');
+        // Auto-fill recipient information with customer info
+        setRecipientName(selectedCustomer.name);
+        setRecipientPhone(selectedCustomer.phoneNumber || '');
+        setRecipientAddress(selectedCustomer.address || '');
+      }
+    }
+  };
 
   useEffect(() => {
     axios.get("https://provinces.open-api.vn/api/p/")
@@ -131,7 +272,7 @@ const CreateInvoice = () => {
         <button className="delete" onClick={resetForm}>
           <img src={deleteIcon} alt="Xóa" /> Xóa nội dung
         </button>
-        <button className="create"><img src={createIcon} alt="Tạo" /> Tạo hoá đơn</button>
+        <button className="create" onClick={handleCreateInvoice}><img src={createIcon} alt="Tạo" /> Tạo hoá đơn</button>
       </div>
       <div className="section">
         <div className="section-1">
@@ -148,13 +289,53 @@ const CreateInvoice = () => {
           </div>
           <div className="form-group"></div>
           <div className="form-group">
-            <label>Tên khách hàng</label>
-            <input type="text" />
+            <label>Khách hàng</label>
+            <select
+              value={isNewCustomer ? "new" : selectedCustomerId}
+              onChange={handleCustomerChange}
+            >
+              <option value="">Chọn khách hàng</option>
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id.toString()}>
+                  {customer.name} - {customer.phoneNumber || 'No phone'}
+                </option>
+              ))}
+              <option value="new">+ Thêm khách hàng mới</option>
+            </select>
           </div>
-          <div className="form-group">
-            <label>Số điện thoại</label>
-            <input type="text" />
-          </div>
+          {!isNewCustomer && selectedCustomerId && (
+            <div className="form-group">
+              <label>Số điện thoại khách hàng</label>
+              <input
+                type="text"
+                value={customerPhone}
+                disabled
+                style={{ backgroundColor: "#f5f5f5" }}
+              />
+            </div>
+          )}
+          {isNewCustomer && (
+            <>
+              <div className="form-group">
+                <label>Tên khách hàng mới</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Nhập tên khách hàng"
+                />
+              </div>
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <input
+                  type="text"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Nhập số điện thoại"
+                />
+              </div>
+            </>
+          )}
           <div className="checkbox-group">
             <label style={{ fontWeight: 700, color: "#163020", marginRight: "100px" }}>Vận chuyển</label>
 
@@ -181,15 +362,27 @@ const CreateInvoice = () => {
           <div className="form-group"></div>
           <div className="form-group">
             <label>Tên người nhận</label>
-            <input type="text" />
+            <input
+              type="text"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+            />
           </div>
           <div className="form-group">
             <label>SĐT người nhận</label>
-            <input type="text" />
+            <input
+              type="text"
+              value={recipientPhone}
+              onChange={(e) => setRecipientPhone(e.target.value)}
+            />
           </div>
           <div className="form-group">
             <label>Địa chỉ người nhận</label>
-            <input type="text" />
+            <input
+              type="text"
+              value={recipientAddress}
+              onChange={(e) => setRecipientAddress(e.target.value)}
+            />
           </div>
           <div className="form-group">
             <label>Tỉnh/Thành phố</label>
@@ -274,12 +467,22 @@ const CreateInvoice = () => {
           <div className="form-group">
             <label style={{ margin: "20px 0", width: "20%" }}>Trạng thái</label>
             <label style={{ fontWeight: "normal", }}>
-              <input type="checkbox" style={{ width: "10%" }} /> Đã thanh toán
+              <input
+                type="checkbox"
+                style={{ width: "10%" }}
+                checked={isPaid}
+                onChange={(e) => setIsPaid(e.target.checked)}
+              /> Đã thanh toán
             </label>
           </div>
           <div className="form-group">
             <label style={{ width: "20%" }}>Ghi chú</label>
-            <input type="text" style={{ width: "80%" }} />
+            <input
+              type="text"
+              style={{ width: "80%" }}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -291,9 +494,9 @@ const CreateInvoice = () => {
             <label>Loại sản phẩm</label>
             <select onChange={handleCategoryChange} value={selectedCategory}>
               <option value="">Chọn loại</option>
-              {Object.keys(productData).map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -306,8 +509,7 @@ const CreateInvoice = () => {
               disabled={!selectedCategory}
             >
               <option value="">Chọn sản phẩm</option>
-              {selectedCategory &&
-                productData[selectedCategory].map((product) => (
+              {products.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name}
                   </option>

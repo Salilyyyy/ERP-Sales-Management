@@ -3,6 +3,7 @@ import createIcon from "../../assets/img/create-icon.svg"
 import deleteIcon from "../../assets/img/delete-icon.svg"
 import "./createCategory.scss"
 import { useNavigate } from "react-router-dom";
+import { categories } from "../../api/apiProductCategory";
 
 const CreateCategory = () => {
   const navigate = useNavigate();

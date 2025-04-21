@@ -61,7 +61,7 @@ const Invoices = () => {
                 page: currentPage,
                 limit: rowsPerPage,
                 customerID: searchQuery || undefined,
-                sortBy: 'ID',
+                sortBy: 'exportTime',
                 sortOrder: 'desc',
             });
 
@@ -196,7 +196,7 @@ const Invoices = () => {
                                 <td>{inv.customerName}</td>
                                 <td>{Number(inv.totalAmount).toLocaleString("vi-VN")} VND</td>
                                 <td>{inv.isPaid && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
-                                <td>{inv.isDelivered && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
+                        <td>{inv.isDelivery && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
                                         <img src={viewIcon} alt="Xem" /> Xem

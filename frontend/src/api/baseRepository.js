@@ -10,14 +10,12 @@ class BaseRepository {
             headers: { 
                 'Content-Type': 'application/json',
             },
-            // Add timeout
             timeout: 5000
         });
 
         this.api.interceptors.request.use((config) => {
             const token = localStorage.getItem('auth_token');
             if (token) {
-                // Ensure token format is correct
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
                 console.log('Setting Authorization header:', formattedToken);
@@ -30,7 +28,6 @@ class BaseRepository {
         this.api.interceptors.response.use(
             (response) => response,
             (error) => {
-                // Log the complete error for debugging
                 console.error('API Error:', {
                     status: error.response?.status,
                     error: error.response?.data?.error,
@@ -38,7 +35,6 @@ class BaseRepository {
                     message: error.message
                 });
 
-                // Only redirect for auth errors if we're not already on the login page
                 if ((error.response?.status === 401 || error.response?.status === 403) && 
                     !window.location.pathname.includes('login')) {
                     console.error('Authentication error:', error.response?.data);
@@ -72,7 +68,20 @@ class BaseRepository {
             console.log('Auth token:', localStorage.getItem('auth_token'));
             
             const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-            console.log('Response:', response);
+            console.log('GET Response:', {
+                url: this.endpoint + this.normalizePath(path),
+                status: response.status,
+                data: response.data,
+            });
+            
+            if (Array.isArray(response.data)) {
+                console.log('Response array content:', response.data.map(item => ({
+                    ...item,
+                    _availableFields: Object.keys(item)
+                })));
+            } else if (response.data && typeof response.data === 'object') {
+                console.log('Response object fields:', Object.keys(response.data));
+            }
             return response.data;
         } catch (error) {
             throw error;
@@ -82,6 +91,11 @@ class BaseRepository {
     async post(path = '', data = {}) {
         try {
             const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
+            console.log('POST Response:', {
+                url: this.endpoint + this.normalizePath(path),
+                status: response.status,
+                data: response.data,
+            });
             return response.data;
         } catch (error) {
             throw error;
@@ -91,6 +105,11 @@ class BaseRepository {
     async put(path = '', data = {}) {
         try {
             const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
+            console.log('PUT Response:', {
+                url: this.endpoint + this.normalizePath(path),
+                status: response.status,
+                data: response.data,
+            });
             return response.data;
         } catch (error) {
             throw error;

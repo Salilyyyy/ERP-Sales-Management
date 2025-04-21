@@ -4,12 +4,12 @@ import editIcon from "../../assets/img/white-edit.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import "./detailCategory.scss";
 import { useParams, useNavigate } from "react-router-dom";
-import { categories } from "../../mock/mock"; // Đảm bảo mock có chứa dữ liệu loại sản phẩm
+import { categories } from "../../mock/mock"; 
 
 const DetailCategory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const category = categories.find((cat) => cat.id.toString() === id); // Sửa từ inv thành cat
+    const category = categories.find((cat) => cat.id.toString() === id);
 
     if (!category) {
         return <h2>Không tìm thấy loại sản phẩm</h2>;

@@ -71,6 +71,10 @@ $text-color: #1a3300;
       background: #E9762B;
       color: #fff;
     }
+    .save{
+      background: #4CAF50;
+      color: #fff;
+    }
   }
 
   .detail-supplier-content {
@@ -110,7 +114,15 @@ $text-color: #1a3300;
           }
         }
       }
+      .info-input {
+        padding: 6px;
+        width: 250px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
     }
+   
+    
   }
 
   @media (max-width: 768px) {

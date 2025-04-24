@@ -3,12 +3,72 @@ import createIcon from "../../assets/img/create-icon.svg"
 import deleteIcon from "../../assets/img/delete-icon.svg"
 import "./createCategory.scss"
 import { useNavigate } from "react-router-dom";
-import { categories } from "../../api/apiProductCategory";
+import ProductCategoryRepository from "../../api/apiProductCategory";
+import { useState } from "react";
 
 const CreateCategory = () => {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    information: {
+      unit: '',
+      status: '',
+      promotion: '',
+      tax: '',
+      description: '',
+      notes: ''
+    }
+  });
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    if (id === 'category') {
+      setFormData(prev => ({
+        ...prev,
+        name: value
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        information: {
+          ...prev.information,
+          [id]: value
+        }
+      }));
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        name: formData.name,
+        unit: formData.information.unit,
+        status: formData.information.status,
+        promotion: formData.information.promotion,
+        tax: formData.information.tax,
+        description: formData.information.description,
+        notes: formData.information.notes
+      };
+      await ProductCategoryRepository.create(payload);
+      navigate("/categories");
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      // You might want to add error handling UI here
+    }
+  };
 
   const resetForm = () => {
+    setFormData({
+      name: '',
+      information: {
+        unit: '',
+        status: '',
+        promotion: '',
+        tax: '',
+        description: '',
+        notes: ''
+      }
+    });
     document.querySelectorAll('.form-group input').forEach(input => input.value = '');
   };
 
@@ -24,43 +84,71 @@ const CreateCategory = () => {
         <button className="delete" onClick={resetForm}>
           <img src={deleteIcon} alt="Xóa" /> Xóa nội dung
         </button>
-        <button className="create"><img src={createIcon} alt="Tạo" /> Thêm loại </button>
+        <button className="create" onClick={handleSubmit}><img src={createIcon} alt="Tạo" /> Thêm loại </button>
       </div>
 
       <div className="form-container">
         <div className="form-group">
           <label htmlFor="category">Loại sản phẩm</label>
-          <input type="text" id="category" />
+          <input
+            type="text"
+            id="category"
+            value={formData.name}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="unit">Đơn vị tính</label>
-          <input type="text" id="unit" />
+          <input
+            type="text"
+            id="unit"
+            value={formData.information.unit}
+            onChange={handleChange}
+          />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="status">Trạng thái</label>
-          <input type="text" id="status" />
-        </div>
 
         <div className="form-group">
           <label htmlFor="promotion">Khuyến mãi</label>
-          <input type="text" id="promotion" />
+          <input
+            type="text"
+            id="promotion"
+            value={formData.information.promotion}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="tax">Thuế</label>
-          <input type="text" id="tax" />
+          <input
+            type="text"
+            id="tax"
+            value={formData.information.tax}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="description">Mô tả</label>
-          <input type="text" id="description" className="long-input" />
+          <input
+            type="text"
+            id="description"
+            className="long-input"
+            value={formData.information.description}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label htmlFor="notes">Ghi chú</label>
-          <input type="text" id="notes" className="long-input" />
+          <input
+            type="text"
+            id="notes"
+            className="long-input"
+            value={formData.information.notes}
+            onChange={handleChange}
+          />
         </div>
       </div>
     </div>
@@ -68,4 +156,3 @@ const CreateCategory = () => {
 }
 
 export default CreateCategory
-

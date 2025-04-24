@@ -111,6 +111,22 @@ $text-color: #1a3300;
     }
   }
     
+  input[type="text"],
+  input[type="email"] {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    color: $text-color;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 3px $primary-color;
+    }
+  }
   @media (max-width: 768px) {
     .info-row {
       flex-direction: column;

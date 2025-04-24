@@ -77,7 +77,6 @@ class StockInRepository extends BaseRepository {
         }
     }
 
-    // Additional methods for DetailStockins
     async getDetailsByStockInId(stockInId) {
         try {
             const response = await this.get(`/${stockInId}/details`);

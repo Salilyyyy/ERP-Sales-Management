@@ -207,7 +207,7 @@ const OrderDetails = () => {
       />
       <div className="order-details">
         <div className="header">
-          <div className="back" onClick={() => navigate("/invoices")}>
+          <div className="back" onClick={() => navigate(-1)}>
             <img src={backIcon} alt="Quay lại" />
           </div>
           <h2>Chi tiết đơn hàng</h2>

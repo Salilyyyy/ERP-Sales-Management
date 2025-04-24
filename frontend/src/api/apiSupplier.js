@@ -14,10 +14,8 @@ class SupplierRepository extends BaseRepository {
             if (!response) {
                 throw new Error('No data received from server');
             }
-            console.log('Supplier data received:', response);
             return response;
         } catch (error) {
-            console.error('Supplier fetch error:', error);
             throw this.handleError(error, 'Failed to fetch suppliers');
         }
     }
@@ -61,13 +59,10 @@ class SupplierRepository extends BaseRepository {
         console.error('Error details:', error);
         if (error.response) {
             const errorMessage = error.response.data?.error || fallbackMessage;
-            console.error('Server error response:', errorMessage);
             throw new Error(errorMessage);
         } else if (error.request) {
-            console.error('No response received:', error.request);
             throw new Error('No response from server');
         } else {
-            console.error('Error:', error.message);
             throw new Error(fallbackMessage);
         }
     }

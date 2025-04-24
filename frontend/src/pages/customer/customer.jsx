@@ -29,7 +29,7 @@ const Customer = () => {
             try {
                 setIsLoading(true);
                 const data = await CustomerRepository.getAll();
-                setCustomers(data);
+                setCustomers(Array.isArray(data) ? data : []);
                 setError(null);
             } catch (err) {
                 setError(err.message);
@@ -61,15 +61,15 @@ const Customer = () => {
         return <div className="customer-container">Error: {error}</div>;
     }
 
-    const filteredCustomers = customers
+    const filteredCustomers = (Array.isArray(customers) ? customers : [])
         .filter((customer) =>
-            customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            customer.ID.toString().includes(searchQuery)
+            (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+(customer.ID ? customer.ID.toString().includes(searchQuery) : false)
         )
         .filter((customer) =>
-            filterType === "all" ? true : customer.ID === parseInt(filterType)
+filterType === "all" ? true : customer.ID === parseInt(filterType)
         )
-        .filter((customer) => customer.name.toLowerCase().includes(filterName.toLowerCase()));
+        .filter((customer) => (customer.name || '').toLowerCase().includes(filterName.toLowerCase()));
 
     const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -84,7 +84,7 @@ const Customer = () => {
         try {
             await CustomerRepository.deleteMultiple(selectedCustomers);
             const updatedCustomers = await CustomerRepository.getAll();
-            setCustomers(updatedCustomers);
+            setCustomers(Array.isArray(updatedCustomers) ? updatedCustomers : []);
             setSelectedCustomers([]);
             setSelectAll(false);
             alert("Xóa khách hàng thành công");
@@ -113,7 +113,7 @@ const Customer = () => {
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
+setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
     };
 
     const handleSelectCustomer = (id) => {
@@ -128,6 +128,10 @@ const Customer = () => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
+    };
+
+    const handleViewInvoices = (customerId) => {
+        navigate(`/customer/${customerId}`);
     };
 
     return (
@@ -194,7 +198,10 @@ const Customer = () => {
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>Xóa lọc</button>
+                <button className="reset-filter" onClick={() => {
+                    setFilterType("all");
+                    setFilterName("");
+                }}>Xóa lọc</button>
             </div>
 
             <table className="order-table">
@@ -212,7 +219,7 @@ const Customer = () => {
                 </thead>
                 <tbody>
                     {paginatedCustomers.map((customer) => (
-                        <tr key={customer.ID}>
+<tr key={customer.ID}>
                             <td><input type="checkbox" checked={selectedCustomers.includes(customer.ID)} onChange={() => handleSelectCustomer(customer.ID)} /></td>
                             <td>{customer.ID}</td>
                             <td>{customer.name}</td>
@@ -221,7 +228,7 @@ const Customer = () => {
                             <td>{customer.Invoices?.length || 0}</td>
                             <td>{customer.address}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                 <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>

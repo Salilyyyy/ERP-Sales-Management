@@ -14,10 +14,8 @@ class CustomerRepository extends BaseRepository {
             if (!response) {
                 throw new Error('No data received from server');
             }
-            console.log('Customer data received:', response);
-            return response;
+            return response.data;
         } catch (error) {
-            console.error('Customer fetch error:', error);
             throw this.handleError(error, 'Failed to fetch customers');
         }
     }
@@ -80,13 +78,10 @@ class CustomerRepository extends BaseRepository {
         console.error('Error details:', error);
         if (error.response) {
             const errorMessage = error.response.data?.error || fallbackMessage;
-            console.error('Server error response:', errorMessage);
             throw new Error(errorMessage);
         } else if (error.request) {
-            console.error('No response received:', error.request);
             throw new Error('No response from server');
         } else {
-            console.error('Error:', error.message);
             throw new Error(fallbackMessage);
         }
     }

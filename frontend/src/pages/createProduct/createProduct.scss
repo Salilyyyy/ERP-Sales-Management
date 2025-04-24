@@ -23,7 +23,6 @@
       cursor: pointer;
     }
 
-
     h2 {
       margin-left: 450px;
       color: #d32f2f;
@@ -114,7 +113,7 @@
 
     .form-fields {
       display: grid;
-      grid-template-columns: 1fr 1fr; /* Chia thành 2 cột */
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
       width: 100%;
       max-width: 800px;
@@ -125,6 +124,7 @@
         align-items: center;
         width: 100%;
         margin-bottom: 15px;
+        position: relative;
 
         label {
           display: inline-block;
@@ -149,12 +149,129 @@
           }
         }
 
-          .width, .height, .length {
-            width: 65px;
-            margin-left: 8px;
+        .select-container {
+          position: relative;
+          width: 320px;
+
+          &::after {
+            content: "";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #666;
+            pointer-events: none;
+          }
+
+          select {
+            width: 100%;
+            padding: 8px 30px 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
+            &:hover {
+              border-color: #007aff;
+            }
+
+            &:focus {
+              outline: none;
+              border-color: #007aff;
+            }
           }
         }
+
+        .custom-select {
+          position: relative;
+          width: 320px;
+
+          .selected-option {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 35px 8px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            &:hover {
+              border-color: #007aff;
+            }
+
+            &::after {
+              content: "";
+              position: absolute;
+              right: 10px;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 0;
+              height: 0;
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-top: 5px solid #666;
+            }
+
+            .country-flag {
+              width: 20px;
+              height: auto;
+            }
+
+            .placeholder {
+              color: #666;
+            }
+          }
+
+          .options-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+            .option {
+              padding: 8px 10px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+
+              &:hover {
+                background-color: #f5f5f5;
+              }
+
+              &.selected {
+                background-color: #e8f0fe;
+              }
+
+              .country-flag {
+                width: 20px;
+                height: auto;
+              }
+            }
+          }
+        }
+
+        .width, .height, .length {
+          width: 65px;
+          margin-left: 8px;
+        }
       }
-    
+    }
   }
 }

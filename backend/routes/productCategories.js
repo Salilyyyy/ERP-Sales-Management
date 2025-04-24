@@ -6,12 +6,17 @@ const router = express.Router();
 
 // Create a new product category
 router.post('/', async (req, res) => {
-  const { name, information } = req.body;
+  const { name, unit, status, promotion, tax, description, notes } = req.body;
   try {
     const productCategory = await prisma.productCategories.create({
       data: {
         name,
-        information,
+        unit,
+        status,
+        promotion,
+        tax,
+        description,
+        notes
       },
     });
     res.status(201).json(productCategory);
@@ -50,13 +55,18 @@ router.get('/:id', async (req, res) => {
 // Update a product category by ID
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, information } = req.body;
+  const { name, unit, status, promotion, tax, description, notes } = req.body;
   try {
     const productCategory = await prisma.productCategories.update({
       where: { ID: parseInt(id) },
       data: {
         name,
-        information,
+        unit,
+        status,
+        promotion,
+        tax,
+        description,
+        notes
       },
     });
     res.status(200).json(productCategory);

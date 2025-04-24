@@ -67,6 +67,7 @@ const Suppliers = () => {
         supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         supplier.ID.toString().includes(searchQuery)
     );
+    filteredSuppliers.sort((a, b) => a.ID - b.ID);
 
     const totalPages = Math.ceil(filteredSuppliers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;

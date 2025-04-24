@@ -49,9 +49,29 @@
                     "type": "string",
                     "description": "Category name"
                   },
-                  "information": {
+                  "unit": {
                     "type": "string",
-                    "description": "Additional information"
+                    "description": "Unit of measurement"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Category status"
+                  },
+                  "promotion": {
+                    "type": "string",
+                    "description": "Promotion percentage"
+                  },
+                  "tax": {
+                    "type": "string",
+                    "description": "Tax percentage"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Category description"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Additional notes"
                   }
                 }
               }
@@ -97,9 +117,29 @@
                   "type": "string",
                   "description": "Category name"
                 },
-                "information": {
+                "unit": {
                   "type": "string",
-                  "description": "Additional information"
+                  "description": "Unit of measurement"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Category status"
+                },
+                "promotion": {
+                  "type": "string",
+                  "description": "Promotion percentage"
+                },
+                "tax": {
+                  "type": "string",
+                  "description": "Tax percentage"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Category description"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               },
               "required": [
@@ -120,7 +160,22 @@
                 "name": {
                   "type": "string"
                 },
-                "information": {
+                "unit": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "promotion": {
+                  "type": "string"
+                },
+                "tax": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "notes": {
                   "type": "string"
                 }
               }
@@ -175,9 +230,29 @@
                   "type": "string",
                   "description": "Category name"
                 },
-                "information": {
+                "unit": {
                   "type": "string",
-                  "description": "Additional information"
+                  "description": "Unit of measurement"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Category status"
+                },
+                "promotion": {
+                  "type": "string",
+                  "description": "Promotion percentage"
+                },
+                "tax": {
+                  "type": "string",
+                  "description": "Tax percentage"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Category description"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               }
             }
@@ -232,9 +307,29 @@
                   "type": "string",
                   "description": "Category name"
                 },
-                "information": {
+                "unit": {
                   "type": "string",
-                  "description": "Additional information"
+                  "description": "Unit of measurement"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Category status"
+                },
+                "promotion": {
+                  "type": "string",
+                  "description": "Promotion percentage"
+                },
+                "tax": {
+                  "type": "string",
+                  "description": "Tax percentage"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Category description"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               }
             }
@@ -252,7 +347,22 @@
                 "name": {
                   "type": "string"
                 },
-                "information": {
+                "unit": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "promotion": {
+                  "type": "string"
+                },
+                "tax": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "notes": {
                   "type": "string"
                 }
               }
@@ -397,7 +507,7 @@
                     "type": "integer",
                     "description": "Available quantity"
                   },
-                  "title": {
+                  "notes": {
                     "type": "string",
                     "description": "Product title"
                   },
@@ -503,7 +613,7 @@
                   "type": "integer",
                   "description": "Available quantity"
                 },
-                "title": {
+                "notes": {
                   "type": "string",
                   "description": "Product title"
                 },
@@ -578,7 +688,7 @@
                 "quantity": {
                   "type": "integer"
                 },
-                "title": {
+                "notes": {
                   "type": "string"
                 },
                 "description": {
@@ -690,7 +800,7 @@
                   "type": "integer",
                   "description": "Available quantity"
                 },
-                "title": {
+                "notes": {
                   "type": "string",
                   "description": "Product title"
                 },
@@ -805,7 +915,7 @@
                   "type": "integer",
                   "description": "Available quantity"
                 },
-                "title": {
+                "notes": {
                   "type": "string",
                   "description": "Product title"
                 },
@@ -865,7 +975,7 @@
                 "quantity": {
                   "type": "integer"
                 },
-                "title": {
+                "notes": {
                   "type": "string"
                 },
                 "description": {
@@ -4831,13 +4941,31 @@
                   "ID": {
                     "type": "integer"
                   },
+                  "organization": {
+                    "type": "string"
+                  },
                   "name": {
+                    "type": "string"
+                  },
+                  "tax": {
+                    "type": "string"
+                  },
+                  "phoneNumber": {
                     "type": "string"
                   },
                   "email": {
                     "type": "string"
                   },
-                  "phone": {
+                  "introduce": {
+                    "type": "string"
+                  },
+                  "postalCode": {
+                    "type": "string"
+                  },
+                  "bonusPoints": {
+                    "type": "integer"
+                  },
+                  "notes": {
                     "type": "string"
                   },
                   "address": {
@@ -4898,6 +5026,22 @@
                 },
                 "address": {
                   "type": "string"
+                },
+                "organizationName": {
+                  "type": "string",
+                  "description": "Tên tổ chức"
+                },
+                "taxNumber": {
+                  "type": "string",
+                  "description": "Mã số thuế"
+                },
+                "rewardPoints": {
+                  "type": "integer",
+                  "description": "Điểm thưởng"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Ghi chú"
                 }
               },
               "required": [

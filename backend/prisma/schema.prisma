@@ -72,7 +72,12 @@ model Products {
 model ProductCategories {
   ID          Int        @id @default(autoincrement())
   name        String
-  information String?
+  unit        String?
+  status      String?
+  promotion   String?
+  tax         String?
+  description String?
+  notes       String?
   Products    Products[]
 }
 

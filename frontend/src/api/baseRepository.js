@@ -18,7 +18,6 @@ class BaseRepository {
             if (token) {
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
-                console.log('Setting Authorization header:', formattedToken);
             } else {
                 console.warn('No auth token found in localStorage');
             }
@@ -63,16 +62,8 @@ class BaseRepository {
 
     async get(path = '', params = {}) {
         try {
-            console.log('Making GET request to:', this.endpoint + this.normalizePath(path));
-            console.log('With params:', params);
-            console.log('Auth token:', localStorage.getItem('auth_token'));
-            
+           
             const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-            console.log('GET Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
             
             if (Array.isArray(response.data)) {
                 console.log('Response array content:', response.data.map(item => ({
@@ -80,7 +71,6 @@ class BaseRepository {
                     _availableFields: Object.keys(item)
                 })));
             } else if (response.data && typeof response.data === 'object') {
-                console.log('Response object fields:', Object.keys(response.data));
             }
             return response.data;
         } catch (error) {
@@ -91,11 +81,6 @@ class BaseRepository {
     async post(path = '', data = {}) {
         try {
             const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
-            console.log('POST Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
             return response.data;
         } catch (error) {
             throw error;
@@ -105,11 +90,6 @@ class BaseRepository {
     async put(path = '', data = {}) {
         try {
             const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
-            console.log('PUT Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
             return response.data;
         } catch (error) {
             throw error;

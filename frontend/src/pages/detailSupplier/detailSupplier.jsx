@@ -184,6 +184,38 @@ const DetailSupplier = () => {
                     </div>
                 </div>
             </div>
+            
+            <div className="supplier-products">
+                <h3>Sản phẩm của nhà cung cấp</h3>
+                <div className="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã SP</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Đơn vị</th>
+                                <th>Số lượng</th>
+                                <th>Giá nhập</th>
+                                <th>Giá bán</th>
+                                <th>Xuất xứ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {supplier.Products && supplier.Products.map(product => (
+                                <tr key={product.ID}>
+                                    <td>#{product.ID}</td>
+                                    <td>{product.name}</td>
+                                    <td>{product.unit}</td>
+                                    <td>{product.quantity}</td>
+                                    <td>{product.inPrice.toLocaleString('vi-VN')} đ</td>
+                                    <td>{product.outPrice.toLocaleString('vi-VN')} đ</td>
+                                    <td>{product.origin}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };

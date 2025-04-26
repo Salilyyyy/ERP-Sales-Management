@@ -42,7 +42,11 @@ router.post('/', async (req, res) => {
 // Get all suppliers
 router.get('/', async (req, res) => {
   try {
-    const suppliers = await prisma.suppliers.findMany();
+    const suppliers = await prisma.suppliers.findMany({
+      include: {
+        Products: true
+      }
+    });
     res.status(200).json(suppliers);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -55,6 +59,9 @@ router.get('/:id', async (req, res) => {
   try {
     const supplier = await prisma.suppliers.findUnique({
       where: { ID: parseInt(id) },
+      include: {
+        Products: true
+      }
     });
       if (supplier) {
         res.status(200).json(supplier);

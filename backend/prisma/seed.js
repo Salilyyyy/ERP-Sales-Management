@@ -29,31 +29,56 @@ async function main() {
     prisma.productCategories.create({
       data: {
         name: 'Electronics',
-        information: 'Electronic devices and accessories',
+        description: 'Electronic devices and accessories',
+        unit: 'piece',
+        status: 'active',
+        promotion: '0',
+        tax: '10',
+        notes: 'Core electronics category'
       },
     }),
     prisma.productCategories.create({
       data: {
         name: 'Clothing',
-        information: 'Fashion items and accessories',
+        description: 'Fashion items and accessories',
+        unit: 'piece',
+        status: 'active',
+        promotion: '0',
+        tax: '10',
+        notes: 'Fashion category'
       },
     }),
     prisma.productCategories.create({
       data: {
         name: 'Books',
-        information: 'Physical and digital books',
+        description: 'Physical and digital books',
+        unit: 'piece',
+        status: 'active',
+        promotion: '0',
+        tax: '5',
+        notes: 'Books and publications'
       },
     }),
     prisma.productCategories.create({
       data: {
         name: 'Home & Garden',
-        information: 'Items for home and garden',
+        description: 'Items for home and garden',
+        unit: 'piece',
+        status: 'active',
+        promotion: '0',
+        tax: '8',
+        notes: 'Home and garden supplies'
       },
     }),
     prisma.productCategories.create({
       data: {
         name: 'Sports',
-        information: 'Sports equipment and accessories',
+        description: 'Sports equipment and accessories',
+        unit: 'piece',
+        status: 'active',
+        promotion: '0',
+        tax: '8',
+        notes: 'Sports and fitness equipment'
       },
     }),
   ]);
@@ -574,7 +599,7 @@ async function main() {
         receiverName: 'John Smith',
         receiverPhone: '555-0201',
         sendTime: new Date(),
-        receiveTime: new Date(Date.now() + 86400000), // Tomorrow
+        receiveTime: new Date(Date.now() + 86400000), 
         size: 'medium',
         shippingCost: 25,
         payer: 'sender',
@@ -588,7 +613,7 @@ async function main() {
         receiverName: 'Sarah Johnson',
         receiverPhone: '555-0202',
         sendTime: new Date(),
-        receiveTime: new Date(Date.now() + 172800000), // Day after tomorrow
+        receiveTime: new Date(Date.now() + 172800000), 
         size: 'large',
         shippingCost: 35,
         payer: 'receiver',
@@ -602,7 +627,7 @@ async function main() {
         receiverName: 'Michael Brown',
         receiverPhone: '555-0203',
         sendTime: new Date(),
-        receiveTime: new Date(Date.now() + 259200000), // 3 days later
+        receiveTime: new Date(Date.now() + 259200000), 
         size: 'small',
         shippingCost: 15,
         payer: 'sender',

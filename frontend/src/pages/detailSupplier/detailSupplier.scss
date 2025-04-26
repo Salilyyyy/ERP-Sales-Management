@@ -71,6 +71,10 @@ $text-color: #1a3300;
       background: #E9762B;
       color: #fff;
     }
+    .save{
+      background: #4CAF50;
+      color: #fff;
+    }
   }
 
   .detail-supplier-content {
@@ -107,6 +111,59 @@ $text-color: #1a3300;
           .info-value-id {
             font-weight: bold;
             color: #d32f2f;
+          }
+        }
+      }
+      .info-input {
+        padding: 6px;
+        width: 250px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+    }
+   
+    
+  }
+
+  .supplier-products {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #EEF0E5;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    h3 {
+      color: $text-color;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        
+        th, td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #eee;
+        }
+
+        th {
+          background-color: #f8f9fa;
+          color: $text-color;
+          font-weight: bold;
+        }
+
+        tbody tr {
+          &:hover {
+            background-color: #f5f5f5;
+          }
+
+          td {
+            color: #666;
           }
         }
       }

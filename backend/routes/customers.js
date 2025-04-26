@@ -17,20 +17,25 @@ router.post('/', async (req, res) => {
     bonusPoints,
     notes,
     address,
+    ward,
+    district,
+    city
   } = req.body;
+  const parsedBonusPoints = parseInt(bonusPoints);
+  const fullAddress = `${address}, ${ward}, ${district}, ${city}`;
   try {
     const customer = await prisma.customers.create({
       data: {
         organization,
-        name,
-        tax,
-        phoneNumber,
+        name: name ? name : "Unknown",
+        tax: tax,
+        phoneNumber: phoneNumber,
         email,
         introduce,
         postalCode,
-        bonusPoints,
+        bonusPoints: parsedBonusPoints,
         notes,
-        address,
+        address: fullAddress,
       },
     });
     res.status(201).json(customer);
@@ -87,7 +92,12 @@ router.put('/:id', async (req, res) => {
     bonusPoints,
     notes,
     address,
+    ward,
+    district,
+    city
   } = req.body;
+  const updatedFullAddress = `${address}, ${ward}, ${district}, ${city}`;
+
   try {
     const customer = await prisma.customers.update({
       where: { ID: parseInt(id) },
@@ -101,7 +111,7 @@ router.put('/:id', async (req, res) => {
         postalCode,
         bonusPoints,
         notes,
-        address,
+        address: updatedFullAddress,
       },
     });
     res.status(200).json(customer);
@@ -148,9 +158,6 @@ router.get('/export', async (req, res) => {
         Invoices: true
       }
     });
-    
-    // Send data as JSON for now
-    // In a real implementation, you would format this as an Excel/CSV file
     res.status(200).json(customers);
   } catch (error) {
     res.status(400).json({ error: error.message });

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./invoices.scss";
+import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import BaseRepository from "../../api/baseRepository";
 
 import checkIcon from "../../assets/img/tick-icon.svg";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -18,8 +20,11 @@ const Invoices = () => {
     const dropdownRef = useRef(null);
 
     const [invoices, setInvoices] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Get loading state from BaseRepository
+    const requestKey = '/invoices';
+    const isLoading = BaseRepository.getLoadingState(requestKey);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,7 +60,6 @@ const Invoices = () => {
     }, []);
 
     const fetchInvoices = async () => {
-        setLoading(true);
         try {
             const response = await InvoiceRepository.getAll({
                 page: currentPage,
@@ -66,6 +70,7 @@ const Invoices = () => {
             });
 
             if (response.success && Array.isArray(response.data)) {
+                console.log("Invoices:", response.data);
                 setInvoices(response.data);
                 setTotalItems(response.pagination.total || 0);
                 setError(null);
@@ -77,8 +82,6 @@ const Invoices = () => {
             console.error("Lỗi khi lấy hóa đơn:", error);
             setInvoices([]);
             setError("Không thể kết nối đến máy chủ");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -161,82 +164,80 @@ const Invoices = () => {
                 </div>
             </div>
 
-            <table className="order-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                        <th>Mã</th>
-                        <th>Thời gian</th>
-                        <th>Khách hàng</th>
-                        <th>Tổng thanh toán</th>
-                        <th>Thanh toán</th>
-                        <th>Giao hàng</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {loading ? (
-                        <tr key="loading-row">
-                            <td colSpan="8" className="text-center">Đang tải dữ liệu...</td>
-                        </tr>
-                    ) : error ? (
-                        <tr key="error-row">
-                            <td colSpan="8" className="text-center error">{error}</td>
-                        </tr>
-                    ) : invoices.length === 0 ? (
-                        <tr key="empty-row">
-                            <td colSpan="8" className="text-center">Không có dữ liệu</td>
-                        </tr>
-                    ) : (
-                        invoices.map((inv) => (
-                            <tr key={inv.id}>
-                                <td><input type="checkbox" checked={selectedInvoices.includes(inv.id)} onChange={() => handleSelectInvoice(inv.id)} /></td>
-                                <td>{inv.id}</td>
-                                <td>{inv.createdAt ? new Date(inv.createdAt).toLocaleString("vi-VN") : "N/A"}</td>
-                                <td>{inv.customerName}</td>
-                                <td>{Number(inv.totalAmount).toLocaleString("vi-VN")} VND</td>
-                                <td>{inv.isPaid && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
-                        <td>{inv.isDelivery && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
-                                <td className="action-buttons">
-                                    <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
-                                        <img src={viewIcon} alt="Xem" /> Xem
-                                    </button>
-                                    <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${inv.id}`)}>
-                                        <img src={editIcon} alt="Sửa" /> Sửa
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
+            {isLoading ? (
+                <LoadingSpinner />
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : (
+                <>
+                    <table className="order-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                                    <th>Mã</th>
+                                    <th>Thời gian</th>
+                                    <th>Khách hàng</th>
+                                    <th>Tổng thanh toán</th>
+                                    <th>Thanh toán</th>
+                                    <th>Giao hàng</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {invoices.length === 0 && (
+                                    <tr key="empty-row">
+                                        <td colSpan="8" className="text-center">Không có dữ liệu</td>
+                                    </tr>
+                                )}
+                                {invoices.map((inv) => (
+                                    <tr key={inv.id}>
+                                        <td><input type="checkbox" checked={selectedInvoices.includes(inv.id)} onChange={() => handleSelectInvoice(inv.id)} /></td>
+                                        <td>{inv.id}</td>
+                                        <td>{inv.createdAt ? new Date(inv.createdAt).toLocaleString("vi-VN") : "N/A"}</td>
+                                        <td>{inv.customerName}</td>
+                                        <td>{Number(inv.totalAmount).toLocaleString("vi-VN")} VND</td>
+                                        <td>{inv.isPaid && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
+                                        <td>{inv.isDelivery && <img src={checkIcon} alt="✓" className="icon-check" />}</td>
+                                        <td className="action-buttons">
+                                            <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
+                                                <img src={viewIcon} alt="Xem" /> Xem
+                                            </button>
+                                            <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${inv.id}`)}>
+                                                <img src={editIcon} alt="Sửa" /> Sửa
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                    </table>
+                    <div className="pagination-container">
+                        <div className="pagination-left">
+                            <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
+                                <option value={5}>5 hàng</option>
+                                <option value={10}>10 hàng</option>
+                                <option value={15}>15 hàng</option>
+                            </select>
+                            <span>
+                                Hiển thị {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, totalItems)} trên {totalItems}
+                            </span>
+                        </div>
 
-            <div className="pagination-container">
-                <div className="pagination-left">
-                    <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                        <option value={5}>5 hàng</option>
-                        <option value={10}>10 hàng</option>
-                        <option value={15}>15 hàng</option>
-                    </select>
-                    <span>
-                        Hiển thị {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, totalItems)} trên {totalItems}
-                    </span>
-                </div>
-
-                <div className="pagination">
-                    <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                        <button
-                            key={`page-${i + 1}`}
-                            className={`btn-page ${currentPage === i + 1 ? "active" : ""}`}
-                            onClick={() => handlePageChange(i + 1)}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
-                    <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
-                </div>
-            </div>
+                        <div className="pagination">
+                            <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
+                            {Array.from({ length: totalPages }).map((_, i) => (
+                                <button
+                                    key={`page-${i + 1}`}
+                                    className={`btn-page ${currentPage === i + 1 ? "active" : ""}`}
+                                    onClick={() => handlePageChange(i + 1)}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                            <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

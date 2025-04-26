@@ -29,7 +29,10 @@ const Customer = () => {
             try {
                 setIsLoading(true);
                 const data = await CustomerRepository.getAll();
-                setCustomers(data);
+                console.log('API Response:', data);
+                console.log('Is Array?', Array.isArray(data));
+                console.log('Data length:', data ? data.length : 0);
+                setCustomers(data || []);
                 setError(null);
             } catch (err) {
                 setError(err.message);
@@ -61,16 +64,36 @@ const Customer = () => {
         return <div className="customer-container">Error: {error}</div>;
     }
 
-    const filteredCustomers = customers
-        .filter((customer) =>
-            customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            customer.ID.toString().includes(searchQuery)
-        )
-        .filter((customer) =>
-            filterType === "all" ? true : customer.ID === parseInt(filterType)
-        )
-        .filter((customer) => customer.name.toLowerCase().includes(filterName.toLowerCase()));
+    if (!Array.isArray(customers)) {
+        console.error('Customers is not an array:', customers);
+        return <div className="customer-container">Lỗi: Dữ liệu không hợp lệ</div>;
+    }
 
+    if (customers.length === 0) {
+        return <div className="customer-container">Không có dữ liệu khách hàng để hiển thị.</div>;
+    }
+
+    
+    const filteredCustomers = customers
+        .filter((customer) => {
+            const nameMatch = (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+            const idMatch = customer.ID ? customer.ID.toString().includes(searchQuery) : false;
+            console.log(`Search filter for ${customer.name}: nameMatch=${nameMatch}, idMatch=${idMatch}`);
+            return nameMatch || idMatch;
+        })
+        .filter((customer) => {
+            const typeMatch = filterType === "all" ? true : customer.ID === parseInt(filterType);
+            console.log(`Type filter for ${customer.name}: typeMatch=${typeMatch}`);
+            return typeMatch;
+        })
+        .filter((customer) => {
+            const nameFilterMatch = filterName === "" ? true : (customer.name || '').toLowerCase().includes(filterName.toLowerCase());
+            console.log(`Name filter for ${customer.name}: nameFilterMatch=${nameFilterMatch}`);
+            return nameFilterMatch;
+        });
+
+    console.log('After filtering - filteredCustomers:', filteredCustomers);
+    
     const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
@@ -84,7 +107,7 @@ const Customer = () => {
         try {
             await CustomerRepository.deleteMultiple(selectedCustomers);
             const updatedCustomers = await CustomerRepository.getAll();
-            setCustomers(updatedCustomers);
+            setCustomers(Array.isArray(updatedCustomers) ? updatedCustomers : []);
             setSelectedCustomers([]);
             setSelectAll(false);
             alert("Xóa khách hàng thành công");
@@ -128,6 +151,10 @@ const Customer = () => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
+    };
+
+    const handleViewInvoices = (customerId) => {
+        navigate(`/customer/${customerId}`);
     };
 
     return (
@@ -194,7 +221,10 @@ const Customer = () => {
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>Xóa lọc</button>
+                <button className="reset-filter" onClick={() => {
+                    setFilterType("all");
+                    setFilterName("");
+                }}>Xóa lọc</button>
             </div>
 
             <table className="order-table">
@@ -221,7 +251,7 @@ const Customer = () => {
                             <td>{customer.Invoices?.length || 0}</td>
                             <td>{customer.address}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                 <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>

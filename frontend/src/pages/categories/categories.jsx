@@ -10,23 +10,35 @@ import exportIcon from "../../assets/img/export-icon.svg";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 
 const Categories = () => {
+    const [selectedIds, setSelectedIds] = useState([]);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [message, setMessage] = useState({ type: null, text: null });
+
+    const showMessage = (text, type = 'error') => {
+        setMessage({ text, type });
+        setTimeout(() => setMessage({ type: null, text: null }), 3000);
+    };
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 setIsLoading(true);
-                const data = await ProductCategoryRepository.getAll();
-                setCategories(data);
-                setError(null);
+                const response = await ProductCategoryRepository.getAll();
+                
+                if (Array.isArray(response?.data)) {
+                    setCategories(response.data);
+                } else if (Array.isArray(response)) {
+                    setCategories(response);
+                } else {
+                    showMessage("Invalid data format received");
+                }
             } catch (err) {
-                setError(err.message);
+                showMessage(err.message);
             } finally {
                 setIsLoading(false);
             }
@@ -35,23 +47,78 @@ const Categories = () => {
         fetchCategories();
     }, []);
 
+    // Debug log for categories
+    useEffect(() => {
+        console.log("Current categories:", categories);
+    }, [categories]);
+
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const handleDelete = () => {
-        alert("Xóa loại sản phẩm");
-        setIsDropdownOpen(false);
+    const handleSingleDelete = async (id) => {
+        try {
+            await ProductCategoryRepository.delete(id);
+            const response = await ProductCategoryRepository.getAll();
+            if (Array.isArray(response?.data)) {
+                setCategories(response.data);
+            } else if (Array.isArray(response)) {
+                setCategories(response);
+            } else {
+                throw new Error("Invalid response format");
+            }
+            showMessage("Xóa thành công", "success");
+            setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+        } catch (err) {
+            showMessage(err.message);
+        }
     };
 
-    const handleExport = () => {
-        alert("Xuất danh sách loại sản phẩm!");
-        setIsDropdownOpen(false);
+    const handleMultipleDelete = async () => {
+        if (selectedIds.length === 0) {
+            showMessage("Vui lòng chọn mục cần xóa");
+            return;
+        }
+        try {
+            await ProductCategoryRepository.deleteMultiple(selectedIds);
+            const response = await ProductCategoryRepository.getAll();
+            if (Array.isArray(response?.data)) {
+                setCategories(response.data);
+            } else if (Array.isArray(response)) {
+                setCategories(response);
+            } else {
+                throw new Error("Invalid response format");
+            }
+            setSelectedIds([]);
+            setIsDropdownOpen(false);
+            showMessage("Xóa thành công", "success");
+        } catch (err) {
+            showMessage(err.message);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const data = await ProductCategoryRepository.export();
+            const url = window.URL.createObjectURL(new Blob([data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'categories.xlsx');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setIsDropdownOpen(false);
+        } catch (err) {
+            showMessage(err.message);
+        }
     };
 
     const filteredCategories = categories.filter((category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         category.ID.toString().includes(searchQuery) ||
-        (category.information && category.information.toLowerCase().includes(searchQuery.toLowerCase()))
+        (category.unit && category.unit.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (category.promotion && category.promotion.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (category.tax && category.tax.toString().includes(searchQuery)) ||
+        (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
 
@@ -70,12 +137,13 @@ const Categories = () => {
         return <div className="categories-container">Loading...</div>;
     }
 
-    if (error) {
-        return <div className="categories-container">Error: {error}</div>;
-    }
-
     return (
         <div className="categories-container">
+            {message.text && (
+                <div className={`message-banner ${message.type}`}>
+                    {message.text}
+                </div>
+            )}
             <h2 className="title">Danh sách loại sản phẩm</h2>
 
             <div className="top-actions">
@@ -100,7 +168,7 @@ const Categories = () => {
 
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDelete}>
+                                <li className="dropdown-item" onClick={handleMultipleDelete}>
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
@@ -115,8 +183,23 @@ const Categories = () => {
             <table className="category-table">
                 <thead>
                     <tr>
+                        <th>
+                            <input
+                                type="checkbox"
+                                onChange={(e) => {
+                                    const ids = e.target.checked 
+                                        ? paginatedCategories.map(category => category.ID) 
+                                        : [];
+                                    setSelectedIds(ids);
+                                }}
+                                checked={selectedIds.length === paginatedCategories.length && paginatedCategories.length > 0}
+                            />
+                        </th>
                         <th>Mã</th>
                         <th>Loại sản phẩm</th>
+                        <th>Đơn vị</th>
+                        <th>Khuyến mãi</th>
+                        <th>Thuế</th>
                         <th>Mô tả</th>
                         <th>Hành động</th>
                     </tr>
@@ -124,15 +207,46 @@ const Categories = () => {
                 <tbody>
                     {paginatedCategories.map((category) => (
                         <tr key={category.ID}>
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(category.ID)}
+                                    onChange={(e) => {
+                                        const newSelectedIds = e.target.checked
+                                            ? [...selectedIds, category.ID]
+                                            : selectedIds.filter(id => id !== category.ID);
+                                        setSelectedIds(newSelectedIds);
+                                    }}
+                                />
+                            </td>
                             <td>{category.ID}</td>
                             <td>{category.name}</td>
-                            <td>{category.information}</td>
+            <td>{category.unit || ''}</td>
+            <td>{category.promotion || ''}</td>
+            <td>{category.tax || ''}</td>
+            <td>{category.description || ''}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/category/${category.ID}`)}>
+                                <button 
+                                    className="btn-icon" 
+                                    onClick={() => navigate(`/category/${category.ID}`)}
+                                >
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
-                                <button className="btn-icon">
+                                <button 
+                                    className="btn-icon"
+                                    onClick={() => navigate(`/edit-category/${category.ID}`)}
+                                >
                                     <img src={editIcon} alt="Sửa" /> Sửa
+                                </button>
+                                <button 
+                                    className="btn-icon"
+                                    onClick={() => {
+                                        if (window.confirm('Bạn có chắc chắn muốn xóa mục này?')) {
+                                            handleSingleDelete(category.ID);
+                                        }
+                                    }}
+                                >
+                                    <img src={deleteIcon} alt="Xóa" /> Xóa
                                 </button>
                             </td>
                         </tr>

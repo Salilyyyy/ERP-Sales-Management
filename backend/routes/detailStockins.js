@@ -8,15 +8,31 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   const { StockinID, productID, quantity, unitPrice } = req.body;
   try {
-    const detailStockin = await prisma.detailStockins.create({
-      data: {
-        StockinID,
-        productID,
-        quantity,
-        unitPrice,
-      },
+    const result = await prisma.$transaction(async (prisma) => {
+      // Create detail stockin record
+      const detailStockin = await prisma.detailStockins.create({
+        data: {
+          StockinID,
+          productID,
+          quantity,
+          unitPrice,
+        },
+      });
+
+      // Update product quantity
+      await prisma.products.update({
+        where: { ID: productID },
+        data: {
+          quantity: {
+            increment: quantity
+          }
+        }
+      });
+
+      return detailStockin;
     });
-    res.status(201).json(detailStockin);
+
+    res.status(201).json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

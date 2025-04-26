@@ -75,9 +75,11 @@ class InvoiceRepository extends BaseRepository {
             id: invoice.ID,
             createdAt: invoice.exportTime,
             customerName: invoice.Customers?.name || 'Không xác định',
-            totalAmount: parseFloat(invoice.totalAmount).toFixed(2), 
             isPaid: !!invoice.isPaid, 
-            isDelivery: !!invoice.isDelivery 
+            isDelivery: !!invoice.isDelivery,
+            totalAmount: invoice.InvoiceDetails?.reduce((total, item) => {
+                return total + parseFloat(item.unitPrice) * parseInt(item.quantity, 10);
+            }, 0).toFixed(2), // Assuming totalValue is a number
         };
     }
 }

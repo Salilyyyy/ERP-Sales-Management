@@ -1,6 +1,17 @@
 import axios from 'axios';
 
+// Centralized loading state management
+const loadingStates = new Map();
+
 class BaseRepository {
+    static getLoadingState(key) {
+        return loadingStates.get(key) || false;
+    }
+
+    static setLoadingState(key, value) {
+        loadingStates.set(key, value);
+    }
+
     constructor(endpoint = '') {
         this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/';
         this.endpoint = endpoint;
@@ -18,7 +29,6 @@ class BaseRepository {
             if (token) {
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
-                console.log('Setting Authorization header:', formattedToken);
             } else {
                 console.warn('No auth token found in localStorage');
             }
@@ -61,67 +71,117 @@ class BaseRepository {
         return path.startsWith('/') ? path : `/${path}`;
     }
 
-    async get(path = '', params = {}) {
-        try {
-            console.log('Making GET request to:', this.endpoint + this.normalizePath(path));
-            console.log('With params:', params);
-            console.log('Auth token:', localStorage.getItem('auth_token'));
-            
-            const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-            console.log('GET Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
-            
-            if (Array.isArray(response.data)) {
-                console.log('Response array content:', response.data.map(item => ({
-                    ...item,
-                    _availableFields: Object.keys(item)
-                })));
-            } else if (response.data && typeof response.data === 'object') {
-                console.log('Response object fields:', Object.keys(response.data));
+    async get(path = '', params = {}, maxRetries = 3) {
+        const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
+        BaseRepository.setLoadingState(requestKey, true);
+        
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            try {
+                const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
+                
+                BaseRepository.setLoadingState(requestKey, false);
+                
+                if (response && response.data === null) {
+                    return [];
+                }
+                
+                if (!response || !response.data) {
+                    throw new Error('Invalid API response received');
+                }
+
+                if (Array.isArray(response.data)) {
+                    return response.data;
+                }
+
+                return response.data;
+            } catch (error) {
+                attempts++;
+                console.error(`GET request attempt ${attempts} failed:`, error);
+                
+                if (attempts === maxRetries) {
+                    BaseRepository.setLoadingState(requestKey, false);
+                    throw error;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 2000)));
             }
-            return response.data;
-        } catch (error) {
-            throw error;
         }
     }
 
-    async post(path = '', data = {}) {
-        try {
-            const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
-            console.log('POST Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
-            return response.data;
-        } catch (error) {
-            throw error;
+    async post(path = '', data = {}, maxRetries = 3) {
+        const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
+        BaseRepository.setLoadingState(requestKey, true);
+        
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            try {
+                const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
+                BaseRepository.setLoadingState(requestKey, false);
+                return response.data;
+            } catch (error) {
+                attempts++;
+                console.error(`POST request attempt ${attempts} failed:`, error);
+                
+                if (attempts === maxRetries) {
+                    BaseRepository.setLoadingState(requestKey, false);
+                    throw error;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+            }
         }
     }
 
-    async put(path = '', data = {}) {
-        try {
-            const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
-            console.log('PUT Response:', {
-                url: this.endpoint + this.normalizePath(path),
-                status: response.status,
-                data: response.data,
-            });
-            return response.data;
-        } catch (error) {
-            throw error;
+    async put(path = '', data = {}, maxRetries = 3) {
+        const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
+        BaseRepository.setLoadingState(requestKey, true);
+        
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            try {
+                const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
+                BaseRepository.setLoadingState(requestKey, false);
+                return response.data;
+            } catch (error) {
+                attempts++;
+                console.error(`PUT request attempt ${attempts} failed:`, error);
+                
+                if (attempts === maxRetries) {
+                    BaseRepository.setLoadingState(requestKey, false);
+                    throw error;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+            }
         }
     }
 
-    async delete(path = '') {
-        try {
-            const response = await this.api.delete(this.endpoint + this.normalizePath(path));
-            return response.data;
-        } catch (error) {
-            throw error;
+    async delete(path = '', maxRetries = 3) {
+        const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
+        BaseRepository.setLoadingState(requestKey, true);
+        
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            try {
+                const response = await this.api.delete(this.endpoint + this.normalizePath(path));
+                BaseRepository.setLoadingState(requestKey, false);
+                return response.data;
+            } catch (error) {
+                attempts++;
+                console.error(`DELETE request attempt ${attempts} failed:`, error);
+                
+                if (attempts === maxRetries) {
+                    BaseRepository.setLoadingState(requestKey, false);
+                    throw error;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+            }
         }
     }
 }

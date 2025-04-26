@@ -38,6 +38,7 @@ class StockInRepository extends BaseRepository {
             const response = await this.post('', {
                 stockinDate: data.stockinDate,
                 notes: data.notes,
+                supplierID: data.supplierID,
                 DetailStockins: data.DetailStockins.map(detail => ({
                     productID: detail.productID,
                     quantity: detail.quantity,
@@ -77,7 +78,6 @@ class StockInRepository extends BaseRepository {
         }
     }
 
-    // Additional methods for DetailStockins
     async getDetailsByStockInId(stockInId) {
         try {
             const response = await this.get(`/${stockInId}/details`);

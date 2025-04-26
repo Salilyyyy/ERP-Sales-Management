@@ -6,14 +6,33 @@ const router = express.Router();
 
 // Create a new stockin
 router.post('/', async (req, res) => {
-  const { stockinDate, notes, supplierID } = req.body;
+  const { stockinDate, notes, supplierID, DetailStockins } = req.body;
   try {
     const stockin = await prisma.stockins.create({
       data: {
         stockinDate,
         notes,
-        supplierID: parseInt(supplierID),
+        supplier: {
+          connect: {
+            ID: parseInt(supplierID)
+          }
+        },
+        DetailStockins: {
+          create: DetailStockins.map(detail => ({
+            productID: detail.productID,
+            quantity: detail.quantity,
+            unitPrice: detail.unitPrice
+          }))
+        }
       },
+      include: {
+        supplier: true,
+        DetailStockins: {
+          include: {
+            Products: true
+          }
+        }
+      }
     });
     res.status(201).json(stockin);
   } catch (error) {

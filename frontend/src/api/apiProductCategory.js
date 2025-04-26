@@ -17,7 +17,7 @@ class ProductCategoryRepository extends BaseRepository {
     async getById(id) {
         try {
             const response = await this.get(`/${id}`);
-            return response.data;
+            return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to fetch product category');
         }
@@ -26,7 +26,7 @@ class ProductCategoryRepository extends BaseRepository {
     async create(data) {
         try {
             const response = await this.post('', data);
-            return response.data;
+            return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to create product category');
         }
@@ -35,7 +35,7 @@ class ProductCategoryRepository extends BaseRepository {
     async update(id, data) {
         try {
             const response = await this.put(`/${id}`, data);
-            return response.data;
+            return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to update product category');
         }
@@ -62,7 +62,7 @@ class ProductCategoryRepository extends BaseRepository {
             const response = await this.get('/export', {
                 responseType: 'blob'
             });
-            return response.data;
+            return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to export product categories');
         }

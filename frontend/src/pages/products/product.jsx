@@ -223,7 +223,7 @@ const Product = () => {
                             <td><img src={product.image} alt={product.name} className="product-img" /></td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon" onClick={() => navigate(`/edit-product/${product.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

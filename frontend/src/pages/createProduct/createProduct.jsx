@@ -1,35 +1,97 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import BaseRepository from "../../api/baseRepository";
+import apiProduct from "../../api/apiProduct";
+import apiProductCategory from "../../api/apiProductCategory";
+import apiSupplier from "../../api/apiSupplier";
+import apiCountry from "../../api/apiCountry";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
+import { storage, ref, uploadBytes, getDownloadURL } from "../../firebase";
+
 import "./createProduct.scss";
 
 const CreateProduct = () => {
   const navigate = useNavigate();
   const [productImage, setProductImage] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const selectRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  const units = ["Cái", "Hộp", "Thùng", "Kg", "Gói"];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesData, suppliersData, countriesData] = await Promise.all([
+          apiProductCategory.getAll(),
+          apiSupplier.getAll(),
+          apiCountry.getAll()
+        ]);
+        console.log('Countries API response:', countriesData);
+        if (!Array.isArray(countriesData)) {
+          console.error('Expected array of countries but got:', typeof countriesData);
+          return;
+        }
+        if (countriesData.length > 0) {
+          console.log('Sample country data:', countriesData[0]);
+        }
+        setCategories(categoriesData);
+        setSuppliers(suppliersData);
+        setCountries(countriesData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     unit: "",
-    price: "",
+    inPrice: "",
+    outPrice: "",
     weight: "",
+    quantity: "",
     dimensions: { length: "", width: "", height: "" },
     manufacturer: "",
     origin: "",
     category: "",
-    inventory: "",
     shortDescription: "",
     details: ""
   });
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProductImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
+      const storageRef = ref(storage, `products/${file.name}`); // có thể đổi tên folder tùy ý
+
+      try {
+        const snapshot = await uploadBytes(storageRef, file);
+        console.log('Upload thành công!', snapshot);
+        const downloadURL = await getDownloadURL(storageRef);
+        console.log('URL ảnh:', downloadURL);
+        setProductImage(downloadURL);
+      } catch (error) {
+        console.error('Lỗi upload ảnh:', error);
+      }
     }
   };
 
@@ -40,10 +102,10 @@ const CreateProduct = () => {
 
   const handleDimensionChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      dimensions: { ...formData.dimensions, [name]: value },
-    });
+    setFormData(prev => ({
+      ...prev,
+      dimensions: { ...prev.dimensions, [name]: value }
+    }));
   };
 
   const resetForm = () => {
@@ -51,22 +113,33 @@ const CreateProduct = () => {
     setFormData({
       name: "",
       unit: "",
-      price: "",
+      inPrice: "",
+      outPrice: "",
       weight: "",
+      quantity: "",
       dimensions: { length: "", width: "", height: "" },
       manufacturer: "",
       origin: "",
       category: "",
-      stock: "",
       shortDescription: "",
       details: ""
     });
   };
 
+  // Get loading states from BaseRepository
+  const categoriesLoading = BaseRepository.getLoadingState('/categories');
+  const suppliersLoading = BaseRepository.getLoadingState('/suppliers');
+  const countriesLoading = BaseRepository.getLoadingState('/countries');
+  const isLoading = categoriesLoading || suppliersLoading || countriesLoading;
+
   return (
     <div className="create-product-container">
-      <div className="header">
-        <div className="back" onClick={() => navigate("/categories")}>
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <>
+          <div className="header">
+        <div className="back" onClick={() => navigate("/product")}>
           <img src={backIcon} alt="Quay lại" />
         </div>
         <h2>Thêm sản phẩm</h2>
@@ -75,8 +148,32 @@ const CreateProduct = () => {
         <button className="delete" onClick={resetForm}>
           <img src={deleteIcon} alt="Xóa" /> Xóa nội dung
         </button>
-        <button className="create">
-          <img src={createIcon} alt="Tạo" /> Tạo hoá đơn
+        <button className="create" onClick={async () => {
+          try {
+            const productData = {
+              name: formData.name,
+              unit: formData.unit,
+              outPrice: parseFloat(formData.outPrice),
+              weight: parseFloat(formData.weight),
+              length: parseFloat(formData.dimensions.length),
+              width: parseFloat(formData.dimensions.width),
+              height: parseFloat(formData.dimensions.height),
+              image: productImage,
+              origin: formData.origin,
+              title: formData.shortDescription,
+              description: formData.details,
+              quantity: parseInt(formData.quantity) || 0,
+              produceCategoriesID: parseInt(formData.category),
+              supplierID: parseInt(formData.manufacturer),
+              inPrice: parseFloat(formData.inPrice)
+            };
+            await apiProduct.create(productData);
+            navigate("/product");
+          } catch (error) {
+            console.error("Error creating product:", error);
+          }
+        }}>
+          <img src={createIcon} alt="Tạo" /> Tạo sản phẩm
         </button>
       </div>
       <div className="product-form">
@@ -103,41 +200,173 @@ const CreateProduct = () => {
           </div>
 
           <div className="form-group">
-            <label>Đơn vị tính</label>
-            <input type="text" name="unit" value={formData.unit} onChange={handleInputChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Đơn giá</label>
-            <input type="text" name="price" value={formData.price} onChange={handleInputChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Khối lượng</label>
-            <input type="text" name="weight" value={formData.weight} onChange={handleInputChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Kích thước</label>
-            <input type="text" className="width" placeholder="Rộng(cm)" value={formData.dimensions.width} onChange={handleDimensionChange} />
-            <input type="text" className="length" placeholder="Dài(cm)" value={formData.dimensions.length} onChange={handleDimensionChange} />
-            <input type="text" className="height" placeholder="Cao(cm)" value={formData.dimensions.height} onChange={handleDimensionChange} />
+            <label>Thuộc loại</label>
+            <div className="select-container">
+              <select name="category" value={formData.category} onChange={handleInputChange}>
+                <option value="">Chọn loại sản phẩm</option>
+                {categories.map((category) => (
+                  <option key={category.ID} value={category.ID}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="form-group">
             <label>Nhà sản xuất</label>
-            <input type="text" name="manufacturer" value={formData.manufacturer} onChange={handleInputChange} />
+            <div className="select-container">
+              <select
+                name="manufacturer"
+                value={formData.manufacturer}
+                onChange={handleInputChange}
+              >
+                <option value="">Chọn nhà sản xuất</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.ID} value={supplier.ID}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="form-group">
             <label>Xuất sứ</label>
-            <input type="text" name="origin" value={formData.origin} onChange={handleInputChange} />
+            <div className="custom-select" ref={selectRef}>
+              <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                {formData.origin ? (
+                  <>
+                    <img
+                      src={countries.find(c => c.name === formData.origin)?.flag}
+                      alt={formData.origin}
+                      className="country-flag"
+                    />
+                    <span>{formData.origin}</span>
+                  </>
+                ) : (
+                  <span className="placeholder">Chọn xuất xứ</span>
+                )}
+              </div>
+              {isOpen && (
+                <div className="options-list">
+                  {countries.map((country) => (
+                    <div
+                      key={country.code}
+                      className={`option ${formData.origin === country.name ? 'selected' : ''}`}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, origin: country.name }));
+                        setIsOpen(false);
+                      }}
+                    >
+                      <img
+                        src={country.flag}
+                        alt={country.name}
+                        className="country-flag"
+                      />
+                      <span>{country.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="form-group">
-            <label>Thuộc loại</label>
-            <input type="text" name="category" value={formData.category} onChange={handleInputChange} />
+            <label>Đơn vị tính</label>
+            <div className="select-container">
+              <select name="unit" value={formData.unit} onChange={handleInputChange}>
+                <option value="">Chọn đơn vị</option>
+                {units.map((unit, index) => (
+                  <option key={index} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          <div className="form-group">
+            <label>Khối lượng (kg)</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleInputChange}
+              min="0"
+              step="0.1"
+            />
+          </div>
+
+
+          <div className="form-group">
+            <label>Kích thước</label>
+            <input
+              type="number"
+              name="width"
+              className="width"
+              placeholder="Rộng(cm)"
+              value={formData.dimensions.width}
+              onChange={handleDimensionChange}
+              min="0"
+              step="0.1"
+            />
+            <input
+              type="number"
+              name="length"
+              className="length"
+              placeholder="Dài(cm)"
+              value={formData.dimensions.length}
+              onChange={handleDimensionChange}
+              min="0"
+              step="0.1"
+            />
+            <input
+              type="number"
+              name="height"
+              className="height"
+              placeholder="Cao(cm)"
+              value={formData.dimensions.height}
+              onChange={handleDimensionChange}
+              min="0"
+              step="0.1"
+            />
+          </div>
+          <div className="form-group">
+            <label>Số lượng</label>
+            <input 
+              type="number"
+              name="quantity"
+              value={formData.quantity || ""}
+              onChange={handleInputChange}
+              min="0"
+              step="1"
+            />
+          </div>
+
+
+          <div className="form-group">
+            <label>Giá nhập</label>
+            <input
+              type="number"
+              name="inPrice"
+              value={formData.inPrice}
+              onChange={handleInputChange}
+              min="0"
+              step="1000"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Giá bán</label>
+            <input
+              type="number"
+              name="outPrice"
+              value={formData.outPrice}
+              onChange={handleInputChange}
+              min="0"
+              step="1000"
+            />
+          </div>
+
 
           <div className="form-group">
             <label>Ghi chú</label>
@@ -150,6 +379,8 @@ const CreateProduct = () => {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getStorage } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Configure Firebase with CORS settings
 const firebaseConfig = {
@@ -31,7 +31,7 @@ const corsSettings = {
     maxAge: 3600
 };
 
-// Apply CORS settings to storage
-storage.cors = corsSettings;
 
-export { storage };
+
+export { storage, ref, uploadBytes, getDownloadURL };
+export default app;

@@ -10,11 +10,11 @@ class CustomerRepository extends BaseRepository {
             if (!localStorage.getItem('auth_token')) {
                 throw new Error('No authentication token found');
             }
-            const response = await this.get('', params);
-            if (!response) {
+            const data = await this.get('', params);
+            if (!data) {
                 throw new Error('No data received from server');
             }
-            return response.data;
+            return data;
         } catch (error) {
             throw this.handleError(error, 'Failed to fetch customers');
         }
@@ -22,8 +22,8 @@ class CustomerRepository extends BaseRepository {
 
     async getById(id) {
         try {
-            const response = await this.get(`/${id}`);
-            return response.data;
+            const data = await this.get(`/${id}`);
+            return data;
         } catch (error) {
             throw this.handleError(error, 'Failed to fetch customer');
         }
@@ -31,8 +31,8 @@ class CustomerRepository extends BaseRepository {
 
     async create(data) {
         try {
-            const response = await this.post('', data);
-            return response.data;
+            const result = await this.post('', data);
+            return result;
         } catch (error) {
             throw this.handleError(error, 'Failed to create customer');
         }
@@ -40,8 +40,8 @@ class CustomerRepository extends BaseRepository {
 
     async update(id, data) {
         try {
-            const response = await this.put(`/${id}`, data);
-            return response.data;
+            const result = await this.put(`/${id}`, data);
+            return result;
         } catch (error) {
             throw this.handleError(error, 'Failed to update customer');
         }
@@ -65,10 +65,10 @@ class CustomerRepository extends BaseRepository {
 
     async export() {
         try {
-            const response = await this.get('/export', {
+            const data = await this.get('/export', {
                 responseType: 'blob'
             });
-            return response.data;
+            return data;
         } catch (error) {
             throw this.handleError(error, 'Failed to export customers');
         }

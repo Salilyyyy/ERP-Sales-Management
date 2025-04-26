@@ -4,7 +4,7 @@ import editIcon from "../../assets/img/white-edit.svg"
 import printIcon from "../../assets/img/print-icon.svg"
 import saveIcon from "../../assets/img/save-icon.svg"
 import "./detailProduct.scss"
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import apiProduct from "../../api/apiProduct";
 import ProductImg from "../../assets/img/product-img.svg"
@@ -14,13 +14,19 @@ const DetailProduct = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [editedProduct, setEditedProduct] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  //use url query param to handle edit/non-edit mode
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isEditMode = searchParams.get("edit") === "true";
+  const [isEditing, setIsEditing] = useState(isEditMode);
+
   const handleEditClick = () => {
     setEditedProduct({ ...product });
-    setIsEditing(true);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("edit", "true");
+    setSearchParams(newSearchParams);
   };
 
   const handleSave = async () => {
@@ -28,7 +34,9 @@ const DetailProduct = () => {
       setLoading(true);
       await apiProduct.update(id, editedProduct);
       setProduct(editedProduct);
-      setIsEditing(false);
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("edit");
+      setSearchParams(newSearchParams);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,6 +71,15 @@ const DetailProduct = () => {
 
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      setIsEditing(true);
+      setEditedProduct({ ...product });
+    } else {
+      setIsEditing(false);
+    }
+  }, [isEditMode, searchParams, product]);
 
   if (loading) return <h2>Đang tải...</h2>;
   if (error) return <h2>Lỗi: {error}</h2>;

@@ -7,13 +7,7 @@ class SupplierRepository extends BaseRepository {
 
     async getAll(params = {}) {
         try {
-            if (!localStorage.getItem('auth_token')) {
-                throw new Error('No authentication token found');
-            }
             const response = await this.get('', params);
-            if (!response) {
-                throw new Error('No data received from server');
-            }
             return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to fetch suppliers');

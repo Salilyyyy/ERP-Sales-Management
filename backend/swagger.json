@@ -2403,10 +2403,22 @@
                     "type": "string",
                     "description": "Representative name"
                   },
-                  "phoneNumberRep": {
-                    "type": "string",
-                    "description": "Representative phone number"
-                  }
+                "phoneNumberRep": {
+                  "type": "string",
+                  "description": "Representative phone number"
+                },
+                "country": {
+                  "type": "string",
+                  "description": "Supplier's country"
+                },
+                "taxId": {
+                  "type": "string",
+                  "description": "Tax identification number"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
+                }
                 }
               }
             }
@@ -2474,6 +2486,18 @@
                 "phoneNumberRep": {
                   "type": "string",
                   "description": "Representative phone number"
+                },
+                "country": {
+                  "type": "string",
+                  "description": "Supplier's country"
+                },
+                "taxId": {
+                  "type": "string",
+                  "description": "Tax identification number"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               },
               "required": [
@@ -2513,10 +2537,22 @@
                 "representative": {
                   "type": "string"
                 },
-                "phoneNumberRep": {
-                  "type": "string"
+                  "phoneNumberRep": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string",
+                    "description": "Supplier's country"
+                  },
+                  "taxId": {
+                    "type": "string",
+                    "description": "Tax identification number"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Additional notes"
+                  }
                 }
-              }
             }
           },
           "400": {
@@ -2591,6 +2627,18 @@
                 "phoneNumberRep": {
                   "type": "string",
                   "description": "Representative phone number"
+                },
+                "country": {
+                  "type": "string",
+                  "description": "Supplier's country"
+                },
+                "taxId": {
+                  "type": "string",
+                  "description": "Tax identification number"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               }
             }
@@ -2668,6 +2716,18 @@
                 "phoneNumberRep": {
                   "type": "string",
                   "description": "Representative phone number"
+                },
+                "country": {
+                  "type": "string",
+                  "description": "Supplier's country"
+                },
+                "taxId": {
+                  "type": "string",
+                  "description": "Tax identification number"
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional notes"
                 }
               }
             }
@@ -2701,6 +2761,15 @@
                   "type": "string"
                 },
                 "phoneNumberRep": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string"
+                },
+                "taxId": {
+                  "type": "string"
+                },
+                "notes": {
                   "type": "string"
                 }
               }

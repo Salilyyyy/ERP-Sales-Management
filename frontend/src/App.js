@@ -1,5 +1,6 @@
 import './App.css';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
+import { LoadingProvider } from './context/LoadingContext';
 import Layout from './components/layout/layout';
 import Dashboard from './pages/dashboard/dashboard';
 import LoginPage from './components/login/login';
@@ -46,7 +47,8 @@ import Error500 from './components/error/error-500';
 function App() {
     return (
         <div className="App">
-            <BrowserRouter>
+            <LoadingProvider>
+                <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<LoginPage />} />
@@ -96,7 +98,8 @@ function App() {
 
                     </Route>
                 </Routes>
-            </BrowserRouter>
+                </BrowserRouter>
+            </LoadingProvider>
         </div>
     );
 }

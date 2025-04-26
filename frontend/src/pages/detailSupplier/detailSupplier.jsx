@@ -16,7 +16,15 @@ const DetailSupplier = () => {
     const [editing, setEditing] = useState(false);
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setSupplier(prev => ({ ...prev, [name]: value }));
+        setSupplier(prev => {
+            const updatedSupplier = { ...prev };
+            if (value === '') {
+                updatedSupplier[name] = null;
+            } else {
+                updatedSupplier[name] = value;
+            }
+            return updatedSupplier;
+        });
     };
 
     const handleClear = () => {
@@ -25,19 +33,33 @@ const DetailSupplier = () => {
             name: "",
             phoneNumber: "",
             email: "",
-            numbertax: "",
+            taxId: "",
             country: "",
             representative: "",
             phoneNumberRep: "",
             address: "",
-            notes: ""
+            postalCode: "",
+            notes: "",
         }));
     };
 
     const handleSave = async () => {
         try {
-            await supplierApi.update(supplier.id, supplier);
-            const updatedSupplier = await supplierApi.getById(supplier.id);
+            const payload = {
+                ID: supplier.ID,
+                name: supplier.name,
+                address: supplier.address,
+                phoneNumber: supplier.phoneNumber,
+                email: supplier.email,
+                country: supplier.country || null,
+                representative: supplier.representative,
+                phoneNumberRep: supplier.phoneNumberRep,
+                postalCode: supplier.postalCode,
+                taxId: supplier.taxId || null,
+                notes: supplier.notes || null
+            };
+
+            const updatedSupplier = await supplierApi.update(supplier.ID, payload);
             setSupplier(updatedSupplier);
             alert("Cập nhật thành công");
             setEditing(false);
@@ -125,11 +147,17 @@ const DetailSupplier = () => {
                     <div className="info-row">
                         <div className="info-item">
                             <div className="info-label">Mã số thuế</div>
-                            {editing ? <input type="text" className="info-input" name="numbertax" value={supplier.numbertax} onChange={handleInputChange} /> : <div className="info-value">{supplier.numbertax}</div>}
+                            {editing ? <input type="text" className="info-input" name="taxId" value={supplier.taxId || ''} onChange={handleInputChange} /> : <div className="info-value">{supplier.taxId}</div>}
                         </div>
                         <div className="info-item">
+                            <div className="info-label">Mã bưu chính</div>
+                            {editing ? <input type="text" className="info-input" name="postalCode" value={supplier.postalCode || ''} onChange={handleInputChange} /> : <div className="info-value">{supplier.postalCode}</div>}
+                        </div>
+                    </div>
+                    <div className="info-row">
+                        <div className="info-item">
                             <div className="info-label">Quốc gia</div>
-                            {editing ? <input type="text" className="info-input" name="country" value={supplier.country} onChange={handleInputChange} /> : <div className="info-value">{supplier.country}</div>}
+                            {editing ? <input type="text" className="info-input" name="country" value={supplier.country || ''} onChange={handleInputChange} /> : <div className="info-value">{supplier.country}</div>}
                         </div>
                     </div>
                     <div className="info-row">
@@ -151,7 +179,7 @@ const DetailSupplier = () => {
                     <div className="info-row full-width">
                         <div className="info-item">
                             <div className="info-label">Ghi chú</div>
-                            {editing ? <input type="text" className="info-input" name="notes" value={supplier.notes} onChange={handleInputChange} /> : <div className="info-value">{supplier.notes}</div>}
+                            {editing ? <input type="text" className="info-input" name="notes" value={supplier.notes || ''} onChange={handleInputChange} /> : <div className="info-value">{supplier.notes}</div>}
                         </div>
                     </div>
                 </div>

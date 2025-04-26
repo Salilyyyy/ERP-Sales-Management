@@ -29,42 +29,79 @@ const validateInvoice = (req, res, next) => {
 router.post('/', validateInvoice, async (req, res) => {
   const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
   try {
-    const invoice = await prisma.invoices.create({
-      data: {
-        Promotions: {
-          connect: { ID: promotionID }
-        },
-        Customers: {
-          connect: { ID: customerID }
-        },
-        exportTime: exportTime || new Date(),
-        paymentMethod,
-        tax,
-        updatedBy: req.user.id,
-      },
-      include: {
-        Customers: true,
-        Promotions: true,
-        InvoiceDetails: {
-          include: {
-            Products: true
+    // Start transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      // Check stock availability for all products
+      if (details && Array.isArray(details)) {
+        for (const detail of details) {
+          const product = await prisma.products.findUnique({
+            where: { ID: detail.productID }
+          });
+          
+          if (!product) {
+            throw new Error(`Product with ID ${detail.productID} not found`);
+          }
+          
+          if (product.quantity < detail.quantity) {
+            throw new Error(`Insufficient stock for product ${product.name}. Available: ${product.quantity}, Requested: ${detail.quantity}`);
           }
         }
       }
-    });
-    
-    if (details && Array.isArray(details)) {
-      await prisma.invoiceDetails.createMany({
-        data: details.map(detail => ({
-          ...detail,
-          invoiceID: invoice.ID
-        }))
+
+      // Create invoice
+      const invoice = await prisma.invoices.create({
+        data: {
+          Promotions: {
+            connect: { ID: promotionID }
+          },
+          Customers: {
+            connect: { ID: customerID }
+          },
+          exportTime: exportTime || new Date(),
+          paymentMethod,
+          tax,
+          updatedBy: req.user.id,
+        },
+        include: {
+          Customers: true,
+          Promotions: true,
+          InvoiceDetails: {
+            include: {
+              Products: true
+            }
+          }
+        }
       });
-    }
+      
+      // Create invoice details and update product quantities
+      if (details && Array.isArray(details)) {
+        // Create invoice details
+        await prisma.invoiceDetails.createMany({
+          data: details.map(detail => ({
+            ...detail,
+            invoiceID: invoice.ID
+          }))
+        });
+
+        // Update product quantities
+        for (const detail of details) {
+          await prisma.products.update({
+            where: { ID: detail.productID },
+            data: {
+              quantity: {
+                decrement: detail.quantity
+              }
+            }
+          });
+        }
+      }
+
+      return invoice;
+    });
 
     res.status(201).json({
       success: true,
-      data: invoice
+      data: result
     });
   } catch (error) {
     res.status(400).json({
@@ -175,6 +212,48 @@ router.put('/:id', validateInvoice, async (req, res) => {
   
   try {
     const result = await prisma.$transaction(async (prisma) => {
+      // Get current invoice details to restore quantities
+      const currentInvoice = await prisma.invoices.findUnique({
+        where: { ID: parseInt(id) },
+        include: {
+          InvoiceDetails: true
+        }
+      });
+
+      if (!currentInvoice) {
+        throw new Error('Invoice not found');
+      }
+
+      // Restore previous quantities
+      for (const detail of currentInvoice.InvoiceDetails) {
+        await prisma.products.update({
+          where: { ID: detail.productID },
+          data: {
+            quantity: {
+              increment: detail.quantity // Add back the quantities that were previously reduced
+            }
+          }
+        });
+      }
+
+      // Check if new quantities are available
+      if (details && Array.isArray(details)) {
+        for (const detail of details) {
+          const product = await prisma.products.findUnique({
+            where: { ID: detail.productID }
+          });
+          
+          if (!product) {
+            throw new Error(`Product with ID ${detail.productID} not found`);
+          }
+          
+          if (product.quantity < detail.quantity) {
+            throw new Error(`Insufficient stock for product ${product.name}. Available: ${product.quantity}, Requested: ${detail.quantity}`);
+          }
+        }
+      }
+
+      // Update invoice
       const invoice = await prisma.invoices.update({
         where: { ID: parseInt(id) },
         data: {
@@ -189,28 +268,42 @@ router.put('/:id', validateInvoice, async (req, res) => {
           tax,
           updatedBy: req.user.id
         },
-      include: {
-        Customers: true,
-        Promotions: true,
-        InvoiceDetails: {
-          include: {
-            Products: true
+        include: {
+          Customers: true,
+          Promotions: true,
+          InvoiceDetails: {
+            include: {
+              Products: true
+            }
           }
         }
-      }
       });
 
       if (details && Array.isArray(details)) {
+        // Delete old invoice details
         await prisma.invoiceDetails.deleteMany({
           where: { invoiceID: parseInt(id) }
         });
 
+        // Create new invoice details
         await prisma.invoiceDetails.createMany({
           data: details.map(detail => ({
             ...detail,
             invoiceID: parseInt(id)
           }))
         });
+
+        // Update product quantities with new values
+        for (const detail of details) {
+          await prisma.products.update({
+            where: { ID: detail.productID },
+            data: {
+              quantity: {
+                decrement: detail.quantity
+              }
+            }
+          });
+        }
       }
 
       return invoice;
@@ -232,6 +325,30 @@ router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.$transaction(async (prisma) => {
+      // Get invoice details to restore quantities
+      const invoice = await prisma.invoices.findUnique({
+        where: { ID: parseInt(id) },
+        include: {
+          InvoiceDetails: true
+        }
+      });
+
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      // Restore product quantities
+      for (const detail of invoice.InvoiceDetails) {
+        await prisma.products.update({
+          where: { ID: detail.productID },
+          data: {
+            quantity: {
+              increment: detail.quantity // Return the quantities back to inventory
+            }
+          }
+        });
+      }
+
       // Delete related shipments first
       await prisma.shipments.deleteMany({
         where: { invoiceID: parseInt(id) }

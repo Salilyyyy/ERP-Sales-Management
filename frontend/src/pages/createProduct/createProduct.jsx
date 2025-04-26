@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import BaseRepository from "../../api/baseRepository";
 import apiProduct from "../../api/apiProduct";
 import apiProductCategory from "../../api/apiProductCategory";
 import apiSupplier from "../../api/apiSupplier";
@@ -7,6 +9,8 @@ import apiCountry from "../../api/apiCountry";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
+import { storage, ref, uploadBytes, getDownloadURL } from "../../firebase";
+
 import "./createProduct.scss";
 
 const CreateProduct = () => {
@@ -16,6 +20,7 @@ const CreateProduct = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [countries, setCountries] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  
   const selectRef = useRef(null);
 
   useEffect(() => {
@@ -73,14 +78,20 @@ const CreateProduct = () => {
     details: ""
   });
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setProductImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
+      const storageRef = ref(storage, `products/${file.name}`); // có thể đổi tên folder tùy ý
+
+      try {
+        const snapshot = await uploadBytes(storageRef, file);
+        console.log('Upload thành công!', snapshot);
+        const downloadURL = await getDownloadURL(storageRef);
+        console.log('URL ảnh:', downloadURL);
+        setProductImage(downloadURL);
+      } catch (error) {
+        console.error('Lỗi upload ảnh:', error);
+      }
     }
   };
 
@@ -115,9 +126,19 @@ const CreateProduct = () => {
     });
   };
 
+  // Get loading states from BaseRepository
+  const categoriesLoading = BaseRepository.getLoadingState('/categories');
+  const suppliersLoading = BaseRepository.getLoadingState('/suppliers');
+  const countriesLoading = BaseRepository.getLoadingState('/countries');
+  const isLoading = categoriesLoading || suppliersLoading || countriesLoading;
+
   return (
     <div className="create-product-container">
-      <div className="header">
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <>
+          <div className="header">
         <div className="back" onClick={() => navigate("/product")}>
           <img src={backIcon} alt="Quay lại" />
         </div>
@@ -358,6 +379,8 @@ const CreateProduct = () => {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

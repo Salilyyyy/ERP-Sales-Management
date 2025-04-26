@@ -60,7 +60,7 @@ $white: #ffffff;
       color: #fff;
     }
 
-    .edit {
+    .edit, .save {
       background: #163020;
       color: #fff;
     }
@@ -94,13 +94,58 @@ $white: #ffffff;
       color: #666;
       display: flex;
       align-items: center;
+
+      input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        color: #333;
+        font-size: 16px;
+        background-color: #fff;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: #888;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #163020;
+          box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+        }
+
+        &:disabled {
+          background-color: #f5f5f5;
+          cursor: not-allowed;
+          color: #666;
+        }
+
+        &::placeholder {
+          color: #999;
+        }
+      }
     }
+  }
+
+  .info-value-edit{
+    padding: 6px;
+      width: 50%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
   }
 
   .info-table {
     margin-top: 20px;
     border-radius: 8px;
     overflow: hidden;
+
+    .list-product {
+      font-weight: 600;
+      font-size: large;
+      margin-bottom: 10px;
+    }
 
     table {
       width: 100%;
@@ -109,13 +154,30 @@ $white: #ffffff;
       th, td {
         padding: 12px 16px;
         border: 1px solid $border-color;
-        text-align: left;
       }
 
       th {
         background-color: $bg-light;
         font-weight: 600;
         color: $text-color;
+        
+        &.text-left {
+          text-align: left;
+        }
+        
+        &.text-right {
+          text-align: right;
+        }
+      }
+
+      td {
+        &.text-right {
+          text-align: right;
+        }
+        
+        &.text-left {
+          text-align: left;
+        }
       }
 
       tbody tr {

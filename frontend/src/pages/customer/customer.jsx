@@ -29,7 +29,10 @@ const Customer = () => {
             try {
                 setIsLoading(true);
                 const data = await CustomerRepository.getAll();
-                setCustomers(Array.isArray(data) ? data : []);
+                console.log('API Response:', data);
+                console.log('Is Array?', Array.isArray(data));
+                console.log('Data length:', data ? data.length : 0);
+                setCustomers(data || []);
                 setError(null);
             } catch (err) {
                 setError(err.message);
@@ -61,16 +64,36 @@ const Customer = () => {
         return <div className="customer-container">Error: {error}</div>;
     }
 
-    const filteredCustomers = (Array.isArray(customers) ? customers : [])
-        .filter((customer) =>
-            (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-(customer.ID ? customer.ID.toString().includes(searchQuery) : false)
-        )
-        .filter((customer) =>
-filterType === "all" ? true : customer.ID === parseInt(filterType)
-        )
-        .filter((customer) => (customer.name || '').toLowerCase().includes(filterName.toLowerCase()));
+    if (!Array.isArray(customers)) {
+        console.error('Customers is not an array:', customers);
+        return <div className="customer-container">Lỗi: Dữ liệu không hợp lệ</div>;
+    }
 
+    if (customers.length === 0) {
+        return <div className="customer-container">Không có dữ liệu khách hàng để hiển thị.</div>;
+    }
+
+    
+    const filteredCustomers = customers
+        .filter((customer) => {
+            const nameMatch = (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+            const idMatch = customer.ID ? customer.ID.toString().includes(searchQuery) : false;
+            console.log(`Search filter for ${customer.name}: nameMatch=${nameMatch}, idMatch=${idMatch}`);
+            return nameMatch || idMatch;
+        })
+        .filter((customer) => {
+            const typeMatch = filterType === "all" ? true : customer.ID === parseInt(filterType);
+            console.log(`Type filter for ${customer.name}: typeMatch=${typeMatch}`);
+            return typeMatch;
+        })
+        .filter((customer) => {
+            const nameFilterMatch = filterName === "" ? true : (customer.name || '').toLowerCase().includes(filterName.toLowerCase());
+            console.log(`Name filter for ${customer.name}: nameFilterMatch=${nameFilterMatch}`);
+            return nameFilterMatch;
+        });
+
+    console.log('After filtering - filteredCustomers:', filteredCustomers);
+    
     const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
@@ -113,7 +136,7 @@ filterType === "all" ? true : customer.ID === parseInt(filterType)
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
+        setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
     };
 
     const handleSelectCustomer = (id) => {
@@ -219,7 +242,7 @@ setSelectedCustomers(newSelectAll ? filteredCustomers.map(c => c.ID) : []);
                 </thead>
                 <tbody>
                     {paginatedCustomers.map((customer) => (
-<tr key={customer.ID}>
+                        <tr key={customer.ID}>
                             <td><input type="checkbox" checked={selectedCustomers.includes(customer.ID)} onChange={() => handleSelectCustomer(customer.ID)} /></td>
                             <td>{customer.ID}</td>
                             <td>{customer.name}</td>

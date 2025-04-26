@@ -90,6 +90,9 @@ model Suppliers {
   email          String
   representative String
   phoneNumberRep String
+  country        String?
+  taxId          String?
+  notes          String?
   Products       Products[]
   Stockins      Stockins[]
 }

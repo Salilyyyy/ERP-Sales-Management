@@ -104,7 +104,6 @@ const CreateInvoice = () => {
     try {
       let customerId = selectedCustomerId;
 
-      // Create new customer if needed
       if (isNewCustomer) {
         if (!customerName || !customerPhone) {
           alert("Vui lòng nhập đầy đủ thông tin khách hàng mới");
@@ -188,7 +187,8 @@ const CreateInvoice = () => {
     const fetchCustomers = async () => {
       try {
         const response = await apiCustomer.getAll();
-        setCustomers(response.data || []);
+        console.log("customer", response);
+        setCustomers(response || []);
       } catch (error) {
         console.error("Error fetching customers:", error);
       }
@@ -210,7 +210,7 @@ const CreateInvoice = () => {
     } else {
       setIsNewCustomer(false);
       setSelectedCustomerId(value);
-      const selectedCustomer = customers.find(c => c.id.toString() === value);
+      const selectedCustomer = customers.find(c => c.id === value);
       if (selectedCustomer) {
         setCustomerName(selectedCustomer.name);
         setCustomerPhone(selectedCustomer.phoneNumber || '');
@@ -296,7 +296,7 @@ const CreateInvoice = () => {
             >
               <option value="">Chọn khách hàng</option>
               {customers.map((customer) => (
-                <option key={customer.id} value={customer.id.toString()}>
+                <option key={customer.id} value={customer.id}>
                   {customer.name} - {customer.phoneNumber || 'No phone'}
                 </option>
               ))}

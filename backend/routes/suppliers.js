@@ -14,6 +14,9 @@ router.post('/', async (req, res) => {
     email,
     representative,
     phoneNumberRep,
+    taxId,
+    country,
+    notes,
   } = req.body;
   try {
     const supplier = await prisma.suppliers.create({
@@ -25,7 +28,10 @@ router.post('/', async (req, res) => {
         email,
         representative,
         phoneNumberRep,
-      },
+        taxId,
+        country,
+        notes, 
+      }
     });
     res.status(201).json(supplier);
   } catch (error) {
@@ -50,11 +56,11 @@ router.get('/:id', async (req, res) => {
     const supplier = await prisma.suppliers.findUnique({
       where: { ID: parseInt(id) },
     });
-    if (supplier) {
-      res.status(200).json(supplier);
-    } else {
-      res.status(404).json({ error: 'Supplier not found' });
-    }
+      if (supplier) {
+        res.status(200).json(supplier);
+      } else {
+        res.status(404).json({ error: 'Supplier not found' });
+      }
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -71,6 +77,9 @@ router.put('/:id', async (req, res) => {
     email,
     representative,
     phoneNumberRep,
+    taxId,
+    country,
+    notes
   } = req.body;
   try {
     const supplier = await prisma.suppliers.update({
@@ -83,6 +92,9 @@ router.put('/:id', async (req, res) => {
         email,
         representative,
         phoneNumberRep,
+        taxId,
+        country,
+      notes,
       },
     });
     res.status(200).json(supplier);

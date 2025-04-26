@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./supplier.scss";
 import { useNavigate } from "react-router-dom";
+import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import BaseRepository from "../../api/baseRepository";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -15,7 +17,6 @@ const Suppliers = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [suppliers, setSuppliers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -27,23 +28,24 @@ const Suppliers = () => {
 
     const fetchSuppliers = async () => {
         try {
-            setLoading(true);
             const data = await supplierApi.getAll();
             setSuppliers(data);
             setError(null);
         } catch (err) {
             setError('Failed to fetch suppliers');
             console.error('Error fetching suppliers:', err);
-        } finally {
-            setLoading(false);
         }
     };
+
+    // Get loading state from BaseRepository
+    const requestKey = supplierApi.endpoint;
+    const isLoading = BaseRepository.getLoadingState(requestKey);
 
     const handleDelete = async (id) => {
         if (window.confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này?")) {
             try {
                 await supplierApi.delete(id);
-                await fetchSuppliers(); // Refresh the list
+                await fetchSuppliers(); 
                 setIsDropdownOpen(false);
             } catch (err) {
                 console.error('Error deleting supplier:', err);
@@ -54,7 +56,6 @@ const Suppliers = () => {
 
     const handleExport = async () => {
         try {
-            // You can implement export functionality here
             alert("Xuất danh sách nhà cung cấp!");
             setIsDropdownOpen(false);
         } catch (err) {
@@ -64,7 +65,7 @@ const Suppliers = () => {
     };
 
     const filteredSuppliers = suppliers.filter((supplier) =>
-        supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        supplier.supplierName?.includes(searchQuery) ||
         supplier.ID.toString().includes(searchQuery)
     );
     filteredSuppliers.sort((a, b) => a.ID - b.ID);
@@ -80,8 +81,12 @@ const Suppliers = () => {
         }
     };
 
-    if (loading) {
-        return <div className="suppliers-container">Loading suppliers...</div>;
+    if (isLoading) {
+        return (
+            <div className="suppliers-container">
+                <LoadingSpinner />
+            </div>
+        );
     }
 
     if (error) {

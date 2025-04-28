@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import "./createSupplier.scss";
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
@@ -168,12 +169,12 @@ const CreateSupplier = () => {
     if (isSubmitting) return;
 
     if (!validateForm()) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc: Tên nhà cung cấp, Số điện thoại, Email, Quốc gia và Mã bưu chính");
+      toast.warning("Vui lòng điền đầy đủ thông tin bắt buộc: Tên nhà cung cấp, Số điện thoại, Email, Quốc gia và Mã bưu chính");
       return;
     }
 
     if (phoneError || emailError || repPhoneError) {
-      alert("Vui lòng kiểm tra lại các trường thông tin còn lỗi");
+      toast.error("Vui lòng kiểm tra lại các trường thông tin còn lỗi");
       return;
     }
 

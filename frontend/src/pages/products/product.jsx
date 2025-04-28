@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./product.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -68,7 +69,7 @@ const Product = () => {
 
     const handleDelete = async () => {
         if (selectedProducts.length === 0) {
-            alert("Vui lòng chọn sản phẩm cần xóa!");
+            toast.warning("Vui lòng chọn sản phẩm cần xóa!");
             return;
         }
 
@@ -80,17 +81,17 @@ const Product = () => {
                 await fetchProducts();
                 setSelectedProducts([]);
                 setSelectAll(false);
-                alert("Xóa sản phẩm thành công!");
+                toast.success("Xóa sản phẩm thành công!");
             } catch (error) {
                 console.error('Error deleting products:', error);
-                alert("Có lỗi xảy ra khi xóa sản phẩm!");
+                toast.error("Có lỗi xảy ra khi xóa sản phẩm!");
             }
         }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        alert("Xuất danh sách sản phẩm!");
+        toast.success("Đã xuất danh sách sản phẩm!");
         setIsDropdownOpen(false);
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "./detailEmployee.scss";
+import { toast } from 'react-toastify';
 import { compressImage } from "../../utils/imageUtils";
 import { storage } from "../../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -53,7 +54,7 @@ const DetailEmployee = () => {
                 URL.revokeObjectURL(previewUrl);
             } catch (error) {
                 console.error("Error uploading image:", error);
-                alert("Có lỗi xảy ra khi tải ảnh lên");
+                toast.error("Có lỗi xảy ra khi tải ảnh lên");
             } finally {
                 setUploadingImage(false);
             }
@@ -95,7 +96,7 @@ const DetailEmployee = () => {
                             await userApi.deleteUser(id);
                             navigate('/employee');
                         } catch (err) {
-                            alert('Có lỗi xảy ra khi xóa nhân viên');
+                            toast.error('Có lỗi xảy ra khi xóa nhân viên');
                             console.error(err);
                         }
                     }
@@ -107,7 +108,7 @@ const DetailEmployee = () => {
                         // Save changes
                         const saveChanges = async () => {
                             if (uploadingImage) {
-                                alert('Đang tải ảnh lên, vui lòng đợi');
+                                toast.warning('Đang tải ảnh lên, vui lòng đợi');
                                 return;
                             }
                             setSaving(true);
@@ -122,7 +123,7 @@ const DetailEmployee = () => {
                                 setPreviewImage(null); // Reset preview
                                 setIsEditing(false);
                             } catch (err) {
-                                alert('Có lỗi xảy ra khi cập nhật nhân viên');
+                                toast.error('Có lỗi xảy ra khi cập nhật nhân viên');
                                 console.error(err);
                             } finally {
                                 setSaving(false);

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./invoices.scss";
+import { toast } from 'react-toastify';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 
@@ -102,18 +103,18 @@ const Invoices = () => {
     const handleDelete = async () => {
         try {
             await Promise.all(selectedInvoices.map((id) => InvoiceRepository.delete(id)));
-            alert("Xóa đơn hàng thành công!");
+            toast.success("Xóa đơn hàng thành công!");
             setSelectedInvoices([]);
             fetchInvoices();
         } catch (error) {
             console.error("Xóa lỗi:", error);
-            alert("Không thể xóa đơn hàng!");
+            toast.error("Không thể xóa đơn hàng!");
         }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        alert("Tính năng xuất đơn hàng đang phát triển.");
+        toast.info("Tính năng xuất đơn hàng đang phát triển");
         setIsDropdownOpen(false);
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./customer.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -101,7 +102,7 @@ const Customer = () => {
 
     const handleDelete = async () => {
         if (selectedCustomers.length === 0) {
-            alert("Vui lòng chọn khách hàng cần xóa");
+            toast.warning("Vui lòng chọn khách hàng cần xóa");
             return;
         }
         try {
@@ -110,9 +111,9 @@ const Customer = () => {
             setCustomers(Array.isArray(updatedCustomers) ? updatedCustomers : []);
             setSelectedCustomers([]);
             setSelectAll(false);
-            alert("Xóa khách hàng thành công");
+            toast.success("Xóa khách hàng thành công");
         } catch (error) {
-            alert("Xóa khách hàng thất bại: " + error.message);
+            toast.error("Xóa khách hàng thất bại: " + error.message);
         }
         setIsDropdownOpen(false);
     };
@@ -128,7 +129,7 @@ const Customer = () => {
             link.click();
             document.body.removeChild(link);
         } catch (error) {
-            alert("Xuất danh sách thất bại: " + error.message);
+            toast.error("Xuất danh sách thất bại: " + error.message);
         }
         setIsDropdownOpen(false);
     };

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./stockIn.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -72,13 +73,13 @@ const Stockin = () => {
                 setIsDropdownOpen(false);
             } catch (err) {
                 console.error('Failed to delete stock-ins:', err);
-                alert('Xóa không thành công: ' + err.message);
+                toast.error('Xóa không thành công: ' + err.message);
             }
         }
     };
 
     const handleExport = () => {
-        alert("Xuất danh sách kho hàng!");
+        toast.success("Đã xuất danh sách kho hàng!");
         setIsDropdownOpen(false);
     };
 

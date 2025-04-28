@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import moment from "moment";
 import "./shipping.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -127,7 +128,7 @@ const Shipping = () => {
 
     const handleDelete = async () => {
         if (selectedShippings.length === 0) {
-            alert("Vui lòng chọn vận đơn để xóa");
+            toast.warning("Vui lòng chọn vận đơn để xóa");
             return;
         }
 
@@ -139,16 +140,16 @@ const Shipping = () => {
                 await fetchShippingData();
                 setSelectedShippings([]);
                 setSelectAll(false);
-                alert("Xóa vận đơn thành công");
+                toast.success("Xóa vận đơn thành công");
             } catch (err) {
-                alert("Xóa vận đơn thất bại: " + err.message);
+                toast.error("Xóa vận đơn thất bại: " + err.message);
             }
         }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        alert("Xuất danh sách vận chuyển!");
+        toast.success("Đã xuất danh sách vận chuyển!");
         setIsDropdownOpen(false);
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from 'react-toastify';
 import apiInvoice from "../../api/apiInvoice";
 import apiCustomer from "../../api/apiCustomer";
 import apiProduct from "../../api/apiProduct";
@@ -42,11 +43,11 @@ const CreateInvoice = () => {
 
   const addProductToInvoice = () => {
     if (!selectedProduct) {
-      alert("Vui lòng chọn sản phẩm.");
+      toast.warning("Vui lòng chọn sản phẩm");
       return;
     }
     if (quantity <= 0 || isNaN(quantity)) {
-      alert("Vui lòng nhập số lượng hợp lệ.");
+      toast.warning("Vui lòng nhập số lượng hợp lệ");
       return;
     }
     const newItem = {
@@ -72,7 +73,7 @@ const CreateInvoice = () => {
       setSelectedProduct(product);
     } catch (error) {
       console.error("Error fetching product details:", error);
-      alert("Không thể lấy thông tin sản phẩm");
+      toast.error("Không thể lấy thông tin sản phẩm");
       setSelectedProduct(null);
     }
   };
@@ -106,7 +107,7 @@ const CreateInvoice = () => {
 
       if (isNewCustomer) {
         if (!customerName || !customerPhone) {
-          alert("Vui lòng nhập đầy đủ thông tin khách hàng mới");
+          toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
           return;
         }
         const newCustomer = await apiCustomer.create({
@@ -142,7 +143,7 @@ const CreateInvoice = () => {
       await apiInvoice.create(invoiceData);
       navigate("/invoices");
     } catch (error) {
-      alert(error.message || "Có lỗi xảy ra khi tạo hóa đơn");
+      toast.error(error.message || "Có lỗi xảy ra khi tạo hóa đơn");
     }
   };
 

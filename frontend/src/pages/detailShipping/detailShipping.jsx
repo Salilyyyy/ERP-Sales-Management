@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./detailShipping.scss";
+import { toast } from 'react-toastify';
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -47,9 +48,9 @@ const DetailShipping = () => {
       await ShippingRepository.update(id, editedOrder);
       setOrder(editedOrder);
       setEditMode(false);
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (err) {
-      alert("Lỗi khi cập nhật: " + err.message);
+      toast.error("Lỗi khi cập nhật: " + err.message);
     }
   };
 

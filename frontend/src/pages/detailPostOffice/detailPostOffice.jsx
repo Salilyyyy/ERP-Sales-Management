@@ -4,6 +4,7 @@ import editIcon from "../../assets/img/white-edit.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import "./detailPostOffice.scss";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 import PostOfficeRepository from "../../api/apiPostOffice";
 
@@ -20,7 +21,7 @@ const DetailPostOffice = () => {
         PostOfficeRepository.getById(id)
             .then(data => {
                 setOffice(data);
-                setFormData(data); // khởi tạo formData để chỉnh sửa
+                setFormData(data); 
                 setLoading(false);
             })
             .catch(err => {
@@ -42,7 +43,7 @@ const DetailPostOffice = () => {
             setOffice(formData);
             setIsEditing(false);
         } catch (err) {
-            alert("Cập nhật thất bại: " + err.message);
+            toast.error("Cập nhật thất bại: " + err.message);
         }
     };
 

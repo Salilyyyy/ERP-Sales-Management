@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./postOffice.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -52,7 +53,7 @@ const PostOffice = () => {
 
     const handleDelete = async () => {
         if (selectedPostOffices.length === 0) {
-            alert("Vui lòng chọn bưu cục cần xóa!");
+            toast.warning("Vui lòng chọn bưu cục cần xóa!");
             return;
         }
 
@@ -61,17 +62,17 @@ const PostOffice = () => {
                 await Promise.all(selectedPostOffices.map(id => postOfficeRepository.delete(id)));
                 await fetchPostOffices();
                 setSelectedPostOffices([]);
-                alert("Xóa bưu cục thành công!");
+                toast.success("Xóa bưu cục thành công!");
             } catch (error) {
                 console.error("Failed to delete post offices:", error);
-                alert("Xóa bưu cục thất bại!");
+                toast.error("Xóa bưu cục thất bại!");
             }
         }
         setIsDropdownOpen(false);
     };
 
     const handleExport = () => {
-        alert("Xuất danh sách bưu cục!");
+        toast.success("Đã xuất danh sách bưu cục!");
         setIsDropdownOpen(false);
     };
 

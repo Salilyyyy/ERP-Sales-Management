@@ -278,6 +278,7 @@ const CreateStockIn = () => {
                 </div>
                 <h2>Tạo mới đơn nhập</h2>
             </div>
+            
 
             <div className="steps">
                 {steps.map((step) => (
@@ -661,26 +662,7 @@ const CreateStockIn = () => {
                         )}
 
 
-                        <div className="modal-actions">
-                            <button
-                                type="button"
-                                className="cancel"
-                                onClick={() => {
-                                    setShowNewProductModal(false);
-                                    setNewProduct(initialNewProduct);
-                                    setCurrentProduct(null);
-                                }}
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                type="button"
-                                className="create"
-                                onClick={handleCreateNewProduct}
-                            >
-                                Thêm vào đơn
-                            </button>
-                        </div>
+                       
                     </div>
                 </div>
             )}

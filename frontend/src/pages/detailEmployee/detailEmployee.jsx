@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./detailEmployee.scss";
 import { toast } from 'react-toastify';
 import { compressImage } from "../../utils/imageUtils";
@@ -9,6 +9,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import avatarIcon from "../../assets/img/avatar.png";
 import editIcon from "../../assets/img/white-edit.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
+import saveIcon from "../../assets/img/save-icon.svg";
+import cancelIcon from "../../assets/img/cancel-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 
@@ -18,39 +20,58 @@ const DetailEmployee = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const fileInputRef = useRef(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const isEditMode = searchParams.get("edit") === "true";
     const [employee, setEmployee] = useState(null);
+    const [editedEmployee, setEditedEmployee] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
+
+    useEffect(() => {
+        const fetchEmployee = async () => {
+            try {
+                const response = await userApi.getUserById(id);
+                setEmployee(response);
+                if (isEditMode) {
+                    setEditedEmployee(response);
+                    setPreviewImage(response.image);
+                }
+                setLoading(false);
+            } catch (err) {
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+
+        fetchEmployee();
+    }, [id, isEditMode]);
+
+    useEffect(() => {
+        if (isEditMode && employee) {
+            setEditedEmployee({ ...employee });
+            setPreviewImage(employee.image);
+        }
+    }, [isEditMode, employee]);
 
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Brief delay to show loading state
             setUploadingImage(true);
             await new Promise(resolve => setTimeout(resolve, 500));
             try {
-                // Compress image to blob
                 const compressedBlob = await compressImage(file);
-                
-                // Create a temporary preview URL
                 const previewUrl = URL.createObjectURL(compressedBlob);
                 setPreviewImage(previewUrl);
 
-                // Upload to Firebase Storage
                 const timestamp = new Date().getTime();
                 const storageRef = ref(storage, `employees/${id}/avatar_${timestamp}.jpg`);
                 const uploadResult = await uploadBytes(storageRef, compressedBlob);
                 const downloadUrl = await getDownloadURL(uploadResult.ref);
                 
-                // Update data with Firebase URL
-                setEditData({...editData, image: downloadUrl});
-                
-                // Clean up preview URL
+                setEditedEmployee(prev => ({...prev, image: downloadUrl}));
                 URL.revokeObjectURL(previewUrl);
             } catch (error) {
                 console.error("Error uploading image:", error);
@@ -61,24 +82,53 @@ const DetailEmployee = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchEmployee = async () => {
-            try {
-                const response = await userApi.getUserById(id);
-                setEmployee(response);
-                setLoading(false);
-            } catch (err) {
-                setError(err.message);
-                setLoading(false);
-            }
-        };
+    const handleEditClick = () => {
+        setEditedEmployee({ ...employee });
+        setPreviewImage(employee.image);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set("edit", "true");
+        setSearchParams(newSearchParams);
+    };
 
-        fetchEmployee();
-    }, [id]);
+    const handleChange = (field, value) => {
+        setEditedEmployee(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
-    if (!employee) return <div>No employee found</div>;
+    const handleSave = async () => {
+        if (uploadingImage) {
+            toast.warning('Đang tải ảnh lên, vui lòng đợi');
+            return;
+        }
+        setSaving(true);
+        try {
+            await userApi.updateUser(id, editedEmployee);
+            setEmployee(editedEmployee);
+            setPreviewImage(null);
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("edit");
+            setSearchParams(newSearchParams);
+            toast.success("Cập nhật thành công!");
+        } catch (err) {
+            toast.error("Cập nhật thất bại: " + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
+        setEditedEmployee(null);
+        setPreviewImage(employee.image);
+    };
+
+    if (loading) return <div>Đang tải...</div>;
+    if (error) return <div>Lỗi: {error}</div>;
+    if (!employee) return <div>Không tìm thấy nhân viên</div>;
 
     return (
         <div className="detail-employee">
@@ -95,6 +145,7 @@ const DetailEmployee = () => {
                         try {
                             await userApi.deleteUser(id);
                             navigate('/employee');
+                            toast.success("Xóa nhân viên thành công!");
                         } catch (err) {
                             toast.error('Có lỗi xảy ra khi xóa nhân viên');
                             console.error(err);
@@ -103,43 +154,20 @@ const DetailEmployee = () => {
                 }}>
                     <img src={deleteIcon} alt="Xóa" /> Xóa
                 </button>
-                <button className="edit" onClick={() => {
-                    if (isEditing) {
-                        // Save changes
-                        const saveChanges = async () => {
-                            if (uploadingImage) {
-                                toast.warning('Đang tải ảnh lên, vui lòng đợi');
-                                return;
-                            }
-                            setSaving(true);
-                            try {
-                                // Update employee data including image URL
-                                const updatedEmployee = {
-                                    ...editData,
-                                    image: editData.image || employee.image // Keep existing image if no new one
-                                };
-                                await userApi.updateUser(id, updatedEmployee);
-                                setEmployee(updatedEmployee);
-                                setPreviewImage(null); // Reset preview
-                                setIsEditing(false);
-                            } catch (err) {
-                                toast.error('Có lỗi xảy ra khi cập nhật nhân viên');
-                                console.error(err);
-                            } finally {
-                                setSaving(false);
-                            }
-                        };
-                        saveChanges();
-                    } else {
-                        // Enter edit mode
-                        setEditData({...employee});
-                        setPreviewImage(employee.image); // Show current image when entering edit mode
-                        setIsEditing(true);
-                    }
-                }}>
-                    <img src={editIcon} alt={isEditing ? "Lưu" : "Sửa"} /> 
-                    {isEditing ? (saving ? "Đang lưu..." : "Lưu") : "Sửa"}
-                </button>
+                {!isEditMode ? (
+                    <button className="edit" onClick={handleEditClick}>
+                        <img src={editIcon} alt="Sửa" /> Sửa
+                    </button>
+                ) : (
+                    <>
+                        <button className="save" onClick={handleSave}>
+                            <img src={saveIcon} alt="Lưu" /> {saving ? "Đang lưu..." : "Lưu"}
+                        </button>
+                        <button className="cancel" onClick={handleCancel}>
+                            <img src={cancelIcon} alt="Hủy" /> Hủy
+                        </button>
+                    </>
+                )}
                 <button className="print">
                     <img src={printIcon} alt="In" /> In
                 </button>
@@ -151,7 +179,7 @@ const DetailEmployee = () => {
                     alt="avatar" 
                     className={`avatar ${uploadingImage ? 'uploading' : ''}`}
                 />
-                {isEditing && (
+                {isEditMode && (
                     <>
                         <p
                             className="edit-photo"
@@ -173,11 +201,11 @@ const DetailEmployee = () => {
             <div className="info-card">
                 <div className="info-row">
                     <strong>Họ tên</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <input
                             type="text"
-                            value={editData.name}
-                            onChange={(e) => setEditData({...editData, name: e.target.value})}
+                            value={editedEmployee.name || ""}
+                            onChange={(e) => handleChange("name", e.target.value)}
                         />
                     ) : (
                         <span>{employee.name}</span>
@@ -185,11 +213,11 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Ngày sinh</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <input
                             type="date"
-                            value={editData.birthday?.split('T')[0]}
-                            onChange={(e) => setEditData({...editData, birthday: e.target.value})}
+                            value={editedEmployee.birthday?.split('T')[0] || ""}
+                            onChange={(e) => handleChange("birthday", e.target.value)}
                         />
                     ) : (
                         <span>{new Date(employee.birthday).toLocaleDateString('vi-VN', {
@@ -201,10 +229,10 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Chức vụ</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <select
-                            value={editData.userType}
-                            onChange={(e) => setEditData({...editData, userType: e.target.value})}
+                            value={editedEmployee.userType || ""}
+                            onChange={(e) => handleChange("userType", e.target.value)}
                         >
                             <option value="admin">Quản lý</option>
                             <option value="employee">Nhân viên</option>
@@ -215,10 +243,10 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Phòng ban</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <select
-                            value={editData.department}
-                            onChange={(e) => setEditData({...editData, department: e.target.value})}
+                            value={editedEmployee.department || ""}
+                            onChange={(e) => handleChange("department", e.target.value)}
                         >
                             <option value="sales">Kinh doanh</option>
                             <option value="accounting">Kế toán</option>
@@ -234,11 +262,11 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Số điện thoại</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <input
                             type="text"
-                            value={editData.phoneNumber}
-                            onChange={(e) => setEditData({...editData, phoneNumber: e.target.value})}
+                            value={editedEmployee.phoneNumber || ""}
+                            onChange={(e) => handleChange("phoneNumber", e.target.value)}
                         />
                     ) : (
                         <span>{employee.phoneNumber}</span>
@@ -246,11 +274,11 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Email</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <input
                             type="email"
-                            value={editData.email}
-                            onChange={(e) => setEditData({...editData, email: e.target.value})}
+                            value={editedEmployee.email || ""}
+                            onChange={(e) => handleChange("email", e.target.value)}
                         />
                     ) : (
                         <span>{employee.email}</span>
@@ -258,11 +286,11 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Địa chỉ</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <input
                             type="text"
-                            value={editData.address}
-                            onChange={(e) => setEditData({...editData, address: e.target.value})}
+                            value={editedEmployee.address || ""}
+                            onChange={(e) => handleChange("address", e.target.value)}
                         />
                     ) : (
                         <span>{employee.address}</span>
@@ -270,10 +298,10 @@ const DetailEmployee = () => {
                 </div>
                 <div className="info-row">
                     <strong>Trạng thái</strong>
-                    {isEditing ? (
+                    {isEditMode ? (
                         <select
-                            value={editData.status}
-                            onChange={(e) => setEditData({...editData, status: e.target.value})}
+                            value={editedEmployee.status || ""}
+                            onChange={(e) => handleChange("status", e.target.value)}
                         >
                             <option value="ACTIVE">Active</option>
                             <option value="INACTIVE">Inactive</option>

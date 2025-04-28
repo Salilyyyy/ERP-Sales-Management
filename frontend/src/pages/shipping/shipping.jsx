@@ -40,7 +40,6 @@ const Shipping = () => {
                 setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
             );
 
-            // Create fetch promises with 10s timeout
             const fetchShipping = Promise.race([
                 apiShipping.getAll(),
                 timeoutPromise(10000)
@@ -51,13 +50,11 @@ const Shipping = () => {
                 timeoutPromise(10000)
             ]);
 
-            // Execute both promises with individual timeout handling
             const [shippingResponse, invoicesResponse] = await Promise.all([
                 fetchShipping,
                 fetchInvoices
             ]);
 
-            // Create a map of invoice IDs to invoice data
             console.log('Raw invoices response:', invoicesResponse);
             const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : invoicesResponse?.data || [];
             console.log('Processed invoices:', invoices);
@@ -307,7 +304,7 @@ const Shipping = () => {
                             <td>{ship.payer}</td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon" onClick={() => navigate(`/shipping/edit/${ship.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

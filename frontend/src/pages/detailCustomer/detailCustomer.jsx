@@ -1,24 +1,71 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import CustomerRepository from "../../api/apiCustomer"; 
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
 import printIcon from "../../assets/img/print-icon.svg";
+import saveIcon from "../../assets/img/save-icon.svg";
 import "./detailCustomer.scss";
 
 const DetailCustomer = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [customer, setCustomer] = useState(null);
+    const [editedCustomer, setEditedCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    const [searchParams, setSearchParams] = useSearchParams();
+    const isEditMode = searchParams.get("edit") === "true";
+    const [isEditing, setIsEditing] = useState(isEditMode);
+
+    const handleEditClick = () => {
+        setEditedCustomer({ ...customer });
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set("edit", "true");
+        setSearchParams(newSearchParams);
+    };
+
+    const handleSave = async () => {
+        try {
+            setLoading(true);
+            await CustomerRepository.update(id, editedCustomer);
+            setCustomer(editedCustomer);
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("edit");
+            setSearchParams(newSearchParams);
+            setIsEditing(false);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditedCustomer(null);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
+    };
+
+    const handleInputChange = (field, value) => {
+        setEditedCustomer(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
 
     useEffect(() => {
         const fetchCustomer = async () => {
             try {
                 const response = await CustomerRepository.getById(id);
                 setCustomer(response);
+                if (isEditMode) {
+                    setEditedCustomer(response);
+                }
             } catch (err) {
                 console.error("Lỗi khi lấy dữ liệu khách hàng:", err);
                 setError("Không tìm thấy khách hàng hoặc có lỗi xảy ra.");
@@ -28,7 +75,7 @@ const DetailCustomer = () => {
         };
 
         fetchCustomer();
-    }, [id]);
+    }, [id, isEditMode]);
 
     if (loading) return <p>Đang tải dữ liệu...</p>;
     if (error) return <h2>{error}</h2>;
@@ -47,9 +94,18 @@ const DetailCustomer = () => {
                 <button className="delete">
                     <img src={deleteIcon} alt="Xóa" /> Xóa
                 </button>
-                <button className="edit">
-                    <img src={editIcon} alt="Sửa" /> Sửa
-                </button>
+                {isEditing ? (
+                    <>
+                        <button className="save" onClick={handleSave}>
+                            <img src={saveIcon} alt="Lưu" /> Lưu
+                        </button>
+                        <button className="cancel" onClick={handleCancel}>Hủy</button>
+                    </>
+                ) : (
+                    <button className="edit" onClick={handleEditClick}>
+                        <img src={editIcon} alt="Sửa" /> Sửa
+                    </button>
+                )}
                 <button className="print">
                     <img src={printIcon} alt="In" /> In
                 </button>
@@ -59,7 +115,16 @@ const DetailCustomer = () => {
                 <div className="info-row">
                     <div className="info-item">
                         <div className="info-label">Tên khách hàng</div>
-                        <div className="info-value">{customer.name}</div>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editedCustomer.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.name}</div>
+                        )}
                     </div>
                     <div className="info-item">
                         <div className="info-label">Mã khách hàng</div>
@@ -70,22 +135,58 @@ const DetailCustomer = () => {
                 <div className="info-row">
                     <div className="info-item">
                         <div className="info-label">Số điện thoại</div>
-                        <div className="info-value">{customer.phoneNumber}</div>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editedCustomer.phoneNumber}
+                                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.phoneNumber}</div>
+                        )}
                     </div>
                     <div className="info-item">
                         <div className="info-label">Email</div>
-                        <div className="info-value">{customer.email}</div>
+                        {isEditing ? (
+                            <input
+                                type="email"
+                                value={editedCustomer.email}
+                                onChange={(e) => handleInputChange('email', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.email}</div>
+                        )}
                     </div>
                 </div>
 
                 <div className="info-row">
                     <div className="info-item">
                         <div className="info-label">Địa chỉ</div>
-                        <div className="info-value">{customer.address}</div>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editedCustomer.address}
+                                onChange={(e) => handleInputChange('address', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.address}</div>
+                        )}
                     </div>
                     <div className="info-item">
                         <div className="info-label">Mã số thuế</div>
-                        <div className="info-value">{customer.tax}</div>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editedCustomer.tax}
+                                onChange={(e) => handleInputChange('tax', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.tax}</div>
+                        )}
                     </div>
                 </div>
 
@@ -103,7 +204,16 @@ const DetailCustomer = () => {
                 <div className="info-row">
                     <div className="info-item">
                         <div className="info-label">Ghi chú</div>
-                        <div className="info-value">{customer.notes}</div>
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editedCustomer.notes}
+                                onChange={(e) => handleInputChange('notes', e.target.value)}
+                                className="info-input"
+                            />
+                        ) : (
+                            <div className="info-value">{customer.notes}</div>
+                        )}
                     </div>
                 </div>
             </div>

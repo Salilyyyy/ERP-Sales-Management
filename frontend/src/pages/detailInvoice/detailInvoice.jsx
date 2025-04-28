@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import "./detailInvoice.scss";
 import InvoiceRepository from "../../api/apiInvoice";
@@ -11,7 +11,9 @@ import backIcon from "../../assets/img/back-icon.svg";
 
 const OrderDetails = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isEditMode = searchParams.get("edit") === "true";
+  const [isEditing, setIsEditing] = useState(isEditMode);
   const [editedInvoice, setEditedInvoice] = useState(null);
 
   const handleDelete = async () => {
@@ -44,7 +46,6 @@ const OrderDetails = () => {
   };
 
   const handleEdit = () => {
-    setIsEditing(true);
     setEditedInvoice({
       ...invoice,
       isPaid: invoice.isPaid,
@@ -52,25 +53,30 @@ const OrderDetails = () => {
       paymentMethod: invoice.paymentMethod || "",
       notes: invoice.notes || ""
     });
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("edit", "true");
+    setSearchParams(newSearchParams);
   };
 
   const handleSave = async () => {
     try {
-      // Only send the fields that can be edited
+      setLoading(true);
       const updateData = {
         isPaid: editedInvoice.isPaid,
         isDelivery: editedInvoice.isDelivery,
         paymentMethod: editedInvoice.paymentMethod,
         notes: editedInvoice.notes
       };
-      
+
       const response = await InvoiceRepository.update(id, updateData);
       if (response.success) {
         setInvoice({
           ...invoice,
           ...updateData
         });
-        setIsEditing(false);
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
         toast.success("Cập nhật hóa đơn thành công!");
       } else {
         toast.error(response.message || "Không thể cập nhật hóa đơn!");
@@ -78,17 +84,21 @@ const OrderDetails = () => {
     } catch (error) {
       console.error("Error updating invoice:", error);
       toast.error("Không thể cập nhật hóa đơn! Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("edit");
+    setSearchParams(newSearchParams);
     setEditedInvoice(null);
   };
 
   const handlePrint = () => {
-    const printContent = document.createElement('div');
-    printContent.innerHTML = `
+      const printContent = document.createElement('div');
+      printContent.innerHTML = `
       <html>
         <head>
           <title>Hóa đơn #${invoice?.ID}</title>
@@ -150,17 +160,32 @@ const OrderDetails = () => {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent.innerHTML);
-    printWindow.document.close();
-    printWindow.print();
-  };
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(printContent.innerHTML);
+      printWindow.document.close();
+      printWindow.print();
+    };
 
   const { id } = useParams();
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isEditMode && invoice) {
+      setIsEditing(true);
+      setEditedInvoice({
+        ...invoice,
+        isPaid: invoice.isPaid,
+        isDelivery: invoice.isDelivery,
+        paymentMethod: invoice.paymentMethod || "",
+        notes: invoice.notes || ""
+      });
+    } else {
+      setIsEditing(false);
+    }
+  }, [isEditMode, searchParams, invoice]);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -199,142 +224,142 @@ const OrderDetails = () => {
   const totalPayment = totalItems + (invoice.tax || 0) - promotionDiscount;
 
   return (
-    <>
-      <ConfirmPopup
-        isOpen={showDeleteConfirm}
-        message="Bạn có chắc chắn muốn xóa hóa đơn này?"
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-      />
-      <div className="order-details">
-        <div className="header">
-          <div className="back" onClick={() => navigate(-1)}>
-            <img src={backIcon} alt="Quay lại" />
+      <>
+        <ConfirmPopup
+          isOpen={showDeleteConfirm}
+          message="Bạn có chắc chắn muốn xóa hóa đơn này?"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+        <div className="order-details">
+          <div className="header">
+            <div className="back" onClick={() => navigate(-1)}>
+              <img src={backIcon} alt="Quay lại" />
+            </div>
+            <h2>Chi tiết đơn hàng</h2>
           </div>
-          <h2>Chi tiết đơn hàng</h2>
-        </div>
-        <div className="actions">
-          {isEditing ? (
-            <>
-              <button className="save" onClick={handleSave}><img src={editIcon} alt="Lưu" /> Lưu thay đổi</button>
-              <button className="cancel" onClick={handleCancel}><img src={deleteIcon} alt="Hủy" /> Hủy</button>
-            </>
-          ) : (
-            <>
-              <button className="delete" onClick={handleDelete}><img src={deleteIcon} alt="Xóa" /> Xóa hóa đơn</button>
-              <button className="edit" onClick={handleEdit}><img src={editIcon} alt="Sửa" /> Sửa hóa đơn</button>
-              <button className="print" onClick={handlePrint}><img src={printIcon} alt="In" /> In hóa đơn</button>
-            </>
-          )}
-        </div>
-        <div className="order-info">
-          <h3 className="order-id">#ĐH-{invoice.ID}</h3>
-          <div className="info-grid">
-            <div><strong>Nhân viên bán:</strong> {invoice.Users?.name || "N/A"}</div>
-            <div><strong>Thời gian tạo:</strong> {new Date(invoice.exportTime).toLocaleString("vi-VN")}</div>
-            <div><strong>Khách hàng:</strong> {invoice.Customers?.name || "N/A"}</div>
-            <div><strong>Số điện thoại:</strong> {invoice.Customers?.phoneNumber || "N/A"}</div>
-            <div><strong>Tên người nhận:</strong> {invoice.Customers?.name || "N/A"}</div>
-            <div><strong>SĐT người nhận:</strong> {invoice.Customers?.phoneNumber || "N/A"}</div>
-            <div><strong>Địa chỉ người nhận:</strong> {invoice.Customers?.address || "N/A"}</div>
-            <div><strong> </strong> </div>
-            <div>
-              <strong>Trạng thái thanh toán:</strong>
-              {isEditing ? (
-                <select 
-                  value={editedInvoice.isPaid}
-                  onChange={(e) => setEditedInvoice({...editedInvoice, isPaid: e.target.value === 'true'})}
-                >
-                  <option value="true">Đã thanh toán</option>
-                  <option value="false">Chưa thanh toán</option>
-                </select>
-              ) : (
-                invoice.isPaid ? "Đã thanh toán" : "Chưa thanh toán"
-              )}
-            </div>
-            <div>
-              <strong>Trạng thái giao hàng:</strong>
-              {isEditing ? (
-                <select
-                  value={editedInvoice.isDelivery}
-                  onChange={(e) => setEditedInvoice({...editedInvoice, isDelivery: e.target.value === 'true'})}
-                >
-                  <option value="true">Đã giao hàng</option>
-                  <option value="false">Chưa giao hàng</option>
-                </select>
-              ) : (
-                invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"
-              )}
-            </div>
-            <div>
-              <strong>Hình thức thanh toán:</strong>
-              {isEditing ? (
-                <select
-                  value={editedInvoice.paymentMethod}
-                  onChange={(e) => setEditedInvoice({...editedInvoice, paymentMethod: e.target.value})}
-                >
-                  <option value="cash">Tiền mặt</option>
-                  <option value="transfer">Chuyển khoản</option>
-                  <option value="card">Thẻ</option>
-                </select>
-              ) : (
-                invoice.paymentMethod || "N/A"
-              )}
-            </div>
-            <div><strong>Khuyến mãi áp dụng:</strong> {invoice.Promotions?.name || "Không có"}</div>
-            <div><strong>Giá trị khuyến mãi:</strong> {invoice.Promotions ? `${invoice.Promotions.value}${invoice.Promotions.type === 'percentage' ? '%' : ' VND'}` : "0"}</div>
-            <div>
-              <strong>Ghi chú:</strong>
-              {isEditing ? (
-                <textarea
-                  value={editedInvoice.notes}
-                  onChange={(e) => setEditedInvoice({...editedInvoice, notes: e.target.value})}
-                  rows="3"
-                  style={{ width: '100%' }}
-                />
-              ) : (
-                invoice.notes || "N/A"
-              )}
+          <div className="actions">
+            {isEditing ? (
+              <>
+                <button className="save" onClick={handleSave}><img src={editIcon} alt="Lưu" /> Lưu thay đổi</button>
+                <button className="cancel" onClick={handleCancel}><img src={deleteIcon} alt="Hủy" /> Hủy</button>
+              </>
+            ) : (
+              <>
+                <button className="delete" onClick={handleDelete}><img src={deleteIcon} alt="Xóa" /> Xóa hóa đơn</button>
+                <button className="edit" onClick={handleEdit}><img src={editIcon} alt="Sửa" /> Sửa hóa đơn</button>
+                <button className="print" onClick={handlePrint}><img src={printIcon} alt="In" /> In hóa đơn</button>
+              </>
+            )}
+          </div>
+          <div className="order-info">
+            <h3 className="order-id">#ĐH-{invoice.ID}</h3>
+            <div className="info-grid">
+              <div><strong>Nhân viên bán:</strong> {invoice.Users?.name || "N/A"}</div>
+              <div><strong>Thời gian tạo:</strong> {new Date(invoice.exportTime).toLocaleString("vi-VN")}</div>
+              <div><strong>Khách hàng:</strong> {invoice.Customers?.name || "N/A"}</div>
+              <div><strong>Số điện thoại:</strong> {invoice.Customers?.phoneNumber || "N/A"}</div>
+              <div><strong>Tên người nhận:</strong> {invoice.Customers?.name || "N/A"}</div>
+              <div><strong>SĐT người nhận:</strong> {invoice.Customers?.phoneNumber || "N/A"}</div>
+              <div><strong>Địa chỉ người nhận:</strong> {invoice.Customers?.address || "N/A"}</div>
+              <div><strong> </strong> </div>
+              <div>
+                <strong>Trạng thái thanh toán:</strong>
+                {isEditing ? (
+                  <select
+                    value={editedInvoice.isPaid}
+                    onChange={(e) => setEditedInvoice({ ...editedInvoice, isPaid: e.target.value === 'true' })}
+                  >
+                    <option value="true">Đã thanh toán</option>
+                    <option value="false">Chưa thanh toán</option>
+                  </select>
+                ) : (
+                  invoice.isPaid ? "Đã thanh toán" : "Chưa thanh toán"
+                )}
+              </div>
+              <div>
+                <strong>Trạng thái giao hàng:</strong>
+                {isEditing ? (
+                  <select
+                    value={editedInvoice.isDelivery}
+                    onChange={(e) => setEditedInvoice({ ...editedInvoice, isDelivery: e.target.value === 'true' })}
+                  >
+                    <option value="true">Đã giao hàng</option>
+                    <option value="false">Chưa giao hàng</option>
+                  </select>
+                ) : (
+                  invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"
+                )}
+              </div>
+              <div>
+                <strong>Hình thức thanh toán:</strong>
+                {isEditing ? (
+                  <select
+                    value={editedInvoice.paymentMethod}
+                    onChange={(e) => setEditedInvoice({ ...editedInvoice, paymentMethod: e.target.value })}
+                  >
+                    <option value="cash">Tiền mặt</option>
+                    <option value="transfer">Chuyển khoản</option>
+                    <option value="card">Thẻ</option>
+                  </select>
+                ) : (
+                  invoice.paymentMethod || "N/A"
+                )}
+              </div>
+              <div><strong>Khuyến mãi áp dụng:</strong> {invoice.Promotions?.name || "Không có"}</div>
+              <div><strong>Giá trị khuyến mãi:</strong> {invoice.Promotions ? `${invoice.Promotions.value}${invoice.Promotions.type === 'percentage' ? '%' : ' VND'}` : "0"}</div>
+              <div>
+                <strong>Ghi chú:</strong>
+                {isEditing ? (
+                  <textarea
+                    value={editedInvoice.notes}
+                    onChange={(e) => setEditedInvoice({ ...editedInvoice, notes: e.target.value })}
+                    rows="3"
+                    style={{ width: '100%' }}
+                  />
+                ) : (
+                  invoice.notes || "N/A"
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="invoice-details">
-          <h3>Chi tiết hóa đơn</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Tên sản phẩm</th>
-                <th>Đơn vị</th>
-                <th>Số lượng</th>
-                <th>Đơn giá</th>
-                <th>Thành tiền</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoice.InvoiceDetails?.map((item, index) => (
-                <tr key={item.ID}>
-                  <td>{index + 1}</td>
-                  <td>{item.Products?.name || "N/A"}</td>
-                  <td>{item.Products?.unit || "N/A"}</td>
-                  <td>{item.quantity}</td>
-                  <td>{(item.unitPrice || 0).toLocaleString("vi-VN")} VND</td>
-                  <td>{((item.unitPrice || 0) * (item.quantity || 0)).toLocaleString("vi-VN")} VND</td>
+          <div className="invoice-details">
+            <h3>Chi tiết hóa đơn</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Đơn vị</th>
+                  <th>Số lượng</th>
+                  <th>Đơn giá</th>
+                  <th>Thành tiền</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="summary">
-            <p><strong>Tổng tiền hàng:</strong> {(totalItems || 0).toLocaleString("vi-VN")} VND</p>
-            <p><strong>Thuế GTGT:</strong> {(invoice.tax || 0).toLocaleString("vi-VN")} VND</p>
-            <p><strong>Khuyến mãi:</strong> {promotionDiscount.toLocaleString("vi-VN")} VND</p>
-            <p className="total"><strong>Tổng thanh toán:</strong> {totalPayment.toLocaleString("vi-VN")} VND</p>
+              </thead>
+              <tbody>
+                {invoice.InvoiceDetails?.map((item, index) => (
+                  <tr key={item.ID}>
+                    <td>{index + 1}</td>
+                    <td>{item.Products?.name || "N/A"}</td>
+                    <td>{item.Products?.unit || "N/A"}</td>
+                    <td>{item.quantity}</td>
+                    <td>{(item.unitPrice || 0).toLocaleString("vi-VN")} VND</td>
+                    <td>{((item.unitPrice || 0) * (item.quantity || 0)).toLocaleString("vi-VN")} VND</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="summary">
+              <p><strong>Tổng tiền hàng:</strong> {(totalItems || 0).toLocaleString("vi-VN")} VND</p>
+              <p><strong>Thuế GTGT:</strong> {(invoice.tax || 0).toLocaleString("vi-VN")} VND</p>
+              <p><strong>Khuyến mãi:</strong> {promotionDiscount.toLocaleString("vi-VN")} VND</p>
+              <p className="total"><strong>Tổng thanh toán:</strong> {totalPayment.toLocaleString("vi-VN")} VND</p>
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
-export default OrderDetails;
+  export default OrderDetails;

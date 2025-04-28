@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import "./detailShipping.scss";
 import { toast } from 'react-toastify';
 import backIcon from "../../assets/img/back-icon.svg";
@@ -8,23 +8,26 @@ import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
-import ShippingRepository from "../../api/apiShipping";
+import apiShipping from "../../api/apiShipping";
 
 const DetailShipping = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isEditMode = searchParams.get("edit") === "true";
   const [order, setOrder] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editedOrder, setEditedOrder] = useState({});
+  const [editedOrder, setEditedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchShipment = async () => {
       try {
-        const result = await ShippingRepository.getById(id);
+        const result = await apiShipping.getById(id);
         setOrder(result);
-        setEditedOrder(result);
+        if (isEditMode) {
+          setEditedOrder(result);
+        }
       } catch (err) {
         setError(err.message || "Không thể tải dữ liệu vận đơn");
       } finally {
@@ -33,7 +36,13 @@ const DetailShipping = () => {
     };
 
     fetchShipment();
-  }, [id]);
+  }, [id, isEditMode]);
+
+  useEffect(() => {
+    if (isEditMode && order) {
+      setEditedOrder({ ...order });
+    }
+  }, [isEditMode, order]);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString("vi-VN");
@@ -43,15 +52,31 @@ const DetailShipping = () => {
     setEditedOrder(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleEditClick = () => {
+    setEditedOrder({ ...order });
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set("edit", "true");
+    setSearchParams(newSearchParams);
+  };
+
   const handleSave = async () => {
     try {
-      await ShippingRepository.update(id, editedOrder);
+      await apiShipping.update(id, editedOrder);
       setOrder(editedOrder);
-      setEditMode(false);
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("edit");
+      setSearchParams(newSearchParams);
       toast.success("Cập nhật thành công!");
     } catch (err) {
       toast.error("Lỗi khi cập nhật: " + err.message);
     }
+  };
+
+  const handleCancel = () => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("edit");
+    setSearchParams(newSearchParams);
+    setEditedOrder(null);
   };
 
   if (loading) return <div className="order-detail-container">Đang tải dữ liệu...</div>;
@@ -68,8 +93,8 @@ const DetailShipping = () => {
       </div>
 
       <div className="actions">
-        {!editMode ? (
-          <button className="edit" onClick={() => setEditMode(true)}>
+        {!isEditMode ? (
+          <button className="edit" onClick={handleEditClick}>
             <img src={editIcon} alt="Sửa" /> Sửa
           </button>
         ) : (
@@ -77,7 +102,7 @@ const DetailShipping = () => {
             <button className="save" onClick={handleSave}>
               <img src={saveIcon} alt="Lưu" /> Lưu
             </button>
-            <button className="cancel" onClick={() => { setEditMode(false); setEditedOrder(order); }}>
+            <button className="cancel" onClick={handleCancel}>
               <img src={cancelIcon} alt="Hủy" /> Hủy
             </button>
           </>
@@ -86,7 +111,6 @@ const DetailShipping = () => {
       </div>
 
       <div className="content">
-        {/* Mỗi dòng info */}
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Mã vận đơn</div>
@@ -109,7 +133,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Tên người nhận</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <input
                   value={editedOrder.receiverName}
                   onChange={(e) => handleChange("receiverName", e.target.value)}
@@ -123,7 +147,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Số điện thoại</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <input
                   value={editedOrder.receiverPhone}
                   onChange={(e) => handleChange("receiverPhone", e.target.value)}
@@ -139,7 +163,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Địa chỉ nhận</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <input
                   value={editedOrder.address}
                   onChange={(e) => handleChange("address", e.target.value)}
@@ -166,7 +190,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Kích thước</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <input
                   value={editedOrder.size}
                   onChange={(e) => handleChange("size", e.target.value)}
@@ -182,7 +206,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Phí vận chuyển</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <input
                   type="number"
                   value={editedOrder.shippingCost}
@@ -197,7 +221,7 @@ const DetailShipping = () => {
           <div className="info-item">
             <div className="info-label">Người thanh toán</div>
             <div className="info-value">
-              {editMode ? (
+              {isEditMode ? (
                 <select
                   value={editedOrder.payer}
                   onChange={(e) => handleChange("payer", e.target.value)}

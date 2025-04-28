@@ -67,8 +67,11 @@ const Employee = () => {
             const allUsers = Array.isArray(users) ? users : [users];
 
             if (normalizedUserType === 'admin') {
-                console.log('Admin role - showing all users');
-                filteredUsers = allUsers;
+                console.log('Admin role - showing staff and manager users');
+                filteredUsers = allUsers.filter(user => {
+                    const userTypeLC = user.userType?.toLowerCase();
+                    return userTypeLC === 'staff' || userTypeLC === 'manager';
+                });
             } else if (normalizedUserType === 'manager') {
                 console.log('Manager role - filtering staff only');
                 filteredUsers = allUsers.filter(user => {
@@ -149,22 +152,19 @@ const Employee = () => {
         console.log('Filtering employees:', employees);
         return employees
             .filter((employee) => {
-                // Search by email, ID, or name
                 const searchMatch = !searchQuery || 
                     employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     employee.ID?.toString().includes(searchQuery) ||
                     (employee.name && employee.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-                // Filter by userType
                 const typeMatch = filterType === "all" || employee.userType === filterType;
 
-                // Filter by department
                 const departmentMatch = !filterDepartment || 
                     employee.department === filterDepartment;
 
                 return searchMatch && typeMatch && departmentMatch;
             })
-            .sort((a, b) => a.ID - b.ID); // Sort by ID from lowest to highest
+            .sort((a, b) => a.ID - b.ID); 
     }, [employees, searchQuery, filterType, filterDepartment]);
 
     const handleSelectAll = () => {
@@ -292,7 +292,7 @@ const Employee = () => {
                                 <td>{user.email}</td>
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                    <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                    <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                                 </td>
                             </tr>
                         ))}

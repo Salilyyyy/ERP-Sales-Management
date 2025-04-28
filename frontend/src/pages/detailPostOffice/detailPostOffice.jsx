@@ -1,50 +1,81 @@
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
+import saveIcon from "../../assets/img/save-icon.svg";
+import cancelIcon from "../../assets/img/cancel-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import "./detailPostOffice.scss";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
-import PostOfficeRepository from "../../api/apiPostOffice";
+import apiPostOffice from "../../api/apiPostOffice";
 
 const DetailPostOffice = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [office, setOffice] = useState(null);
-    const [formData, setFormData] = useState({});
+    const [searchParams, setSearchParams] = useSearchParams();
+    const isEditMode = searchParams.get("edit") === "true";
+    const [editedOffice, setEditedOffice] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
-        PostOfficeRepository.getById(id)
-            .then(data => {
-                setOffice(data);
-                setFormData(data); 
+        const fetchOffice = async () => {
+            try {
+                const result = await apiPostOffice.getById(id);
+                setOffice(result);
+                if (isEditMode) {
+                    setEditedOffice(result);
+                }
                 setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 setError(err.message);
                 setLoading(false);
-            });
-    }, [id]);
+            }
+        };
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        fetchOffice();
+    }, [id, isEditMode]);
+
+    useEffect(() => {
+        if (isEditMode && office) {
+            setEditedOffice({ ...office });
+        }
+    }, [isEditMode, office]);
+
+    const handleChange = (field, value) => {
+        setEditedOffice(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleEditClick = () => {
+        setEditedOffice({ ...office });
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.set("edit", "true");
+        setSearchParams(newSearchParams);
     };
 
     const handleSave = async () => {
         try {
-            await PostOfficeRepository.update(id, formData);
-            setOffice(formData);
-            setIsEditing(false);
+            await apiPostOffice.update(id, editedOffice);
+            setOffice(editedOffice);
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("edit");
+            setSearchParams(newSearchParams);
+            toast.success("Cập nhật thành công!");
         } catch (err) {
             toast.error("Cập nhật thất bại: " + err.message);
         }
+    };
+
+    const handleCancel = () => {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
+        setEditedOffice(null);
     };
 
     if (loading) return <h2>Loading...</h2>;
@@ -65,14 +96,19 @@ const DetailPostOffice = () => {
                     <img src={deleteIcon} alt="Xóa" /> Xóa
                 </button>
 
-                {!isEditing ? (
-                    <button className="edit" onClick={() => setIsEditing(true)}>
+                {!isEditMode ? (
+                    <button className="edit" onClick={handleEditClick}>
                         <img src={editIcon} alt="Sửa" /> Sửa
                     </button>
                 ) : (
-                    <button className="edit" onClick={handleSave}>
-                        💾 Lưu
-                    </button>
+                    <>
+                        <button className="save" onClick={handleSave}>
+                            <img src={saveIcon} alt="Lưu" /> Lưu
+                        </button>
+                        <button className="cancel" onClick={handleCancel}>
+                            <img src={cancelIcon} alt="Hủy" /> Hủy
+                        </button>
+                    </>
                 )}
 
                 <button className="print">
@@ -89,12 +125,11 @@ const DetailPostOffice = () => {
                     <div className="info-item">
                         <div className="info-label">Tên bưu cục</div>
                         <div className="info-value">
-                            {isEditing ? (
+                            {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="name"
-                                    value={formData.name || ""}
-                                    onChange={handleChange}
+                                    value={editedOffice.name || ""}
+                                    onChange={(e) => handleChange("name", e.target.value)}
                                 />
                             ) : (
                                 office.name
@@ -107,12 +142,11 @@ const DetailPostOffice = () => {
                     <div className="info-item">
                         <div className="info-label">Số điện thoại</div>
                         <div className="info-value">
-                            {isEditing ? (
+                            {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber || ""}
-                                    onChange={handleChange}
+                                    value={editedOffice.phoneNumber || ""}
+                                    onChange={(e) => handleChange("phoneNumber", e.target.value)}
                                 />
                             ) : (
                                 office.phoneNumber
@@ -122,12 +156,11 @@ const DetailPostOffice = () => {
                     <div className="info-item">
                         <div className="info-label">Email</div>
                         <div className="info-value">
-                            {isEditing ? (
+                            {isEditMode ? (
                                 <input
                                     type="email"
-                                    name="email"
-                                    value={formData.email || ""}
-                                    onChange={handleChange}
+                                    value={editedOffice.email || ""}
+                                    onChange={(e) => handleChange("email", e.target.value)}
                                 />
                             ) : (
                                 office.email
@@ -140,12 +173,11 @@ const DetailPostOffice = () => {
                     <div className="info-item">
                         <div className="info-label">Địa chỉ</div>
                         <div className="info-value">
-                            {isEditing ? (
+                            {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="address"
-                                    value={formData.address || ""}
-                                    onChange={handleChange}
+                                    value={editedOffice.address || ""}
+                                    onChange={(e) => handleChange("address", e.target.value)}
                                 />
                             ) : (
                                 office.address
@@ -158,12 +190,11 @@ const DetailPostOffice = () => {
                     <div className="info-item">
                         <div className="info-label">Ghi chú</div>
                         <div className="info-value">
-                            {isEditing ? (
+                            {isEditMode ? (
                                 <input
                                     type="text"
-                                    name="note"
-                                    value={formData.note || ""}
-                                    onChange={handleChange}
+                                    value={editedOffice.note || ""}
+                                    onChange={(e) => handleChange("note", e.target.value)}
                                 />
                             ) : (
                                 office.note

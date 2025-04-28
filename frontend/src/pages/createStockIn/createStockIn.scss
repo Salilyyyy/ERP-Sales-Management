@@ -1,7 +1,7 @@
 $primary-color: #1a3300;
 $border-color: #ccc;
 $bg-light: #f5f5f5;
-$text-color: #1a3300;
+$text-color: #163020;
 
 .create-stockin-container {
     width: 75%;
@@ -9,107 +9,455 @@ $text-color: #1a3300;
     background: #f9f9f9;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  
-    .title {
-      font-size: 24px;
-      font-weight: bold;
-      color: #163020;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-  
+    font-family: Arial, sans-serif;
+    color: $text-color;
+
     .header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-  
-      .back {
-        display: flex;
-        cursor: pointer;
-      }
-  
-  
-      h2 {
-        margin-left: 450px;
-        color: #d32f2f;
-      }
-    }
-  
-    .actions {
-      display: flex;
-      justify-content: flex-end;
-      margin: 20px;
-      button {
-        width: 100px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        margin-left: 10px;
         display: flex;
         align-items: center;
-        padding: 5px 10px;
-        border-radius: 5px;
-        justify-content: center;
-  
-        img {
-          width: 16px;
-          height: 16px;
-          margin-right: 5px;
-          color: #fff;
-        }
-      }
-  
-      .delete {
-        background: #ff3f3f;
-        color: #fff;
-      }
-  
-      .create {
-        background: #fbfada;
-        color: #163020;
-        border: solid 1px #163020;
-      }
-    }
-  
-    
-    .create-stockin-content {
-        background: #eef0e5;
-        padding: 20px;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .info-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        
-        .info-label {
-            width: 150px;
-            font-weight: bold;
-            color: $primary-color;
+        margin-bottom: 20px;
+
+        .back {
+            cursor: pointer;
+            transition: opacity 0.2s;
             display: flex;
+
+            &:hover {
+                opacity: 0.8;
+            }
+
+            img {
+                width: 24px;
+                height: 24px;
+            }
         }
-        .supplier, .item-code {
-            width: 220px;
-        }
-        
-        input, select {
-            width: 200px;
-            padding: 8px;
-            border: 1px solid $border-color;
-            border-radius: 4px;
+
+        h2 {
+            margin-left: 450px;
+            color: #d32f2f;
+            font-size: 24px;
+            font-weight: bold;
         }
     }
-    
-    .double-input {
+
+    .steps {
         display: flex;
-        gap: 10px;
-        
-        .info-item {
+        justify-content: space-between;
+        margin-bottom: 40px;
+        position: relative;
+        padding: 0 40px;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 60px;
+            right: 60px;
+            height: 2px;
+            background: $border-color;
+            z-index: 1;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
             flex: 1;
+            cursor: pointer;
+
+            .step-number {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                background: #fff;
+                border: 2px solid $border-color;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+                color: #666;
+                margin-bottom: 8px;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    border-color: $primary-color;
+                    color: $primary-color;
+                }
+            }
+
+            .step-text {
+                color: #666;
+                font-size: 14px;
+                text-align: center;
+                transition: color 0.3s ease;
+            }
+
+            &.active {
+                .step-number {
+                    background: $primary-color;
+                    border-color: $primary-color;
+                    color: #fff;
+
+                    &:hover {
+                        background: darken($primary-color, 10%);
+                    }
+                }
+
+                .step-text {
+                    color: $primary-color;
+                    font-weight: bold;
+                }
+            }
+        }
+    }
+
+    .create-stockin-content {
+        padding: 15px;
+        background: #EEF0E5;
+        border-radius: 5px;
+
+        .step-content {
+            margin-bottom: 30px;
+
+            .selected-products {
+                margin-top: 20px;
+                background: #fff;
+                border-radius: 4px;
+                padding: 15px;
+
+                h3 {
+                    color: $text-color;
+                    font-size: 16px;
+                    margin-bottom: 15px;
+                }
+
+                .selected-products-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+
+                    th, td {
+                        padding: 12px;
+                        text-align: left;
+                        border-bottom: 1px solid $border-color;
+                    }
+
+                    th {
+                        background-color: $bg-light;
+                        font-weight: bold;
+                        color: $text-color;
+
+                        &:last-child {
+                            width: 60px;
+                        }
+                    }
+
+                    td {
+                        color: #666;
+
+                        .delete-btn {
+                            background: none;
+                            border: none;
+                            cursor: pointer;
+                            padding: 5px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+
+                            img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            &:hover {
+                                opacity: 0.7;
+                            }
+                        }
+                    }
+
+                    tr:hover {
+                        background-color: rgba($bg-light, 0.5);
+                    }
+                }
+            }
+
+            .summary {
+                background: #fff;
+                border-radius: 4px;
+                padding: 20px;
+
+                h3 {
+                    color: $text-color;
+                    font-size: 18px;
+                    margin-bottom: 20px;
+                }
+
+                .summary-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+
+                    th, td {
+                        padding: 12px;
+                        text-align: left;
+                        border-bottom: 1px solid $border-color;
+                    }
+
+                    th {
+                        background-color: $bg-light;
+                        font-weight: bold;
+                        color: $text-color;
+                    }
+
+                    td {
+                        color: #666;
+                    }
+                }
+            }
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: row;
+            margin: 20px;
+            position: relative;
+
+            .info-label {
+                width: 150px;
+                font-weight: bold;
+                color: #333;
+                display: flex;
+                justify-content: flex-start;
+                font-size: 14px;
+            }
+
+            input, select, textarea {
+                width: 215px;
+                padding: 8px 12px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+                font-family: Arial, sans-serif;
+                transition: all 0.2s ease;
+
+                &:focus {
+                    border-color: $text-color;
+                    outline: none;
+                    box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+                }
+
+                &[readonly] {
+                    background-color: #f5f5f5;
+                    cursor: not-allowed;
+                }
+
+                &.input-size {
+                    width: 200px;
+                }
+            }
+
+            textarea {
+                resize: vertical;
+            }
+        }
+    }
+
+    .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin: 20px;
+
+        button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            width: 150px;
+            justify-content: center;
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            img {
+                width: 16px;
+                height: 16px;
+                margin-right: 5px;
+            }
+
+            &.previous {
+                background: #fff;
+                border: 1px solid $text-color;
+                color: $text-color;
+
+                &:hover:not(:disabled) {
+                    background: #f5f5f5;
+                }
+            }
+
+            &.next {
+                background: #fbfada;
+                color: $text-color;
+                border: solid 1px $text-color;
+
+                &:hover:not(:disabled) {
+                    background: $text-color;
+                    color: #fff;
+                }
+            }
+
+            &.delete {
+                background: #ff3f3f;
+                color: #fff;
+
+                &:hover:not(:disabled) {
+                    background: #ff2525;
+                }
+            }
+
+            &.create {
+                background: #fbfada;
+                color: $text-color;
+                border: solid 1px $text-color;
+
+                &:hover:not(:disabled) {
+                    background: $text-color;
+                    color: #fff;
+                }
+            }
+        }
+    }
+
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+
+        .modal-content {
+            background: #EEF0E5;
+            border-radius: 8px;
+            padding: 15px;
+            width: 65%;
+            max-height: 90vh;
+            overflow-y: auto;
+
+            h3 {
+                margin: 0 0 20px;
+                font-size: 18px;
+                font-weight: bold;
+                color: $text-color;
+                text-align: left;
+            }
+
+            .info-item {
+                display: flex;
+                flex-direction: row;
+                margin: 15px 0;
+                position: relative;
+
+                .info-label {
+                    width: 150px;
+                    font-weight: bold;
+                    color: #333;
+                    display: flex;
+                    justify-content: flex-start;
+                    font-size: 14px;
+                }
+
+                input[type="text"],
+                input[type="date"],
+                select {
+                    width: 215px;
+                }
+
+                input[type="number"],
+                .input-size {
+                    width: 100px;
+                }
+
+                input, select, textarea {
+                    padding: 8px 12px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    font-family: Arial, sans-serif;
+                    transition: all 0.2s ease;
+                    background: white;
+
+                    &:focus {
+                        border-color: $text-color;
+                        outline: none;
+                        box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+                    }
+                }
+
+                textarea {
+                    width: 215px;
+                    min-height: 100px;
+                    resize: vertical;
+                }
+
+                &.dimensions {
+                    input {
+                        width: 32%;
+                    }
+                }
+            }
+
+            .modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 1px solid $border-color;
+
+                button {
+                    padding: 8px 12px;
+                    border-radius: 5px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    width: 120px;
+
+                    &.cancel {
+                        background: #fff;
+                        border: 1px solid $border-color;
+                        color: $text-color;
+
+                        &:hover {
+                            background: #f5f5f5;
+                        }
+                    }
+
+                    &.create {
+                        background: #fbfada;
+                        color: $text-color;
+                        border: solid 1px $text-color;
+
+                        &:hover {
+                            background: $text-color;
+                            color: #fff;
+                        }
+                    }
+                }
+            }
         }
     }
 }

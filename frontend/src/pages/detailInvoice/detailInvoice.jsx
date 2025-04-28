@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import "./detailInvoice.scss";
 import InvoiceRepository from "../../api/apiInvoice";
 import deleteIcon from "../../assets/img/delete-icon.svg";
@@ -21,17 +22,17 @@ const OrderDetails = () => {
     try {
       const response = await InvoiceRepository.delete(id);
       if (response.success) {
-        alert("Xóa hóa đơn thành công!");
+        toast.success("Xóa hóa đơn thành công!");
         navigate("/invoices");
       } else {
-        alert(response.message || "Không thể xóa hóa đơn!");
+        toast.error(response.message || "Không thể xóa hóa đơn!");
       }
     } catch (error) {
       console.error("Error deleting invoice:", error);
       if (error.message?.includes('Foreign key constraint')) {
-        alert("Không thể xóa hóa đơn vì có dữ liệu liên quan! Vui lòng xóa vận đơn trước khi xóa hóa đơn.");
+        toast.error("Không thể xóa hóa đơn vì có dữ liệu liên quan! Vui lòng xóa vận đơn trước khi xóa hóa đơn.");
       } else {
-        alert("Không thể xóa hóa đơn! Vui lòng thử lại sau.");
+        toast.error("Không thể xóa hóa đơn! Vui lòng thử lại sau.");
       }
     } finally {
       setShowDeleteConfirm(false);
@@ -70,13 +71,13 @@ const OrderDetails = () => {
           ...updateData
         });
         setIsEditing(false);
-        alert("Cập nhật hóa đơn thành công!");
+        toast.success("Cập nhật hóa đơn thành công!");
       } else {
-        alert(response.message || "Không thể cập nhật hóa đơn!");
+        toast.error(response.message || "Không thể cập nhật hóa đơn!");
       }
     } catch (error) {
       console.error("Error updating invoice:", error);
-      alert("Không thể cập nhật hóa đơn! Vui lòng thử lại sau.");
+      toast.error("Không thể cập nhật hóa đơn! Vui lòng thử lại sau.");
     }
   };
 

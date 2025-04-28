@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./supplier.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -49,18 +50,18 @@ const Suppliers = () => {
                 setIsDropdownOpen(false);
             } catch (err) {
                 console.error('Error deleting supplier:', err);
-                alert('Failed to delete supplier');
+                toast.error('Không thể xóa nhà cung cấp');
             }
         }
     };
 
     const handleExport = async () => {
         try {
-            alert("Xuất danh sách nhà cung cấp!");
+            toast.success("Đã xuất danh sách nhà cung cấp!");
             setIsDropdownOpen(false);
         } catch (err) {
             console.error('Error exporting suppliers:', err);
-            alert('Failed to export suppliers');
+            toast.error('Không thể xuất danh sách nhà cung cấp');
         }
     };
 

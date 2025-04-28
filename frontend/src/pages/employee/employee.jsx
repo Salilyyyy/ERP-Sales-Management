@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./employee.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 import { userApi } from "../../api/apiUser";
 import AuthRepository from "../../api/apiAuth";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -99,7 +100,7 @@ const Employee = () => {
 
     const handleDelete = async () => {
         if (selectedEmployees.length === 0) {
-            alert("Vui lòng chọn nhân viên để xóa");
+            toast.warning("Vui lòng chọn nhân viên để xóa");
             return;
         }
 
@@ -113,10 +114,10 @@ const Employee = () => {
                 getCurrentUserAndEmployees();
                 setSelectedEmployees([]);
                 setIsDropdownOpen(false);
-                alert("Xóa nhân viên thành công");
+                toast.success("Xóa nhân viên thành công");
             } catch (err) {
                 console.error("Error deleting employees:", err);
-                alert("Có lỗi xảy ra khi xóa nhân viên");
+                toast.error("Có lỗi xảy ra khi xóa nhân viên");
             }
         }
     };
@@ -136,7 +137,7 @@ const Employee = () => {
             setIsDropdownOpen(false);
         } catch (err) {
             console.error("Error exporting employees:", err);
-            alert("Có lỗi xảy ra khi xuất danh sách");
+            toast.error("Có lỗi xảy ra khi xuất danh sách");
         }
     };
 

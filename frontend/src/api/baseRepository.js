@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Centralized loading state management
 const loadingStates = new Map();
@@ -38,12 +40,8 @@ class BaseRepository {
         this.api.interceptors.response.use(
             (response) => response,
             (error) => {
-                console.error('API Error:', {
-                    status: error.response?.status,
-                    error: error.response?.data?.error,
-                    details: error.response?.data?.details,
-                    message: error.message
-                });
+                const errorMessage = error.response?.data?.error || error.message;
+                toast.error(errorMessage);
 
                 if ((error.response?.status === 401 || error.response?.status === 403) && 
                     !window.location.pathname.includes('login')) {
@@ -120,6 +118,7 @@ class BaseRepository {
             try {
                 const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
                 BaseRepository.setLoadingState(requestKey, false);
+                toast.success('Thao tác thành công');
                 return response.data;
             } catch (error) {
                 attempts++;
@@ -145,6 +144,7 @@ class BaseRepository {
             try {
                 const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
                 BaseRepository.setLoadingState(requestKey, false);
+                toast.success('Cập nhật thành công');
                 return response.data;
             } catch (error) {
                 attempts++;
@@ -170,6 +170,7 @@ class BaseRepository {
             try {
                 const response = await this.api.delete(this.endpoint + this.normalizePath(path));
                 BaseRepository.setLoadingState(requestKey, false);
+                toast.success('Xóa thành công');
                 return response.data;
             } catch (error) {
                 attempts++;

@@ -95,13 +95,14 @@ const Product = () => {
         setIsDropdownOpen(false);
     };
 
-    const filteredProducts = products
+const filteredProducts = products
         .filter((product) =>
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.ID.toString().includes(searchQuery)
         )
         .filter((product) => (filterType === "all" ? true : String(product.produceCategoriesID) === String(filterType)))
-        .filter((product) => product.name.toLowerCase().includes(filterName.toLowerCase()));
+        .filter((product) => product.name.toLowerCase().includes(filterName.toLowerCase()))
+        .sort((a, b) => a.ID - b.ID);
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;

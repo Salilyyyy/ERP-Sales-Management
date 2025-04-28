@@ -252,8 +252,8 @@ const Customer = () => {
                             <td>{customer.Invoices?.length || 0}</td>
                             <td>{customer.address}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon"><img src={editIcon} alt="Sửa" /> Sửa</button>
+                <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

@@ -234,7 +234,7 @@ const Categories = () => {
                                 </button>
                                 <button 
                                     className="btn-icon"
-                                    onClick={() => navigate(`/edit-category/${category.ID}`)}
+                                    onClick={() => navigate(`/category/${category.ID}?edit=true`)}
                                 >
                                     <img src={editIcon} alt="Sửa" /> Sửa
                                 </button>

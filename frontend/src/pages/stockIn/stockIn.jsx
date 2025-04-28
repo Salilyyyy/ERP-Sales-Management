@@ -281,7 +281,7 @@ const Stockin = () => {
                                                 {showStockInfo && (
                                                     <td className="action-buttons" rowSpan={rowSpan}>
                                                         <button className="btn-icon" onClick={() => navigate(`/stockin/${stockItem.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                                        <button className="btn-icon" onClick={() => navigate(`/stockin/${stockItem.ID}/edit`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                                        <button className="btn-icon" onClick={() => navigate(`/stockin/${stockItem.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                                                     </td>
                                                 )}
                                             </tr>

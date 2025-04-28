@@ -4,7 +4,6 @@ import "./invoices.scss";
 import { toast } from 'react-toastify';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
-
 import checkIcon from "../../assets/img/tick-icon.svg";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
@@ -23,7 +22,6 @@ const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
     const [error, setError] = useState(null);
 
-    // Get loading state from BaseRepository
     const requestKey = '/invoices';
     const isLoading = BaseRepository.getLoadingState(requestKey);
 
@@ -203,9 +201,9 @@ const Invoices = () => {
                                             <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
                                                 <img src={viewIcon} alt="Xem" /> Xem
                                             </button>
-                                            <button className="btn-icon" onClick={() => navigate(`/edit-invoice/${inv.id}`)}>
-                                                <img src={editIcon} alt="Sửa" /> Sửa
-                                            </button>
+                            <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}?edit=true`)}>
+                                <img src={editIcon} alt="Sửa" /> Sửa
+                            </button>
                                         </td>
                                     </tr>
                                 ))}

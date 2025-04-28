@@ -155,7 +155,7 @@ const Suppliers = () => {
                                 <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}`)}>
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
-                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}/edit`)}>
+                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}?edit=true`)}>
                                     <img src={editIcon} alt="Sửa" /> Sửa
                                 </button>
                             </td>

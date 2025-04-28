@@ -224,7 +224,7 @@ const Promotion = () => {
                                     <td>{promotion.quantity}</td>
                                     <td className="action-buttons">
                                         <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                        <button className="btn-icon" onClick={() => navigate(`/edit-promotion/${promotion.ID}`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                        <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                                     </td>
                                 </tr>
                             ))}

@@ -64,6 +64,119 @@
 
     
   }
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .popup-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+    .popup-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  
+      h3 {
+        margin: 0;
+        color: #163020;
+        font-size: 18px;
+      }
+  
+      span {
+        cursor: pointer;
+        color: #999;
+        &:hover {
+          color: #666;
+        }
+      }
+    }
+  
+    .popup-body {
+      padding: 24px;
+  
+      .form-group {
+        margin-bottom: 16px;
+  
+        label {
+          display: flex;
+          margin-bottom: 8px;
+          color: #163020;
+          font-weight: 600;
+        }
+  
+        input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #d9d9d9;
+          border-radius: 4px;
+          font-size: 14px;
+  
+          &:focus {
+            border-color: #163020;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+          }
+  
+          &::placeholder {
+            color: #bfbfbf;
+          }
+        }
+      }
+  
+      .popup-actions {
+        margin-top: 24px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+  
+        button {
+          padding: 8px 16px;
+          border-radius: 4px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+  
+          &.btn-cancel {
+            background-color: white;
+            border: 1px solid #d9d9d9;
+            color: rgba(0, 0, 0, 0.85);
+  
+            &:hover {
+              border-color: #163020;
+              color: #163020;
+            }
+          }
+  
+          &.btn-create {
+            background-color: #163020;
+            border: none;
+            color: white;
+  
+            &:hover {
+              background-color: #2c5738;
+            }
+          }
+        }
+      }
+    }
+  }
+  
 
   .section {
     padding: 15px;

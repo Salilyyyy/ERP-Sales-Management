@@ -38,7 +38,6 @@ const Suppliers = () => {
         }
     };
 
-    // Get loading state from BaseRepository
     const requestKey = supplierApi.endpoint;
     const isLoading = BaseRepository.getLoadingState(requestKey);
 

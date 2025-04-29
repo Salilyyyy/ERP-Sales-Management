@@ -74,7 +74,6 @@ const DetailStockIn = () => {
         fetchStockIn();
     }, [id, isEditMode]);
 
-    // Get loading state from BaseRepository
     const requestKey = `/stockins/${id}`;
     const isLoading = BaseRepository.getLoadingState(requestKey);
 

@@ -35,7 +35,6 @@ const Shipping = () => {
     const fetchData = async () => {
         try {
             setIsLoading(true);
-            // Create timeout promises
             const timeoutPromise = (ms) => new Promise((_, reject) =>
                 setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
             );

@@ -45,7 +45,7 @@ model InvoiceDetails {
   Products  Products @relation(fields: [productID], references: [ID])
 }
 
-model Products {
+model Product {
   ID                  Int                @id @default(autoincrement())
   produceCategoriesID Int
   unit                String
@@ -62,12 +62,11 @@ model Products {
   quantity            Int
   title               String
   description         String?
-  InvoiceDetails      InvoiceDetails[]
-  DetailStockins      DetailStockins[]
-  productCategory     ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
-  supplier            Suppliers         @relation(fields: [supplierID], references: [ID])
+  InvoiceDetails      InvoiceDetails[]   
+  DetailStockins      DetailStockins[]   
+  productCategory     ProductCategories  @relation(fields: [produceCategoriesID], references: [ID]) 
+  supplier            Suppliers          @relation(fields: [supplierID], references: [ID]) 
 }
-
 
 model ProductCategories {
   ID          Int        @id @default(autoincrement())

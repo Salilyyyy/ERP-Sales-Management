@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./promotion.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -8,6 +9,8 @@ import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
 import apiPromotion from "../../api/apiPromotion";
+import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 
 const formatDateTime = (dateString) => {
     if (!dateString) return '';
@@ -34,17 +37,44 @@ const Promotion = () => {
     const [endDateFilter, setEndDateFilter] = useState("");
     const [promotions, setPromotions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
-        fetchPromotions();
+        let isMounted = true;
+        
+        const loadPromotions = async () => {
+            try {
+                const response = await apiPromotion.getAll();
+                if (isMounted) {
+                    setPromotions(response);
+                }
+            } catch (error) {
+                if (isMounted) {
+                    toast.error(error.message || "Không thể tải danh sách khuyến mãi");
+                    setPromotions([]);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPromotions();
+        
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const fetchPromotions = async () => {
+        setLoading(true);
         try {
             const response = await apiPromotion.getAll();
             setPromotions(response);
         } catch (error) {
-            console.error("Failed to fetch promotions:", error);
+            toast.error(error.message || "Không thể tải danh sách khuyến mãi");
+            setPromotions([]);
         } finally {
             setLoading(false);
         }
@@ -62,21 +92,31 @@ const Promotion = () => {
         };
     }, []);
 
-    const handleDelete = async () => {
+    const handleDeleteClick = () => {
+        if (selectedPromotions.length === 0) {
+            toast.warn("Vui lòng chọn ít nhất một khuyến mãi để xóa");
+            return;
+        }
+        setShowDeleteConfirm(true);
+        setIsDropdownOpen(false);
+    };
+
+    const handleDeleteConfirm = async () => {
+        setShowDeleteConfirm(false);
         try {
             for (const id of selectedPromotions) {
                 await apiPromotion.delete(id);
             }
+            toast.success(`Đã xóa ${selectedPromotions.length} khuyến mãi thành công`);
             await fetchPromotions();
             setSelectedPromotions([]);
-            setIsDropdownOpen(false);
         } catch (error) {
-            console.error("Failed to delete promotions:", error);
+            toast.error(error.message || "Không thể xóa khuyến mãi");
         }
     };
 
     const handleExport = () => {
-        alert("Xuất danh sách khuyến mãi!");
+        toast.info("Tính năng xuất dữ liệu sẽ được cập nhật trong thời gian tới");
         setIsDropdownOpen(false);
     };
 
@@ -147,7 +187,7 @@ const Promotion = () => {
                         </button>
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDelete}>
+                                <li className="dropdown-item" onClick={handleDeleteClick}>
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
@@ -188,7 +228,7 @@ const Promotion = () => {
             </div>
 
             {loading ? (
-                <div className="loading">Loading...</div>
+                <LoadingSpinner />
             ) : (
                 <>
                     <table className="promotion-table">
@@ -252,6 +292,12 @@ const Promotion = () => {
                     </div>
                 </>
             )}
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message={`Bạn có chắc chắn muốn xóa ${selectedPromotions.length} khuyến mãi đã chọn?`}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

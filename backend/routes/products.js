@@ -52,19 +52,26 @@ router.post('/', async (req, res) => {
 // Get all products
 router.get('/', async (req, res) => {
   try {
-    const products = await prisma.products.findMany();
+    const products = await prisma.products.findMany({
+      include: {
+        categories: true, 
+      },
+    });
     res.status(200).json(products);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get a single product by ID
+// Get a single product by ID with category name
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const product = await prisma.products.findUnique({
       where: { ID: parseInt(id) },
+      include: {
+        categories: true, 
+      },
     });
     if (product) {
       res.status(200).json(product);

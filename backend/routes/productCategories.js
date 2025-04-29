@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
         promotion,
         tax,
         description,
-        notes
+        notes,
       },
     });
     res.status(201).json(productCategory);
@@ -25,22 +25,29 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get all product categories
+// Get all product categories with their related products
 router.get('/', async (req, res) => {
   try {
-    const productCategories = await prisma.productCategories.findMany();
+    const productCategories = await prisma.productCategories.findMany({
+      include: {
+        Products: true, // Bao gồm tất cả các sản phẩm liên quan đến danh mục
+      },
+    });
     res.status(200).json(productCategories);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Get a single product category by ID
+// Get a single product category by ID with its related products
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const productCategory = await prisma.productCategories.findUnique({
       where: { ID: parseInt(id) },
+      include: {
+        Products: true, // Bao gồm tất cả các sản phẩm liên quan đến danh mục
+      },
     });
     if (productCategory) {
       res.status(200).json(productCategory);
@@ -66,7 +73,7 @@ router.put('/:id', async (req, res) => {
         promotion,
         tax,
         description,
-        notes
+        notes,
       },
     });
     res.status(200).json(productCategory);
@@ -83,6 +90,26 @@ router.delete('/:id', async (req, res) => {
       where: { ID: parseInt(id) },
     });
     res.status(204).end();
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// API Get products by category
+router.get('/categories/:categoryId', async (req, res) => {
+  const { categoryId } = req.params;
+  try {
+    const productCategory = await prisma.productCategories.findUnique({
+      where: { ID: parseInt(categoryId) },
+      include: {
+        Products: true,
+      },
+    });
+    if (productCategory) {
+      res.status(200).json(productCategory);
+    } else {
+      res.status(404).json({ error: 'Danh mục sản phẩm không tồn tại' });
+    }
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

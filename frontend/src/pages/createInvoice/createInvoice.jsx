@@ -4,9 +4,9 @@ import axios from "axios";
 import { toast } from 'react-toastify';
 import apiInvoice from "../../api/apiInvoice";
 import apiCustomer from "../../api/apiCustomer";
-import apiProduct from "../../api/apiProduct";
+import apiProductCategory from "../../api/apiProductCategory";
+import apiPromotion from "../../api/apiPromotion";
 import "./createInvoice.scss";
-import { listEmployee } from "../../mock/mock";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
@@ -16,9 +16,18 @@ const CreateInvoice = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [isNewCustomer, setIsNewCustomer] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [showCustomerPopup, setShowCustomerPopup] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    name: "",
+    phoneNumber: "",
+    organizationName: "",
+    taxCode: "",
+    address: "",
+    postalCode: "",
+    note: "",
+    email: "",
+    bonusPoints: 0,
+  });
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
@@ -41,6 +50,38 @@ const CreateInvoice = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
 
+  const [promotions, setPromotions] = useState([]);
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [vatRate, setVatRate] = useState(10);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+
+  const [vat, setVat] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0)
+
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const response = await apiPromotion.getAll();
+        console.log("Promotions response:", response);
+        if (Array.isArray(response)) {
+          const today = new Date();
+          const activePromotions = response.filter(promo => new Date(promo.dateEnd) > today);
+          console.log("Active promotions:", activePromotions);
+          setPromotions(activePromotions);
+        }
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+        setPromotions([]);
+      }
+    };
+    fetchPromotions();
+  }, []);
+
+
+
+  const totalAmount = invoiceItems.reduce((sum, item) => sum + item.total, 0);
+
   const addProductToInvoice = () => {
     if (!selectedProduct) {
       toast.warning("Vui lòng chọn sản phẩm");
@@ -50,35 +91,47 @@ const CreateInvoice = () => {
       toast.warning("Vui lòng nhập số lượng hợp lệ");
       return;
     }
-    const newItem = {
-      id: selectedProduct.id,
-      name: selectedProduct.name,
-      unit: selectedProduct.unit || "N/A",
-      quantity: quantity,
-      price: selectedProduct.outPrice,
-      total: selectedProduct.outPrice * quantity,
-    };
-    setInvoiceItems([...invoiceItems, newItem]);
+
+    const existingItemIndex = invoiceItems.findIndex(item => item.id === selectedProduct.ID);
+
+    if (existingItemIndex >= 0) {
+      const updatedItems = [...invoiceItems];
+      const updatedItem = updatedItems[existingItemIndex];
+      updatedItem.quantity += quantity;
+      updatedItem.total = updatedItem.price * updatedItem.quantity;
+      setInvoiceItems(updatedItems);
+      setQuantity(1); 
+    } else {
+      const newItem = {
+        id: selectedProduct.ID,
+        name: selectedProduct.name,
+        unit: selectedProduct.unit || "N/A",
+        quantity: quantity,
+        price: selectedProduct.outPrice,
+        total: selectedProduct.outPrice * quantity,
+      };
+      setInvoiceItems([...invoiceItems, newItem]);
+      setQuantity(1);
+    }
   };
 
-  const handleProductChange = async (e) => {
-    const selectedProductId = e.target.value;
-    if (!selectedProductId) {
+  const handleProductChange = (e) => {
+    const selectedProductId = parseInt(e.target.value);
+    if (!selectedProductId || isNaN(selectedProductId)) {
       setSelectedProduct(null);
       return;
     }
-    
-    try {
-      const product = await apiProduct.getById(selectedProductId);
+
+    const product = products.find(p => p.ID === selectedProductId);
+    if (product) {
       setSelectedProduct(product);
-    } catch (error) {
-      console.error("Error fetching product details:", error);
-      toast.error("Không thể lấy thông tin sản phẩm");
+    } else {
       setSelectedProduct(null);
+      toast.error("Không thể tìm thấy sản phẩm");
     }
   };
+
   const resetForm = () => {
-    setSelectedEmployee("");
     setSelectedProvince("");
     setSelectedDistrict("");
     setSelectedWard("");
@@ -88,37 +141,79 @@ const CreateInvoice = () => {
     setQuantity(1);
     setShippingOption("");
     setPaymentMethod("");
-    setDiscountRate(0);
-    setVatRate(5);
-    setCustomerName("");
-    setCustomerPhone("");
+    setSelectedPromotion(null);
+    setVatRate(10);
     setRecipientName("");
     setRecipientPhone("");
     setRecipientAddress("");
     setNote("");
     setIsPaid(false);
     setSelectedCustomerId("");
-    setIsNewCustomer(false);
+    setNewCustomer({
+      name: "",
+      phoneNumber: "",
+      organizationName: "",
+      taxCode: "",
+      address: "",
+      postalCode: "",
+      note: "",
+      email: "",
+      bonusPoints: 0,
+    });
   };
+  useEffect(() => {
+    const vatValue = (totalAmount * vatRate) / 100;
+    const discountValue = selectedPromotion
+      ? selectedPromotion.type === "percentage"
+        ? (totalAmount * selectedPromotion.value) / 100
+        : selectedPromotion.value * 1000
+      : 0;
+    const finalTotal = Math.max(0, totalAmount + vatValue - discountValue);
+
+    setVat(vatValue);
+    setDiscount(Math.min(discountValue, totalAmount + vatValue));
+    setGrandTotal(finalTotal);
+  }, [totalAmount, vatRate, selectedPromotion]);
 
   const handleCreateInvoice = async () => {
     try {
-      let customerId = selectedCustomerId;
-
-      if (isNewCustomer) {
-        if (!customerName || !customerPhone) {
-          toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
-          return;
-        }
-        const newCustomer = await apiCustomer.create({
-          name: customerName,
-          phoneNumber: customerPhone
-        });
-        customerId = newCustomer.id;
+      if (!selectedCustomerId) {
+        toast.warning("Vui lòng chọn khách hàng");
+        return;
       }
 
+      if (invoiceItems.length === 0) {
+        toast.warning("Vui lòng thêm ít nhất một sản phẩm");
+        return;
+      }
+
+      if (!paymentMethod) {
+        toast.warning("Vui lòng chọn hình thức thanh toán");
+        return;
+      }
+
+      if (!shippingOption) {
+        toast.warning("Vui lòng chọn hình thức vận chuyển");
+        return;
+      }
+
+      if (
+        shippingOption === "ship" &&
+        (!recipientName ||
+          !recipientPhone ||
+          !recipientAddress ||
+          !selectedProvince ||
+          !selectedDistrict ||
+          !selectedWard)
+      ) {
+        toast.warning("Vui lòng điền đầy đủ thông tin giao hàng");
+        return;
+      }
+
+      const bonusPoints = Math.floor(grandTotal / 100);
+
       const invoiceData = {
-        customerId,
+        customerId: selectedCustomerId,
         recipientName,
         recipientPhone,
         recipientAddress,
@@ -127,51 +222,144 @@ const CreateInvoice = () => {
         isDelivery: shippingOption === "ship",
         paymentMethod,
         employeeName: selectedEmployee,
-        items: invoiceItems.map(item => ({
+        items: invoiceItems.map((item) => ({
           productId: item.id,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
         })),
-        province: provinces.find(p => p.code === selectedProvince)?.name || "",
-        district: districts.find(d => d.code === selectedDistrict)?.name || "",
-        ward: wards.find(w => w.code === selectedWard)?.name || "",
+        province:
+          provinces.find((p) => p.code === selectedProvince)?.name || "",
+        district:
+          districts.find((d) => d.code === selectedDistrict)?.name || "",
+        ward: wards.find((w) => w.code === selectedWard)?.name || "",
         vat: vatRate,
-        discount: discountRate,
-        totalAmount: grandTotal
+        discount: discount,
+        promotionId: selectedPromotion?.ID,
+        totalAmount: grandTotal,
+        bonusPoints: bonusPoints,
       };
 
-      await apiInvoice.create(invoiceData);
+      const createdInvoice = await apiInvoice.create(invoiceData);
+
+      const selectedCustomer = customers.find(
+        (c) => c.id === selectedCustomerId
+      );
+      if (selectedCustomer) {
+        const updatedBonusPoints = selectedCustomer.bonusPoints + bonusPoints;
+        await apiCustomer.update(selectedCustomerId, {
+          ...selectedCustomer,
+          bonusPoints: updatedBonusPoints,
+        });
+        toast.success(`Khách hàng được cộng ${bonusPoints} điểm thưởng`);
+      }
+
+      toast.success("Tạo hóa đơn thành công");
       navigate("/invoices");
     } catch (error) {
       toast.error(error.message || "Có lỗi xảy ra khi tạo hóa đơn");
     }
   };
 
-  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await apiProduct.getAll();
-        setCategories(response);
+        const response = await apiProductCategory.getAll();
+        if (Array.isArray(response)) {
+          setCategories(response);
+        }
       } catch (error) {
         console.error("Error fetching categories:", error);
+        setCategories([]);
       }
     };
     fetchCategories();
   }, []);
 
-  const handleCategoryChange = async (e) => {
-    const categoryId = e.target.value;
-    setSelectedCategory(categoryId);
-    setSelectedProduct(null);
-    
-    if (categoryId) {
+  useEffect(() => {
+    const fetchCustomers = async () => {
       try {
-        const response = await apiProduct.getAll({ produceCategoriesID: categoryId });
-        setProducts(response);
+        const response = await apiCustomer.getAll();
+        if (Array.isArray(response)) {
+          setCustomers(response);
+        } else {
+          console.error("Invalid response format for customers:", response);
+          setCustomers([]);
+        }
       } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
+        console.error("Error fetching customers:", error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("https://provinces.open-api.vn/api/p/")
+      .then((response) => {
+        setProvinces(response.data);
+      })
+      .catch((error) => console.error("Error fetching provinces:", error));
+  }, []);
+
+  useEffect(() => {
+    if (selectedProvince) {
+      axios
+        .get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`)
+        .then((response) => {
+          setDistricts(response.data.districts);
+          setWards([]);
+          setSelectedDistrict("");
+          setSelectedWard("");
+        })
+        .catch((error) => console.error("Error fetching districts:", error));
+    }
+  }, [selectedProvince]);
+
+  useEffect(() => {
+    if (selectedDistrict) {
+      axios
+        .get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
+        .then((response) => {
+          setWards(response.data.wards);
+          setSelectedWard("");
+        })
+        .catch((error) => console.error("Error fetching wards:", error));
+    }
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.name) {
+      setSelectedEmployee(user.name);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (shippingOption === "noShip" && paymentMethod === "cod") {
+      setPaymentMethod("");
+      toast.info(
+        "Hình thức thanh toán COD đã bị hủy do không chọn ship hàng"
+      );
+    }
+  }, [shippingOption]);
+
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+    setSelectedCategory(value);
+    setSelectedProduct(null);
+    setProducts([]);
+
+    if (value) {
+      const categoryId = parseInt(value);
+      if (!isNaN(categoryId)) {
+        const selectedCat = categories.find(cat => cat.ID === categoryId);
+        if (selectedCat && Array.isArray(selectedCat.Products)) {
+          setProducts(selectedCat.Products);
+        } else {
+          setProducts([]);
+          toast.error("Không tìm thấy sản phẩm trong loại này");
+        }
       }
     } else {
       setProducts([]);
@@ -179,90 +367,173 @@ const CreateInvoice = () => {
   };
 
   const removeItem = (indexToRemove) => {
-    setInvoiceItems(invoiceItems.filter((_, index) => index !== indexToRemove));
+    setInvoiceItems(
+      invoiceItems.filter((_, index) => index !== indexToRemove)
+    );
   };
 
-
-  // Fetch customers list
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const response = await apiCustomer.getAll();
-        console.log("customer", response);
-        setCustomers(response || []);
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-      }
-    };
-    fetchCustomers();
-  }, []);
-
-  // Handle customer selection
   const handleCustomerChange = (e) => {
     const value = e.target.value;
+
     if (value === "new") {
-      setIsNewCustomer(true);
+      setShowCustomerPopup(true);
       setSelectedCustomerId("");
-      setCustomerName("");
-      setCustomerPhone("");
       setRecipientName("");
       setRecipientPhone("");
       setRecipientAddress("");
-    } else {
-      setIsNewCustomer(false);
-      setSelectedCustomerId(value);
-      const selectedCustomer = customers.find(c => c.id === value);
-      if (selectedCustomer) {
-        setCustomerName(selectedCustomer.name);
-        setCustomerPhone(selectedCustomer.phoneNumber || '');
-        // Auto-fill recipient information with customer info
-        setRecipientName(selectedCustomer.name);
-        setRecipientPhone(selectedCustomer.phoneNumber || '');
-        setRecipientAddress(selectedCustomer.address || '');
-      }
+      return;
+    }
+
+    if (!value) {
+      setSelectedCustomerId("");
+      setRecipientName("");
+      setRecipientPhone("");
+      setRecipientAddress("");
+      return;
+    }
+
+    setSelectedCustomerId(value);
+
+    const selectedCustomer = customers.find((c) => c.id === value);
+    if (selectedCustomer) {
+      setRecipientName(selectedCustomer.name ?? "");
+      setRecipientPhone(selectedCustomer.phoneNumber ?? "");
+      setRecipientAddress(selectedCustomer.address ?? "");
     }
   };
 
-  useEffect(() => {
-    axios.get("https://provinces.open-api.vn/api/p/")
-      .then(response => {
-        setProvinces(response.data);
-      })
-      .catch(error => console.error("Error fetching provinces:", error));
-  }, []);
+  const handleCreateNewCustomer = async () => {
+    try {
+      if (!newCustomer.name || !newCustomer.phoneNumber) {
+        toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
+        return;
+      }
+      const customerData = {
+        name: newCustomer.name,
+        phoneNumber: newCustomer.phoneNumber,
+        organization: newCustomer.organizationName,
+        tax: newCustomer.taxCode,
+        email: newCustomer.email,
+        address: newCustomer.address,
+        postalCode: newCustomer.postalCode,
+        notes: newCustomer.note,
+        bonusPoints: 0,
+      };
+      const createdCustomer = await apiCustomer.create(customerData);
+      setCustomers([...customers, createdCustomer]);
+      setSelectedCustomerId(createdCustomer.id);
+      setShowCustomerPopup(false);
 
-  useEffect(() => {
-    if (selectedProvince) {
-      axios.get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`)
-        .then(response => {
-          setDistricts(response.data.districts);
-          setWards([]);
-          setSelectedDistrict("");
-          setSelectedWard("");
-        })
-        .catch(error => console.error("Error fetching districts:", error));
+      setRecipientName(createdCustomer.name);
+      setRecipientPhone(createdCustomer.phoneNumber);
+      setRecipientAddress(createdCustomer.address || "");
+      setNewCustomer({
+        name: "",
+        phoneNumber: "",
+        organizationName: "",
+        taxCode: "",
+        address: "",
+        postalCode: "",
+        note: "",
+        email: "",
+        bonusPoints: 0,
+      });
+      toast.success("Tạo khách hàng mới thành công");
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi tạo khách hàng mới");
     }
-  }, [selectedProvince]);
+  };
 
-  useEffect(() => {
-    if (selectedDistrict) {
-      axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
-        .then(response => {
-          setWards(response.data.wards);
-          setSelectedWard("");
-        })
-        .catch(error => console.error("Error fetching wards:", error));
-    }
-  }, [selectedDistrict]);
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [discountRate, setDiscountRate] = useState(0);
-  const [vatRate, setVatRate] = useState(10);
-  const totalAmount = invoiceItems.reduce((sum, item) => sum + item.total, 0);
-  const discount = (totalAmount * discountRate) / 100;
-  const vat = (totalAmount * vatRate) / 100;
-  const grandTotal = totalAmount + vat - discount;
   return (
     <div className="invoice-container">
+      {showCustomerPopup && (
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <div className="popup-header">
+              <h3>Thêm khách hàng mới</h3>
+              <span onClick={() => setShowCustomerPopup(false)} style={{ cursor: "pointer", fontSize: "20px", fontWeight: "bold" }}>×</span>
+            </div>
+            <div className="popup-body">
+              <div className="form-group">
+                <label>Tên khách hàng</label>
+                <input
+                  type="text"
+                  value={newCustomer.name}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                  placeholder="Nhập tên khách hàng"
+                />
+              </div>
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <input
+                  type="text"
+                  value={newCustomer.phoneNumber}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, phoneNumber: e.target.value })}
+                  placeholder="Nhập số điện thoại"
+                />
+              </div>
+              <div className="form-group">
+                <label>Tên tổ chức</label>
+                <input
+                  type="text"
+                  value={newCustomer.organizationName}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, organizationName: e.target.value })}
+                  placeholder="Nhập tên tổ chức"
+                />
+              </div>
+              <div className="form-group">
+                <label>Mã số thuế</label>
+                <input
+                  type="text"
+                  value={newCustomer.taxCode}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, taxCode: e.target.value })}
+                  placeholder="Nhập mã số thuế"
+                />
+              </div>
+              <div className="form-group">
+                <label>Địa chỉ</label>
+                <input
+                  type="text"
+                  value={newCustomer.address}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                  placeholder="Nhập địa chỉ"
+                />
+              </div>
+              <div className="form-group">
+                <label>Mã bưu điện</label>
+                <input
+                  type="text"
+                  value={newCustomer.postalCode}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, postalCode: e.target.value })}
+                  placeholder="Nhập mã bưu điện"
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                  placeholder="Nhập email"
+                />
+              </div>
+              <div className="form-group">
+                <label>Ghi chú</label>
+                <input
+                  type="text"
+                  value={newCustomer.note}
+                  onChange={(e) => setNewCustomer({ ...newCustomer, note: e.target.value })}
+                  placeholder="Nhập ghi chú"
+                />
+              </div>
+              <div className="popup-actions">
+                <button className="btn-cancel" onClick={() => setShowCustomerPopup(false)}>Hủy</button>
+                <button className="btn-create" onClick={handleCreateNewCustomer}>Tạo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="header">
         <div className="back" onClick={() => navigate("/invoices")}>
           <img src={backIcon} alt="Quay lại" />
@@ -279,20 +550,18 @@ const CreateInvoice = () => {
         <div className="section-1">
           <div className="form-group">
             <label>Nhân viên bán</label>
-            <select value={selectedEmployee} onChange={(e) => setSelectedEmployee(e.target.value)}>
-              <option value="">Chọn nhân viên</option>
-              {listEmployee.map((employee) => (
-                <option key={employee.id} value={employee.name}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={selectedEmployee}
+              disabled
+              style={{ backgroundColor: "#f5f5f5" }}
+            />
           </div>
           <div className="form-group"></div>
           <div className="form-group">
             <label>Khách hàng</label>
             <select
-              value={isNewCustomer ? "new" : selectedCustomerId}
+              value={selectedCustomerId || ""}
               onChange={handleCustomerChange}
             >
               <option value="">Chọn khách hàng</option>
@@ -304,39 +573,7 @@ const CreateInvoice = () => {
               <option value="new">+ Thêm khách hàng mới</option>
             </select>
           </div>
-          {!isNewCustomer && selectedCustomerId && (
-            <div className="form-group">
-              <label>Số điện thoại khách hàng</label>
-              <input
-                type="text"
-                value={customerPhone}
-                disabled
-                style={{ backgroundColor: "#f5f5f5" }}
-              />
-            </div>
-          )}
-          {isNewCustomer && (
-            <>
-              <div className="form-group">
-                <label>Tên khách hàng mới</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Nhập tên khách hàng"
-                />
-              </div>
-              <div className="form-group">
-                <label>Số điện thoại</label>
-                <input
-                  type="text"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="Nhập số điện thoại"
-                />
-              </div>
-            </>
-          )}
+
           <div className="checkbox-group">
             <label style={{ fontWeight: 700, color: "#163020", marginRight: "100px" }}>Vận chuyển</label>
 
@@ -356,79 +593,90 @@ const CreateInvoice = () => {
                 name="shippingOption"
                 value="noShip"
                 checked={shippingOption === "noShip"}
-                onChange={() => setShippingOption("noShip")}
+                onChange={() => {
+                  setShippingOption("noShip");
+                  setRecipientName("");
+                  setRecipientPhone("");
+                  setRecipientAddress("");
+                  setSelectedProvince("");
+                  setSelectedDistrict("");
+                  setSelectedWard("");
+                }}
               /> Không ship hàng
             </label>
           </div>
-          <div className="form-group"></div>
-          <div className="form-group">
-            <label>Tên người nhận</label>
-            <input
-              type="text"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>SĐT người nhận</label>
-            <input
-              type="text"
-              value={recipientPhone}
-              onChange={(e) => setRecipientPhone(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Địa chỉ người nhận</label>
-            <input
-              type="text"
-              value={recipientAddress}
-              onChange={(e) => setRecipientAddress(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Tỉnh/Thành phố</label>
-            <select
-              value={selectedProvince}
-              onChange={(e) => setSelectedProvince(e.target.value)}
-            >
-              <option value="">Chọn Tỉnh/Thành phố</option>
-              {provinces.map((province) => (
-                <option key={province.code} value={province.code}>
-                  {province.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Quận/Huyện</label>
-            <select
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              disabled={!selectedProvince}
-            >
-              <option value="">Chọn Quận/Huyện</option>
-              {districts.map((district) => (
-                <option key={district.code} value={district.code}>
-                  {district.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Phường/Xã</label>
-            <select
-              value={selectedWard}
-              onChange={(e) => setSelectedWard(e.target.value)}
-              disabled={!selectedDistrict}
-            >
-              <option value="">Chọn Phường/Xã</option>
-              {wards.map((ward) => (
-                <option key={ward.code} value={ward.code}>
-                  {ward.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {shippingOption === "ship" && (
+            <>
+              <div className="form-group">
+                <label>Tên người nhận</label>
+                <input
+                  type="text"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>SĐT người nhận</label>
+                <input
+                  type="text"
+                  value={recipientPhone}
+                  onChange={(e) => setRecipientPhone(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Địa chỉ người nhận</label>
+                <input
+                  type="text"
+                  value={recipientAddress}
+                  onChange={(e) => setRecipientAddress(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Tỉnh/Thành phố</label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                >
+                  <option value="">Chọn Tỉnh/Thành phố</option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Quận/Huyện</label>
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => setSelectedDistrict(e.target.value)}
+                  disabled={!selectedProvince}
+                >
+                  <option value="">Chọn Quận/Huyện</option>
+                  {districts.map((district) => (
+                    <option key={district.code} value={district.code}>
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Phường/Xã</label>
+                <select
+                  value={selectedWard}
+                  onChange={(e) => setSelectedWard(e.target.value)}
+                  disabled={!selectedDistrict}
+                >
+                  <option value="">Chọn Phường/Xã</option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </div>
         <div className="form-group-col">
           <div className="checkbox-group">
@@ -460,7 +708,14 @@ const CreateInvoice = () => {
                 name="paymentMethod"
                 value="cod"
                 checked={paymentMethod === "cod"}
-                onChange={() => setPaymentMethod("cod")}
+                disabled={shippingOption !== "ship"}
+                onChange={() => {
+                  if (shippingOption === "ship") {
+                    setPaymentMethod("cod");
+                  } else {
+                    toast.warning("COD chỉ khả dụng khi chọn ship hàng");
+                  }
+                }}
               /> COD
             </label>
           </div>
@@ -496,7 +751,7 @@ const CreateInvoice = () => {
             <select onChange={handleCategoryChange} value={selectedCategory}>
               <option value="">Chọn loại</option>
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>
+                <option key={category.ID} value={category.ID}>
                   {category.name}
                 </option>
               ))}
@@ -506,15 +761,15 @@ const CreateInvoice = () => {
             <label>Tên sản phẩm</label>
             <select
               onChange={handleProductChange}
-              value={selectedProduct?.id || ""}
+              value={selectedProduct?.ID || ""}
               disabled={!selectedCategory}
             >
               <option value="">Chọn sản phẩm</option>
               {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
+                <option key={product.ID} value={product.ID}>
+                  {product.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="form-group">
@@ -566,18 +821,30 @@ const CreateInvoice = () => {
         </table>
         <div className="section-4">
           <div className="form-group">
-            <label>Khuyến mãi (%)</label>
-            <select value={discountRate} onChange={(e) => setDiscountRate(Number(e.target.value))}>
-              <option value="0">0%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="15">15%</option>
+            <label>Khuyến mãi</label>
+            <select
+              value={selectedPromotion?.ID || ""}
+              onChange={(e) => {
+                const promoId = parseInt(e.target.value);
+                const promo = promotions.find(p => p.ID === promoId);
+                setSelectedPromotion(promo || null);
+              }}
+            >
+              <option value="">Không áp dụng</option>
+              {promotions.map((promotion) => (
+                <option key={promotion.ID} value={promotion.ID}>
+                  {promotion.name} ({promotion.value}{promotion.type === "percentage" ? "%" : "k"})
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="form-group">
             <label>Thuế VAT (%)</label>
-            <select value={vatRate} onChange={(e) => setVatRate(Number(e.target.value))}>
+            <select
+              value={vatRate}
+              onChange={(e) => setVatRate(Number(e.target.value))}
+            >
               <option value="5">5%</option>
               <option value="8">8%</option>
               <option value="10">10%</option>
@@ -595,6 +862,6 @@ const CreateInvoice = () => {
       </div>
     </div>
   );
-}
+};
 
 export default CreateInvoice;

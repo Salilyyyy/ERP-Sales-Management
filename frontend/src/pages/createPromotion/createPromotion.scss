@@ -87,11 +87,15 @@
             display: flex;
           }
   
-          input {
+          select, input {
             width: 250px;
             padding: 0.5rem;
             border: 1px solid #ccc;
             border-radius: 6px;
+          }
+
+          select{
+            width: 270px;
           }
         }
       }

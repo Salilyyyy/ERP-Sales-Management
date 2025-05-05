@@ -176,11 +176,11 @@ const DetailSupplier = () => {
                                 <input
                                     type="text"
                                     className="info-input"
-                                    value={editedSupplier.taxId || ''}
-                                    onChange={(e) => handleInputChange('taxId', e.target.value)}
+                                    value={editedSupplier.tax || ''}
+                                    onChange={(e) => handleInputChange('tax', e.target.value)}
                                 />
                             ) : (
-                                <div className="info-value">{supplier.taxId}</div>
+                                <div className="info-value">{supplier.tax}</div>
                             )}
                         </div>
                         <div className="info-item">

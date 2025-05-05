@@ -220,6 +220,39 @@
       font-size: 14px;
       background: #fff;
       box-sizing: border-box;
+      
+      &:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+      }
+    }
+
+    select {
+      cursor: pointer;
+      
+      &:focus {
+        border-color: #163020;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+      }
+
+      option {
+        padding: 8px;
+      }
+    }
+
+    // Special styling for customer selection
+    &:has(select[value=""]:not(:focus)) {
+      select {
+        color: #666;
+      }
+    }
+
+    // Make customer selection dropdown wider
+    &:has(select[name="customer"]) {
+      select {
+        width: 60%;
+      }
     }
   }
 

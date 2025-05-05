@@ -59,8 +59,8 @@ const DetailProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const data = await apiProduct.getById(id);
-        setProduct(data);
+        const response = await apiProduct.getById(id);
+        setProduct(response.data);
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -243,7 +243,7 @@ const DetailProduct = () => {
                 className="info-input"
               />
             ) : (
-              <div className="info-value">{product.supplierID}</div>
+              <div className="info-value">{product.supplier?.name || 'N/A'}</div>
             )}
           </div>
           <div className="info-item">
@@ -264,12 +264,12 @@ const DetailProduct = () => {
             {isEditing ? (
               <input
                 type="text"
-                value={editedProduct.productCategoriesID}
-                onChange={(e) => handleInputChange('productCategoriesID', e.target.value)}
+                value={editedProduct.produceCategoriesID}
+                onChange={(e) => handleInputChange('produceCategoriesID', e.target.value)}
                 className="info-input"
               />
             ) : (
-              <div className="info-value">{product.productCategoriesID}</div>
+              <div className="info-value">{product.productCategory?.name || "N/A"}</div>
             )}
           </div>
           <div className="info-item">

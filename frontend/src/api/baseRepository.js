@@ -28,28 +28,50 @@ class BaseRepository {
 
         this.api.interceptors.request.use((config) => {
             const token = localStorage.getItem('auth_token');
+            console.log('Current auth token:', token);
+            
             if (token) {
+                // Ensure token is properly formatted
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
-            } else {
-                console.warn('No auth token found in localStorage');
+                console.log('Request headers:', config.headers);
             }
             return config;
+        }, (error) => {
+            console.error('Request interceptor error:', error);
+            return Promise.reject(error);
         });
 
         this.api.interceptors.response.use(
-            (response) => response,
+            (response) => {
+                console.log('Response received:', response);
+                return response;
+            },
             (error) => {
+                console.error('API Error:', error);
+                console.error('Error response:', error.response);
+                
+                // Handle 401 Unauthorized error
+                if (error.response?.status === 401) {
+                    const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
+                    toast.error(errorMessage);
+                    if (!window.location.pathname.includes('login')) {
+                        localStorage.removeItem('auth_token');
+                        window.location.href = '/login';
+                    }
+                    return Promise.reject(new Error(errorMessage));
+                }
+
+                // Handle 403 Forbidden error
+                if (error.response?.status === 403) {
+                    const errorMessage = error.response?.data?.error || 'Bạn không có quyền truy cập';
+                    toast.error(errorMessage);
+                    return Promise.reject(new Error(errorMessage));
+                }
+
+                // Handle other errors
                 const errorMessage = error.response?.data?.error || error.message;
                 toast.error(errorMessage);
-
-                if ((error.response?.status === 401 || error.response?.status === 403) && 
-                    !window.location.pathname.includes('login')) {
-                    console.error('Authentication error:', error.response?.data);
-                    localStorage.removeItem('auth_token');
-                    window.location.href = '/login';
-                    return Promise.reject(new Error('Unauthorized - Please log in again'));
-                }
 
                 const enhancedError = new Error(error.response?.data?.error || error.message);
                 enhancedError.status = error.response?.status;

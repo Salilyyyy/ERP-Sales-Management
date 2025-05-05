@@ -661,8 +661,14 @@ const CreateStockIn = () => {
                             </>
                         )}
 
-
-                       
+                        <div className="actions">
+                            <button type="button" className="previous" onClick={() => setShowNewProductModal(false)}>
+                                Hủy
+                            </button>
+                            <button type="button" className="create" onClick={handleCreateNewProduct}>
+                                Xác nhận
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

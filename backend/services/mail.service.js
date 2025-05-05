@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
     auth: {
-        user: "8bcb2a430c763d",
-        pass: "363ea37b439b59"
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     }
 });
 
@@ -14,7 +14,7 @@ const sendEmail = async (to, subject, html) => {
         console.log('Preparing to send email...');
 
         const mailOptions = {
-            from: '"ERP System" <from@example.com>',
+            from: process.env.SMTP_FROM,
             to: to,
             subject: subject,
             html: html

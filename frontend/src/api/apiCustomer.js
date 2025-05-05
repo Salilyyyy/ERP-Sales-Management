@@ -1,4 +1,5 @@
 import BaseRepository from './baseRepository';
+import { toast } from 'react-toastify';
 
 class CustomerRepository extends BaseRepository {
     constructor() {
@@ -7,16 +8,45 @@ class CustomerRepository extends BaseRepository {
 
     async getAll(params = {}) {
         try {
-            if (!localStorage.getItem('auth_token')) {
-                throw new Error('No authentication token found');
-            }
+            console.log('Fetching customers...');
             const data = await this.get('', params);
+            console.log('Customer data received:', data);
+            
+            // Ensure we have valid data
             if (!data) {
-                throw new Error('No data received from server');
+                console.error('No data received from server');
+                throw new Error('Không nhận được dữ liệu từ máy chủ');
             }
-            return data;
+
+            // Convert response to array if needed
+            const customers = Array.isArray(data) ? data : [];
+            
+            // Log the result
+            console.log(`Retrieved ${customers.length} customers`);
+            if (customers.length === 0) {
+                console.log('Note: Customer list is empty');
+            } else {
+                console.log('First customer:', customers[0]);
+            }
+
+            return customers;
         } catch (error) {
-            throw this.handleError(error, 'Failed to fetch customers');
+            console.error('Error in getAll customers:', error);
+            
+            // Check for specific error types
+            if (error.response?.status === 401) {
+                toast.error('Vui lòng đăng nhập lại để tiếp tục');
+                return [];
+            }
+            
+            if (error.response?.status === 403) {
+                toast.error('Bạn không có quyền truy cập danh sách khách hàng');
+                return [];
+            }
+
+            // For other errors, show a generic message
+            toast.error('Không thể tải danh sách khách hàng');
+            return [];
         }
     }
 

@@ -21,8 +21,8 @@ router.post('/', async (req, res) => {
     district,
     city
   } = req.body;
-  const parsedBonusPoints = parseInt(bonusPoints);
-  const fullAddress = `${address}, ${ward}, ${district}, ${city}`;
+  const parsedBonusPoints = bonusPoints ? parseInt(bonusPoints) : 0;
+  const fullAddress = `${address}${ward ? `, ${ward}` : ''}${district ? `, ${district}` : ''}${city ? `, ${city}` : ''}`;
   try {
     const customer = await prisma.customers.create({
       data: {
@@ -46,15 +46,40 @@ router.post('/', async (req, res) => {
 
 // Get all customers
 router.get('/', async (req, res) => {
+  console.log('GET /customers request received');
   try {
+    console.log('Attempting to fetch customers from database...');
     const customers = await prisma.customers.findMany({
       include: {
         Invoices: true
       }
     });
+    
+    console.log(`Found ${customers.length} customers:`, customers);
+
+    if (!customers) {
+      console.error('Database returned null or undefined');
+      return res.status(500).json({ error: 'Database returned no data' });
+    }
+
+    if (!Array.isArray(customers)) {
+      console.error('Database returned non-array:', typeof customers);
+      return res.status(500).json({ error: 'Invalid data format from database' });
+    }
+
     res.status(200).json(customers);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error fetching customers:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Database constraint violation' });
+    }
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+    res.status(500).json({ 
+      error: 'Internal server error fetching customers',
+      details: error.message
+    });
   }
 });
 

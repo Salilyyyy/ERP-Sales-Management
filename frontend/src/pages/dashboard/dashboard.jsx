@@ -10,9 +10,8 @@ import {
   Legend,
 } from "chart.js";
 
-// 👉 Import jsPDF và autoTable đúng cách
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // <- Cách chính xác
+import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -65,10 +64,10 @@ const Dashboard = () => {
   ];
 
   const stockStats = [
-    { label: "Initiated", width: "100%", change: "+42.1%", icon: upIcon, color: "green" },
-    { label: "Abandonment rate", width: "70%", change: "-16.6%", icon: downIcon, color: "red" },
-    { label: "Bounce rate", width: "85%", change: "+22%", icon: upIcon, color: "green" },
-    { label: "Completion rate", width: "95%", change: "+45.32%", icon: upIcon, color: "green" },
+    { label: "Chén Bát Tràng", width: "100%", change: "+42.1%", icon: upIcon, color: "green" },
+    { label: "Ly sứ thuỷ tinh", width: "70%", change: "-16.6%", icon: downIcon, color: "red" },
+    { label: "Ly pha lê", width: "85%", change: "+22%", icon: upIcon, color: "green" },
+    { label: "Tranh Đông Hồ", width: "95%", change: "+45.32%", icon: upIcon, color: "green" },
   ];
 
   const donutCards = ["Khuyến mãi", "Khách hàng mới"];

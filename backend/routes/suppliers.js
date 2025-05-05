@@ -1,8 +1,12 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const { authenticateToken } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 const router = express.Router();
+
+// Apply authentication middleware to all routes
+router.use(authenticateToken);
 
 // Create a new supplier
 router.post('/', async (req, res) => {

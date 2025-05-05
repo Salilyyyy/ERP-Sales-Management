@@ -21,7 +21,7 @@ model Promotions {
 
 model Invoices {
   ID             Int              @id @default(autoincrement())
-  promotionID    Int
+  promotionID    Int?
   customerID     Int
   exportTime     DateTime
   paymentMethod  String
@@ -29,7 +29,7 @@ model Invoices {
   InvoiceDetails InvoiceDetails[]
   Shipments      Shipments[]
   Customers      Customers        @relation(fields: [customerID], references: [ID])
-  Promotions     Promotions       @relation(fields: [promotionID], references: [ID])
+  Promotions     Promotions?      @relation(fields: [promotionID], references: [ID])
   isPaid          Boolean          @default(false)
   isDelivery      Boolean          @default(false) 
 }
@@ -42,7 +42,7 @@ model InvoiceDetails {
   quantity  Int
   notes     String?
   Invoices  Invoices @relation(fields: [invoiceID], references: [ID])
-  Products  Products @relation(fields: [productID], references: [ID])
+  Products  Product @relation(fields: [productID], references: [ID])
 }
 
 model Product {
@@ -77,7 +77,7 @@ model ProductCategories {
   tax         String?
   description String?
   notes       String?
-  Products    Products[]
+  Products    Product[]
 }
 
 model Suppliers {
@@ -92,7 +92,7 @@ model Suppliers {
   country        String?
   taxId          String?
   notes          String?
-  Products       Products[]
+  Products       Product[]
   Stockins      Stockins[]
 }
 
@@ -112,19 +112,25 @@ model Customers {
 }
 
 model Shipments {
-  ID            Int         @id @default(autoincrement())
-  invoiceID     Int
-  postOfficeID  Int
-  receiverName  String
-  receiverPhone String
-  sendTime      DateTime
-  receiveTime   DateTime
-  size          String
-  shippingCost  Float
-  payer         String
-  address       String
-  Invoices      Invoices    @relation(fields: [invoiceID], references: [ID])
-  PostOffices   PostOffices @relation(fields: [postOfficeID], references: [ID])
+  ID               Int         @id @default(autoincrement())
+  invoiceID        Int
+  postOfficeID     Int?
+  receiverName     String?
+  receiverPhone    String?
+  sendTime         DateTime
+  receiveTime      DateTime
+  size             String?
+  shippingCost     Float?
+  payer            String?
+  address          String?
+  district         String?
+  province         String?
+  recipientAddress String?
+  recipientName    String?
+  recipientPhone   String?
+  ward             String?
+  Invoices         Invoices    @relation(fields: [invoiceID], references: [ID])
+  PostOffices      PostOffices? @relation(fields: [postOfficeID], references: [ID])
 }
 
 model PostOffices {
@@ -171,5 +177,5 @@ model DetailStockins {
   quantity  Int
   unitPrice Float
   Stockins  Stockins @relation(fields: [StockinID], references: [ID])
-  Products  Products @relation(fields: [productID], references: [ID])
+  Products  Product @relation(fields: [productID], references: [ID])
 }

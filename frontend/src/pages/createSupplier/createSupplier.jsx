@@ -205,10 +205,14 @@ const CreateSupplier = () => {
         notes
       };
 
-      await apiSupplier.create(supplierData);
-      navigate("/supplier-list");
+      const response = await apiSupplier.create(supplierData);
+      if (response) {
+        toast.success("Tạo nhà cung cấp thành công");
+        navigate("/supplier-list");
+      }
     } catch (error) {
       console.error("Error creating supplier:", error);
+      toast.error(error.message || "Có lỗi xảy ra khi tạo nhà cung cấp");
     } finally {
       setIsSubmitting(false);
     }
@@ -246,7 +250,8 @@ const CreateSupplier = () => {
         </div>
         <h2>Thêm nhà cung cấp</h2>
       </div>
-      <div className="actions">
+      <form className="customer-form" onSubmit={handleSubmit}>
+        <div className="actions">
           <button type="button" className="delete" onClick={resetForm}>
             <img src={deleteIcon} alt="Xóa" /> Xóa
           </button>
@@ -254,7 +259,6 @@ const CreateSupplier = () => {
             <img src={createIcon} alt="Tạo" /> {isSubmitting ? 'Đang tạo...' : 'Tạo'}
           </button>
         </div>
-      <form className="customer-form" onSubmit={handleSubmit}>
         
         <div className="info-row">
           <div className="form-group">

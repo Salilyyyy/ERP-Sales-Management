@@ -11,8 +11,8 @@ const validateInvoice = (req, res, next) => {
     return res.status(400).json({ error: 'Valid Customer ID is required' });
   }
   
-  if (!promotionID || !Number.isInteger(parseInt(promotionID))) {
-    return res.status(400).json({ error: 'Valid Promotion ID is required' });
+  if (promotionID !== null && (!Number.isInteger(parseInt(promotionID)))) {
+    return res.status(400).json({ error: 'If provided, Promotion ID must be valid' });
   }
 
   if (!paymentMethod) {
@@ -29,12 +29,10 @@ const validateInvoice = (req, res, next) => {
 router.post('/', validateInvoice, async (req, res) => {
   const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
   try {
-    // Start transaction
-    const result = await prisma.$transaction(async (prisma) => {
-      // Check stock availability for all products
+    const result = await prisma.$transaction(async (tx) => {
       if (details && Array.isArray(details)) {
         for (const detail of details) {
-          const product = await prisma.products.findUnique({
+          const product = await tx.product.findUnique({
             where: { ID: detail.productID }
           });
           
@@ -48,44 +46,92 @@ router.post('/', validateInvoice, async (req, res) => {
         }
       }
 
-      // Create invoice
-      const invoice = await prisma.invoices.create({
-        data: {
-          Promotions: {
-            connect: { ID: promotionID }
-          },
-          Customers: {
-            connect: { ID: customerID }
-          },
-          exportTime: exportTime || new Date(),
-          paymentMethod,
-          tax,
-          updatedBy: req.user.id,
+      const {
+        recipientName,
+        recipientPhone,
+        recipientAddress,
+        district,
+        province,
+        ward,
+        isPaid,
+        isDelivery
+      } = req.body;
+
+      // Create invoice with basic data
+      const invoiceData = {
+        Customers: {
+          connect: { ID: customerID }
         },
+        exportTime: exportTime || new Date(),
+        paymentMethod,
+        tax,
+        isPaid: isPaid || false,
+        isDelivery: isDelivery || false,
+        ...(promotionID && {
+          Promotions: {
+            connect: { ID: parseInt(promotionID) }
+          }
+        })
+      };
+
+      // Create invoice and get result
+      const cleanInvoice = await tx.invoices.create({
+        data: invoiceData
+      });
+
+      // Fetch complete invoice with all relations
+      const invoice = await tx.invoices.findUnique({
+        where: { ID: cleanInvoice.ID },
         include: {
           Customers: true,
           Promotions: true,
           InvoiceDetails: {
             include: {
-              Products: true
+              Products: {
+                select: {
+                  ID: true,
+                  name: true,
+                  unit: true,
+                  quantity: true,
+                  outPrice: true
+                }
+              }
             }
-          }
+          },
+          Shipments: true
         }
       });
-      
-      // Create invoice details and update product quantities
+
+      // Create shipment if delivery is required
+      if (isDelivery) {
+        await tx.shipments.create({
+          data: {
+            invoiceID: invoice.ID,
+            sendTime: new Date(),
+            receiveTime: new Date(),
+            recipientName,
+            recipientPhone,
+            recipientAddress,
+            district: district || '',
+            province: province || '',
+            ward: ward || ''
+          }
+        });
+      }
+
+      // Create invoice details if provided
       if (details && Array.isArray(details)) {
-        // Create invoice details
-        await prisma.invoiceDetails.createMany({
+        await tx.invoiceDetails.createMany({
           data: details.map(detail => ({
-            ...detail,
+            productID: detail.productID,
+            quantity: detail.quantity,
+            unitPrice: detail.price,
             invoiceID: invoice.ID
           }))
         });
 
-        // Update product quantities
         for (const detail of details) {
-          await prisma.products.update({
+          await tx.product.update({
             where: { ID: detail.productID },
             data: {
               quantity: {
@@ -100,8 +146,11 @@ router.post('/', validateInvoice, async (req, res) => {
     });
 
     res.status(201).json({
+       redirect: '/invoices',
       success: true,
-      data: result
+      message: 'Invoice created successfully',
+      data: result,
+     
     });
   } catch (error) {
     res.status(400).json({
@@ -144,9 +193,18 @@ router.get('/', async (req, res) => {
         Promotions: true,
         InvoiceDetails: {
           include: {
-            Products: true
+            Products: {
+              select: {
+                ID: true,
+                name: true,
+                unit: true,
+                quantity: true,
+                outPrice: true
+              }
+            }
           }
-        }
+        },
+        Shipments: true
       },
       orderBy: {
         ID: 'desc'
@@ -181,9 +239,18 @@ router.get('/:id', async (req, res) => {
         Promotions: true,
         InvoiceDetails: {
           include: {
-            Products: true
+            Products: {
+              select: {
+                ID: true,
+                name: true,
+                unit: true,
+                quantity: true,
+                outPrice: true
+              }
+            }
           }
-        }
+        },
+        Shipments: true
       }
     });
 
@@ -211,9 +278,8 @@ router.put('/:id', validateInvoice, async (req, res) => {
   const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
   
   try {
-    const result = await prisma.$transaction(async (prisma) => {
-      // Get current invoice details to restore quantities
-      const currentInvoice = await prisma.invoices.findUnique({
+    const result = await prisma.$transaction(async (tx) => {
+      const currentInvoice = await tx.invoices.findUnique({
         where: { ID: parseInt(id) },
         include: {
           InvoiceDetails: true
@@ -226,7 +292,7 @@ router.put('/:id', validateInvoice, async (req, res) => {
 
       // Restore previous quantities
       for (const detail of currentInvoice.InvoiceDetails) {
-        await prisma.products.update({
+        await tx.product.update({
           where: { ID: detail.productID },
           data: {
             quantity: {
@@ -239,7 +305,7 @@ router.put('/:id', validateInvoice, async (req, res) => {
       // Check if new quantities are available
       if (details && Array.isArray(details)) {
         for (const detail of details) {
-          const product = await prisma.products.findUnique({
+          const product = await tx.product.findUnique({
             where: { ID: detail.productID }
           });
           
@@ -254,48 +320,106 @@ router.put('/:id', validateInvoice, async (req, res) => {
       }
 
       // Update invoice
-      const invoice = await prisma.invoices.update({
+      const {
+        recipientName,
+        recipientPhone,
+        recipientAddress,
+        district,
+        province,
+        ward,
+        isPaid,
+        isDelivery
+      } = req.body;
+
+      // Update invoice with basic data first
+      const cleanInvoice = await tx.invoices.update({
         where: { ID: parseInt(id) },
         data: {
-          Promotions: {
-            connect: { ID: promotionID }
-          },
           Customers: {
             connect: { ID: customerID }
+          },
+          Promotions: promotionID ? {
+            connect: { ID: promotionID }
+          } : {
+            disconnect: true
           },
           exportTime,
           paymentMethod,
           tax,
-          updatedBy: req.user.id
+          isPaid: isPaid || false,
+          isDelivery: isDelivery || false,
+          Shipments: isDelivery ? {
+            upsert: {
+              where: { invoiceID: parseInt(id) },
+              create: {
+                sendTime: new Date(),
+                receiveTime: new Date(),
+                recipientName,
+                recipientPhone,
+                recipientAddress,
+                district: district || '',
+                province: province || '',
+                ward: ward || ''
+              },
+              update: {
+                recipientName,
+                recipientPhone,
+                recipientAddress,
+                district: district || '',
+                province: province || '',
+                ward: ward || ''
+              }
+            }
+          } : {
+            deleteMany: {
+              invoiceID: parseInt(id)
+            }
+          }
         },
+      });
+
+      // Fetch complete updated invoice with all relations
+      const invoice = await tx.invoices.findUnique({
+        where: { ID: cleanInvoice.ID },
         include: {
           Customers: true,
           Promotions: true,
           InvoiceDetails: {
             include: {
-              Products: true
+              Products: {
+                select: {
+                  ID: true,
+                  name: true,
+                  unit: true,
+                  quantity: true,
+                  outPrice: true
+                }
+              }
             }
-          }
+          },
+          Shipments: true
         }
       });
 
       if (details && Array.isArray(details)) {
         // Delete old invoice details
-        await prisma.invoiceDetails.deleteMany({
+        await tx.invoiceDetails.deleteMany({
           where: { invoiceID: parseInt(id) }
         });
 
         // Create new invoice details
-        await prisma.invoiceDetails.createMany({
+        await tx.invoiceDetails.createMany({
           data: details.map(detail => ({
-            ...detail,
+            productID: detail.productID,
+            quantity: detail.quantity,
+            unitPrice: detail.price,
             invoiceID: parseInt(id)
           }))
         });
 
         // Update product quantities with new values
         for (const detail of details) {
-          await prisma.products.update({
+          await tx.product.update({
             where: { ID: detail.productID },
             data: {
               quantity: {
@@ -311,7 +435,9 @@ router.put('/:id', validateInvoice, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: result
+      message: 'Invoice updated successfully',
+      data: result,
+      redirect: '/invoices'
     });
   } catch (error) {
     res.status(400).json({
@@ -324,9 +450,9 @@ router.put('/:id', validateInvoice, async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async (tx) => {
       // Get invoice details to restore quantities
-      const invoice = await prisma.invoices.findUnique({
+      const invoice = await tx.invoices.findUnique({
         where: { ID: parseInt(id) },
         include: {
           InvoiceDetails: true
@@ -339,7 +465,7 @@ router.delete('/:id', async (req, res) => {
 
       // Restore product quantities
       for (const detail of invoice.InvoiceDetails) {
-        await prisma.products.update({
+        await tx.product.update({
           where: { ID: detail.productID },
           data: {
             quantity: {
@@ -350,24 +476,25 @@ router.delete('/:id', async (req, res) => {
       }
 
       // Delete related shipments first
-      await prisma.shipments.deleteMany({
+      await tx.shipments.deleteMany({
         where: { invoiceID: parseInt(id) }
       });
 
       // Then delete invoice details
-      await prisma.invoiceDetails.deleteMany({
+      await tx.invoiceDetails.deleteMany({
         where: { invoiceID: parseInt(id) }
       });
 
       // Finally delete the invoice
-      await prisma.invoices.delete({
+      await tx.invoices.delete({
         where: { ID: parseInt(id) }
       });
     });
 
     res.status(200).json({
       success: true,
-      message: 'Invoice deleted successfully'
+      message: 'Invoice deleted successfully',
+      redirect: '/invoices'
     });
   } catch (error) {
     res.status(400).json({

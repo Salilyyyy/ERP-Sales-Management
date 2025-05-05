@@ -34,7 +34,7 @@ const Product = () => {
     const fetchCategories = async () => {
         try {
             const response = await productCategoryApi.getAll();
-            setCategories(Array.isArray(response) ? response : []);
+            setCategories(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Error fetching categories:', error);
             setCategories([]); // Ensure categories is always an array
@@ -45,7 +45,7 @@ const Product = () => {
         try {
             setLoading(true);
             const response = await productApi.getAll();
-            const productsList = Array.isArray(response) ? response : [];
+            const productsList = Array.isArray(response.data) ? response.data : [];
             setProducts(productsList);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -95,7 +95,7 @@ const Product = () => {
         setIsDropdownOpen(false);
     };
 
-const filteredProducts = products
+    const filteredProducts = products
         .filter((product) =>
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.ID.toString().includes(searchQuery)
@@ -203,9 +203,12 @@ const filteredProducts = products
                         <th>Mã</th>
                         <th>Tên sản phẩm</th>
                         <th>Loại</th>
-                        <th>Kích cỡ</th>
-                        <th>Đơn giá</th>
+                        <th>Nhà cung cấp</th>
+                        <th>Xuất xứ</th>
+                        <th>Giá nhập</th>
+                        <th>Giá bán</th>
                         <th>Tồn kho</th>
+                        <th>Đơn vị</th>
                         <th>Hình ảnh</th>
                         <th>Hành động</th>
                     </tr>
@@ -216,12 +219,13 @@ const filteredProducts = products
                             <td><input type="checkbox" checked={selectedProducts.includes(product.ID)} onChange={() => handleSelectProduct(product.ID)} /></td>
                             <td>{product.ID}</td>
                             <td>{product.name}</td>
-                            <td>
-                                {categories.find(c => String(c.ID) === String(product.produceCategoriesID))?.name || 'Không xác định'}
-                            </td>
-                            <td>{`${product.width} cm × ${product.height} cm × ${product.length} cm`}</td>
-                            <td>{product.outPrice}</td>
+                            <td>{product.productCategory?.name || 'Không xác định'}</td>
+                            <td>{product.supplier?.name || 'Không xác định'}</td>
+                            <td>{product.origin}</td>
+                            <td>{product.inPrice?.toLocaleString('vi-VN')} đ</td>
+                            <td>{product.outPrice?.toLocaleString('vi-VN')} đ</td>
                             <td>{product.quantity}</td>
+                            <td>{product.unit}</td>
                             <td><img src={product.image} alt={product.name} className="product-img" /></td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>

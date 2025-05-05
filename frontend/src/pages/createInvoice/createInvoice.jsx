@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import apiProduct from "../../api/apiProduct";
 import { toast } from 'react-toastify';
 import apiInvoice from "../../api/apiInvoice";
 import apiCustomer from "../../api/apiCustomer";
@@ -17,6 +18,7 @@ const CreateInvoice = () => {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [showCustomerPopup, setShowCustomerPopup] = useState(false);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     phoneNumber: "",
@@ -36,7 +38,7 @@ const CreateInvoice = () => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
-  const [shippingOption, setShippingOption] = useState("");
+  const [shippingOption, setShippingOption] = useState("noShip");
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const [selectedProvince, setSelectedProvince] = useState("");
@@ -92,15 +94,27 @@ const CreateInvoice = () => {
       return;
     }
 
+    if (selectedProduct.quantity < quantity) {
+      toast.warning(`Số lượng sản phẩm ${selectedProduct.name} không đủ. Chỉ còn ${selectedProduct.quantity} sản phẩm.`);
+      return;
+    }
+
     const existingItemIndex = invoiceItems.findIndex(item => item.id === selectedProduct.ID);
 
     if (existingItemIndex >= 0) {
       const updatedItems = [...invoiceItems];
       const updatedItem = updatedItems[existingItemIndex];
-      updatedItem.quantity += quantity;
+      const newQuantity = updatedItem.quantity + quantity;
+
+      if (newQuantity > selectedProduct.quantity) {
+        toast.warning(`Số lượng sản phẩm ${selectedProduct.name} không đủ. Chỉ còn ${selectedProduct.quantity} sản phẩm.`);
+        return;
+      }
+
+      updatedItem.quantity = newQuantity;
       updatedItem.total = updatedItem.price * updatedItem.quantity;
       setInvoiceItems(updatedItems);
-      setQuantity(1); 
+      setQuantity(1);
     } else {
       const newItem = {
         id: selectedProduct.ID,
@@ -213,36 +227,56 @@ const CreateInvoice = () => {
       const bonusPoints = Math.floor(grandTotal / 100);
 
       const invoiceData = {
-        customerId: selectedCustomerId,
-        recipientName,
-        recipientPhone,
-        recipientAddress,
-        note,
-        isPaid,
-        isDelivery: shippingOption === "ship",
+        customerID: parseInt(selectedCustomerId),
+        promotionID: selectedPromotion?.ID || null,
         paymentMethod,
-        employeeName: selectedEmployee,
-        items: invoiceItems.map((item) => ({
-          productId: item.id,
+        tax: vatRate,
+        exportTime: new Date(),
+        details: invoiceItems.map((item) => ({
+          productID: item.id,
           quantity: item.quantity,
           price: item.price,
         })),
-        province:
-          provinces.find((p) => p.code === selectedProvince)?.name || "",
-        district:
-          districts.find((d) => d.code === selectedDistrict)?.name || "",
-        ward: wards.find((w) => w.code === selectedWard)?.name || "",
-        vat: vatRate,
+        recipientName,
+        recipientPhone,
+        recipientAddress: shippingOption === "ship" ? 
+          [
+            recipientAddress,
+            wards.find((w) => w.code === selectedWard)?.name,
+            districts.find((d) => d.code === selectedDistrict)?.name,
+            provinces.find((p) => p.code === selectedProvince)?.name
+          ].filter(Boolean).map(part => part.trim()).join(", ")
+          : recipientAddress,
+        note,
+        isPaid,
+        isDelivery: shippingOption === "ship",
+        employeeName: selectedEmployee,
+        province: "",
+        district: "",
+        ward: "",
         discount: discount,
-        promotionId: selectedPromotion?.ID,
         totalAmount: grandTotal,
         bonusPoints: bonusPoints,
       };
 
       const createdInvoice = await apiInvoice.create(invoiceData);
 
+      for (const item of invoiceItems) {
+        const currentProduct = products.find(p => p.ID === item.id);
+        if (currentProduct) {
+          const updatedQuantity = currentProduct.quantity - item.quantity;
+          if (updatedQuantity < 0) {
+            throw new Error(`Số lượng sản phẩm ${currentProduct.name} không đủ để tạo hoá đơn`);
+          }
+          await apiProduct.update(item.id, {
+            ...currentProduct,
+            quantity: updatedQuantity
+          });
+        }
+      }
+
       const selectedCustomer = customers.find(
-        (c) => c.id === selectedCustomerId
+        (c) => c.ID === selectedCustomerId
       );
       if (selectedCustomer) {
         const updatedBonusPoints = selectedCustomer.bonusPoints + bonusPoints;
@@ -277,55 +311,73 @@ const CreateInvoice = () => {
 
   useEffect(() => {
     const fetchCustomers = async () => {
+      setIsLoadingCustomers(true);
       try {
         const response = await apiCustomer.getAll();
         if (Array.isArray(response)) {
           setCustomers(response);
         } else {
           console.error("Invalid response format for customers:", response);
+          toast.error("Không thể tải danh sách khách hàng");
           setCustomers([]);
         }
       } catch (error) {
         console.error("Error fetching customers:", error);
+        toast.error("Không thể tải danh sách khách hàng");
         setCustomers([]);
+      } finally {
+        setIsLoadingCustomers(false);
       }
     };
     fetchCustomers();
   }, []);
 
+  // Fetch provinces data
   useEffect(() => {
-    axios
-      .get("https://provinces.open-api.vn/api/p/")
-      .then((response) => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await axios.get("https://provinces.open-api.vn/api/p/");
         setProvinces(response.data);
-      })
-      .catch((error) => console.error("Error fetching provinces:", error));
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
+        toast.error("Không thể tải danh sách tỉnh thành");
+      }
+    };
+    fetchProvinces();
   }, []);
 
+  // Fetch districts when province changes
   useEffect(() => {
-    if (selectedProvince) {
-      axios
-        .get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`)
-        .then((response) => {
-          setDistricts(response.data.districts);
-          setWards([]);
-          setSelectedDistrict("");
-          setSelectedWard("");
-        })
-        .catch((error) => console.error("Error fetching districts:", error));
-    }
+    const fetchDistricts = async () => {
+      if (!selectedProvince) return;
+      try {
+        const response = await axios.get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
+        setDistricts(response.data.districts);
+        setWards([]);
+        setSelectedDistrict("");
+        setSelectedWard("");
+      } catch (error) {
+        console.error("Error fetching districts:", error);
+        toast.error("Không thể tải danh sách quận huyện");
+      }
+    };
+    fetchDistricts();
   }, [selectedProvince]);
 
+  // Fetch wards when district changes
   useEffect(() => {
-    if (selectedDistrict) {
-      axios
-        .get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
-        .then((response) => {
-          setWards(response.data.wards);
-          setSelectedWard("");
-        })
-        .catch((error) => console.error("Error fetching wards:", error));
-    }
+    const fetchWards = async () => {
+      if (!selectedDistrict) return;
+      try {
+        const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+        setWards(response.data.wards);
+        setSelectedWard("");
+      } catch (error) {
+        console.error("Error fetching wards:", error);
+        toast.error("Không thể tải danh sách phường xã");
+      }
+    };
+    fetchWards();
   }, [selectedDistrict]);
 
   useEffect(() => {
@@ -372,33 +424,114 @@ const CreateInvoice = () => {
     );
   };
 
-  const handleCustomerChange = (e) => {
+  const handleCustomerChange = async (e) => {
     const value = e.target.value;
 
-    if (value === "new") {
-      setShowCustomerPopup(true);
+    if (value === "new" || !value) {
+      setShowCustomerPopup(value === "new");
       setSelectedCustomerId("");
       setRecipientName("");
       setRecipientPhone("");
       setRecipientAddress("");
+      setShippingOption("noShip");
+      setSelectedProvince("");
+      setSelectedDistrict("");
+      setSelectedWard("");
       return;
     }
 
-    if (!value) {
-      setSelectedCustomerId("");
-      setRecipientName("");
-      setRecipientPhone("");
-      setRecipientAddress("");
-      return;
-    }
+    const customerId = parseInt(value);
+    setSelectedCustomerId(customerId);
 
-    setSelectedCustomerId(value);
-
-    const selectedCustomer = customers.find((c) => c.id === value);
+    const selectedCustomer = customers.find((c) => c.ID === customerId);
     if (selectedCustomer) {
       setRecipientName(selectedCustomer.name ?? "");
       setRecipientPhone(selectedCustomer.phoneNumber ?? "");
-      setRecipientAddress(selectedCustomer.address ?? "");
+
+      // Parse customer address into components
+      const address = selectedCustomer.address ?? "";
+      const parts = address.split(",").map(part => part.trim());
+      if (parts.length >= 4) {
+        setShippingOption("ship"); // Enable shipping to show the address fields
+        setRecipientAddress(parts[0]); // Street address
+
+        // Find and set province first
+        const provinceName = parts[3];
+        console.log("Looking for province:", provinceName);
+        console.log("Provinces:", provinces);
+        console.log("Parts:", parts);
+        const foundProvince = provinces.find(p => {
+          console.log("Checking province:", p.name);
+          const normalizedProvinceName = p.name.toLowerCase()
+            .replace(/thành phố /g, '')
+            .replace(/tỉnh /g, '')
+            .trim();
+          const normalizedSearchName = provinceName.toLowerCase()
+            .replace(/thành phố /g, '')
+            .replace(/tỉnh /g, '')
+            .trim();
+          return normalizedProvinceName === normalizedSearchName;
+        });
+        if (foundProvince) {
+          setSelectedProvince(foundProvince.code);
+
+          // Fetch districts for this province
+          try {
+            const response = await axios.get(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`);
+            setDistricts(response.data.districts);
+
+            // Find and set district
+            const districtName = parts[2];
+            console.log("Districts:", response.data.districts);
+            const foundDistrict = response.data.districts.find(d => {
+              console.log("Checking district:", d.name);
+              const normalizedDistrictName = d.name.toLowerCase()
+                .replace(/quận /g, '')
+                .replace(/huyện /g, '')
+                .trim();
+              const normalizedSearchName = districtName.toLowerCase()
+                .replace(/quận /g, '')
+                .replace(/huyện /g, '')
+                .trim();
+              return normalizedDistrictName === normalizedSearchName;
+            });
+            if (foundDistrict) {
+              setSelectedDistrict(foundDistrict.code);
+
+              // Fetch wards for this district
+              try {
+                const wardResponse = await axios.get(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`);
+                setWards(wardResponse.data.wards);
+
+                // Find and set ward
+                const wardName = parts[1];
+                console.log("Wards:", wardResponse.data.wards);
+                const foundWard = wardResponse.data.wards.find(w => {
+                  console.log("Checking ward:", w.name);
+                  const normalizedWardName = w.name.toLowerCase()
+                    .replace(/phường /g, '')
+                    .replace(/xã /g, '')
+                    .trim();
+                  const normalizedSearchName = wardName.toLowerCase()
+                    .replace(/phường /g, '')
+                    .replace(/xã /g, '')
+                    .trim();
+                  return normalizedWardName === normalizedSearchName;
+                });
+                if (foundWard) {
+                  setSelectedWard(foundWard.code);
+                }
+              } catch (error) {
+                console.error("Error fetching wards:", error);
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching districts:", error);
+          }
+        }
+      } else {
+        setRecipientAddress(address);
+      }
     }
   };
 
@@ -421,12 +554,23 @@ const CreateInvoice = () => {
       };
       const createdCustomer = await apiCustomer.create(customerData);
       setCustomers([...customers, createdCustomer]);
-      setSelectedCustomerId(createdCustomer.id);
+      setSelectedCustomerId(createdCustomer.ID);
       setShowCustomerPopup(false);
 
       setRecipientName(createdCustomer.name);
       setRecipientPhone(createdCustomer.phoneNumber);
-      setRecipientAddress(createdCustomer.address || "");
+      
+      // Format address properly for new customer
+      const address = createdCustomer.address ?? "";
+      const parts = address.split(",").map(part => part.trim());
+      if (parts.length >= 4) {
+        setShippingOption("ship");
+        setRecipientAddress(parts[0]);
+        // Try to match province/district/ward later when needed
+      } else {
+        setRecipientAddress(address);
+        setShippingOption("noShip");
+      }
       setNewCustomer({
         name: "",
         phoneNumber: "",
@@ -558,19 +702,24 @@ const CreateInvoice = () => {
             />
           </div>
           <div className="form-group"></div>
-          <div className="form-group">
-            <label>Khách hàng</label>
+          <div className="form-group customer-select">
+            <label>Khách hàng <span style={{ color: 'red' }}>*</span></label>
             <select
+              name="customer"
               value={selectedCustomerId || ""}
               onChange={handleCustomerChange}
+              disabled={isLoadingCustomers}
+              style={{ width: '60%' }}
             >
-              <option value="">Chọn khách hàng</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.phoneNumber || 'No phone'}
+              <option value="">
+                {isLoadingCustomers ? "Đang tải danh sách khách hàng..." : "Chọn khách hàng"}
+              </option>
+              {!isLoadingCustomers && customers.map((customer) => (
+                <option key={customer.ID} value={customer.ID}>
+                  {`${customer.name} - ${customer.phoneNumber || 'Không có SĐT'}`}
                 </option>
               ))}
-              <option value="new">+ Thêm khách hàng mới</option>
+              {!isLoadingCustomers && <option value="new">+ Thêm khách hàng mới</option>}
             </select>
           </div>
 
@@ -825,7 +974,12 @@ const CreateInvoice = () => {
             <select
               value={selectedPromotion?.ID || ""}
               onChange={(e) => {
-                const promoId = parseInt(e.target.value);
+                const value = e.target.value;
+                if (!value) {
+                  setSelectedPromotion(null);
+                  return;
+                }
+                const promoId = parseInt(value);
                 const promo = promotions.find(p => p.ID === promoId);
                 setSelectedPromotion(promo || null);
               }}

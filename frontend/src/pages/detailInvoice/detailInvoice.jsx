@@ -502,14 +502,14 @@ const OrderDetails = () => {
         </div>
         <div className="actions">
           {isEditing ? (
-            <>
+            <div className="edit-actions">
               <button className="cancel" onClick={handleCancel}>
                 <img src={cancelIcon} alt="Hủy" /> Hủy
               </button>
               <button className="save" onClick={handleSave}>
                 <img src={saveIcon} alt="Lưu" /> {loading ? "Đang lưu..." : "Lưu"}
               </button>
-            </>
+            </div>
           ) : (
             <>
               <button className="delete" onClick={handleDelete}>

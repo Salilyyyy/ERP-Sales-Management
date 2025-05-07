@@ -1,26 +1,49 @@
-import backIcon from "../../assets/img/back-icon.svg"
-import deleteIcon from "../../assets/img/delete-icon.svg"
-import editIcon from "../../assets/img/white-edit.svg"
-import printIcon from "../../assets/img/print-icon.svg"
-import saveIcon from "../../assets/img/save-icon.svg"
-import "./detailProduct.scss"
+import backIcon from "../../assets/img/back-icon.svg";
+import deleteIcon from "../../assets/img/delete-icon.svg";
+import editIcon from "../../assets/img/white-edit.svg";
+import saveIcon from "../../assets/img/save-icon.svg";
+import "./detailProduct.scss";
+import { Cloudinary } from '@cloudinary/url-gen';
+import { AdvancedImage } from '@cloudinary/react';
+import { auto } from '@cloudinary/url-gen/actions/resize';
+import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import sha1 from 'crypto-js/sha1';
 import apiProduct from "../../api/apiProduct";
-import ProductImg from "../../assets/img/product-img.svg"
+import apiCountry from "../../api/apiCountry";
+import apiProductCategory from "../../api/apiProductCategory";
+import apiSupplier from "../../api/apiSupplier";
+import ProductImg from "../../assets/img/product-img.svg";
 
 const DetailProduct = () => {
+  const cld = new Cloudinary({ cloud: { cloudName: 'dlrm4ccbs' } });
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [editedProduct, setEditedProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  //use url query param to handle edit/non-edit mode
+  const [countries, setCountries] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef(null);
+  const units = ["Cái", "Hộp", "Thùng", "Kg", "Gói"];
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
   const [isEditing, setIsEditing] = useState(isEditMode);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleEditClick = () => {
     setEditedProduct({ ...product });
@@ -47,20 +70,77 @@ const DetailProduct = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setEditedProduct(null);
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("edit");
+    setSearchParams(newSearchParams);
   };
 
-  const handleInputChange = (field, value) => {
-    setEditedProduct(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const generateSignature = (params) => {
+    const apiSecret = '9IqI3iaNI1e9mwTp8V6uomrwFts';
+    const sortedParams = Object.keys(params).sort().map(key => `${key}=${params[key]}`).join('&');
+    return sha1(sortedParams + apiSecret).toString();
+  };
+
+  const uploadToCloudinary = async (file) => {
+    try {
+      const timestamp = Math.round((new Date()).getTime() / 1000);
+      const params = {
+        timestamp,
+        api_key: '679573739148611',
+        resource_type: 'image',
+        folder: 'products'
+      };
+      const signature = generateSignature(params);
+      const formData = new FormData();
+      formData.append('file', file);
+      Object.entries(params).forEach(([key, value]) => formData.append(key, value));
+      formData.append('signature', signature);
+      const response = await fetch(`https://api.cloudinary.com/v1_1/dlrm4ccbs/auto/upload`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error((await response.json()).error?.message || 'Upload failed');
+      const data = await response.json();
+      return { public_id: data.public_id, secure_url: data.secure_url };
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+  };
+
+  const handleInputChange = async (field, value) => {
+    if (field === 'image' && value instanceof File) {
+      try {
+        const result = await uploadToCloudinary(value);
+        const newImage = `${result.public_id}`;
+        setEditedProduct(prev => ({ ...prev, image: newImage }));
+        setProduct(prev => ({ ...prev, image: newImage }));
+      } catch (error) {
+        setError('Lỗi khi tải lên hình ảnh');
+      }
+    } else {
+      setEditedProduct(prev => ({ ...prev, [field]: value }));
+      if (field === 'supplierID') {
+        const selectedSupplier = suppliers.find(s => s.ID === parseInt(value));
+        const supplierCategories = selectedSupplier?.productCategories || [];
+        setFilteredCategories(supplierCategories);
+      }
+    }
   };
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
-        const response = await apiProduct.getById(id);
+        const [response, countriesData, categoriesData, suppliersData] = await Promise.all([
+          apiProduct.getById(id),
+          apiCountry.getAll(),
+          apiProductCategory.getAll(),
+          apiSupplier.getAll()
+        ]);
         setProduct(response.data);
+        setCountries(countriesData);
+        setAllCategories(categoriesData);
+        setSuppliers(suppliersData);
+        const currentSupplier = suppliersData.find(s => s.ID === response.data.supplierID);
+        const supplierCategories = currentSupplier?.productCategories || [];
+        setFilteredCategories(supplierCategories);
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -68,8 +148,7 @@ const DetailProduct = () => {
         setLoading(false);
       }
     };
-
-    fetchProduct();
+    fetchData();
   }, [id]);
 
   useEffect(() => {
@@ -95,21 +174,34 @@ const DetailProduct = () => {
         <h2>Chi tiết sản phẩm</h2>
       </div>
       <div className="actions">
-        <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
         {isEditing ? (
-          <>
+          <div className="edit-actions">
             <button className="save" onClick={handleSave}><img src={saveIcon} alt="Lưu" /> Lưu</button>
             <button className="cancel" onClick={handleCancel}>Hủy</button>
-          </>
+          </div>
         ) : (
-          <button className="edit" onClick={handleEditClick}><img src={editIcon} alt="Sửa" /> Sửa</button>
+          <>
+            <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
+            <button className="edit" onClick={handleEditClick}><img src={editIcon} alt="Sửa" /> Sửa</button>
+          </>
         )}
-        <button className="print"><img src={printIcon} alt="In" /> In </button>
       </div>
 
       <div className="detail-product-content">
         <div className="product-image">
-          <img src={product.image || ProductImg} alt={product.name} className="img-product" />
+          {product.image ? (
+            <AdvancedImage
+              key={product.image} // Add key to force re-render when image changes
+              cldImg={cld.image(product.image)
+                .format('auto')
+                .quality('auto')
+                .resize(auto().gravity(autoGravity()).width(500).height(500))}
+              alt={product.name}
+              className="img-product"
+            />
+          ) : (
+            <img src={ProductImg} alt={product.name} className="img-product" />
+          )}
           {isEditing && (
             <div className="edit-image">
               <label htmlFor="image-upload" className="edit-image-label">
@@ -123,11 +215,7 @@ const DetailProduct = () => {
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      handleInputChange('image', reader.result);
-                    };
-                    reader.readAsDataURL(file);
+                    handleInputChange('image', file);
                   }
                 }}
                 className="image-upload"
@@ -157,12 +245,18 @@ const DetailProduct = () => {
           <div className="info-item">
             <div className="info-label">Đơn vị tính</div>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 value={editedProduct.unit}
                 onChange={(e) => handleInputChange('unit', e.target.value)}
                 className="info-input"
-              />
+              >
+                <option value="">Chọn đơn vị</option>
+                {units.map((unit, index) => (
+                  <option key={index} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
             ) : (
               <div className="info-value">{product.unit}</div>
             )}
@@ -236,12 +330,18 @@ const DetailProduct = () => {
           <div className="info-item">
             <div className="info-label">Nhà sản xuất</div>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 value={editedProduct.supplierID}
                 onChange={(e) => handleInputChange('supplierID', e.target.value)}
                 className="info-input"
-              />
+              >
+                <option value="">Chọn nhà sản xuất</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.ID} value={supplier.ID}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
             ) : (
               <div className="info-value">{product.supplier?.name || 'N/A'}</div>
             )}
@@ -249,41 +349,82 @@ const DetailProduct = () => {
           <div className="info-item">
             <div className="info-label">Xuất sứ</div>
             {isEditing ? (
-              <input
-                type="text"
-                value={editedProduct.origin}
-                onChange={(e) => handleInputChange('origin', e.target.value)}
-                className="info-input"
-              />
+              <div className="custom-select" ref={selectRef}>
+                <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                  {editedProduct.origin ? (
+                    <>
+                      <img
+                        src={countries.find(c => c.name === editedProduct.origin)?.flag}
+                        alt={editedProduct.origin}
+                        className="country-flag"
+                      />
+                      <span>{editedProduct.origin}</span>
+                    </>
+                  ) : (
+                    <span className="placeholder">Chọn xuất xứ</span>
+                  )}
+                </div>
+                {isOpen && (
+                  <div className="options-list">
+                    {countries.map((country) => (
+                      <div
+                        key={country.code}
+                        className={`option ${editedProduct.origin === country.name ? 'selected' : ''}`}
+                        onClick={() => {
+                          handleInputChange('origin', country.name);
+                          setIsOpen(false);
+                        }}
+                      >
+                        <img
+                          src={country.flag}
+                          alt={country.name}
+                          className="country-flag"
+                        />
+                        <span>{country.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="info-value">{product.origin}</div>
+              <div className="info-value">
+                {product.origin && countries.find(c => c.name === product.origin) ? (
+                  <>
+                    <img
+                      src={countries.find(c => c.name === product.origin)?.flag}
+                      alt={product.origin}
+                      className="country-flag"
+                    />
+                    <span>{product.origin}</span>
+                  </>
+                ) : (
+                  product.origin || 'N/A'
+                )}
+              </div>
             )}
           </div>
           <div className="info-item">
             <div className="info-label">Thuộc loại</div>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 value={editedProduct.produceCategoriesID}
                 onChange={(e) => handleInputChange('produceCategoriesID', e.target.value)}
                 className="info-input"
-              />
+              >
+                <option value="">Chọn loại sản phẩm</option>
+                {filteredCategories.map((category) => (
+                  <option key={category.ID} value={category.ID}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             ) : (
               <div className="info-value">{product.productCategory?.name || "N/A"}</div>
             )}
           </div>
           <div className="info-item">
             <div className="info-label">Tồn kho</div>
-            {isEditing ? (
-              <input
-                type="number"
-                value={editedProduct.quantity}
-                onChange={(e) => handleInputChange('quantity', e.target.value)}
-                className="info-input"
-              />
-            ) : (
-              <div className="info-value">{product.quantity}</div>
-            )}
+            <div className="info-value">{product.quantity}</div>
           </div>
           <div className="info-item">
             <div className="info-label">Ghi chú</div>

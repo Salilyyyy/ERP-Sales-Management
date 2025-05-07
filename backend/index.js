@@ -11,6 +11,14 @@ const { authenticateToken } = require('./middleware/auth');
 const prisma = new PrismaClient();
 const app = express();
 
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    console.log('Request has timed out.');
+    res.status(408).send('Request has timed out');
+  });
+  next();
+});
+
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());

@@ -22,35 +22,29 @@ class BaseRepository {
             headers: {
                 'Content-Type': 'application/json',
             },
-            timeout: 5000
+            timeout: 30000
         });
 
         this.api.interceptors.request.use((config) => {
             const token = localStorage.getItem('auth_token');
-            console.log('Current auth token:', token);
 
             if (token) {
-                // Ensure token is properly formatted
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
-                console.log('Request headers:', config.headers);
             }
             return config;
         }, (error) => {
-            console.error('Request interceptor error:', error);
             return Promise.reject(error);
         });
 
         this.api.interceptors.response.use(
             (response) => {
-                console.log('Response received:', response);
                 return response;
             },
             (error) => {
                 console.error('API Error:', error);
                 console.error('Error response:', error.response);
 
-                // Handle 401 Unauthorized error
                 if (error.response?.status === 401) {
                     const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
                     toast.error(errorMessage);
@@ -61,14 +55,12 @@ class BaseRepository {
                     return Promise.reject(new Error(errorMessage));
                 }
 
-                // Handle 403 Forbidden error
                 if (error.response?.status === 403) {
                     const errorMessage = error.response?.data?.error || 'Bạn không có quyền truy cập';
                     toast.error(errorMessage);
                     return Promise.reject(new Error(errorMessage));
                 }
 
-                // Handle other errors
                 const errorMessage = error.response?.data?.error || error.message;
                 toast.error(errorMessage);
 
@@ -117,7 +109,6 @@ class BaseRepository {
                 return response.data;
             } catch (error) {
                 attempts++;
-                console.error(`GET request attempt ${attempts} failed:`, error);
 
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
@@ -139,11 +130,9 @@ class BaseRepository {
             try {
                 const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
                 BaseRepository.setLoadingState(requestKey, false);
-                toast.success('Thao tác thành công');
                 return response.data;
             } catch (error) {
                 attempts++;
-                console.error(`POST request attempt ${attempts} failed:`, error);
 
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
@@ -165,7 +154,6 @@ class BaseRepository {
             try {
                 const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
                 BaseRepository.setLoadingState(requestKey, false);
-                toast.success('Cập nhật thành công');
                 return response.data;
             } catch (error) {
                 attempts++;
@@ -191,11 +179,9 @@ class BaseRepository {
             try {
                 const response = await this.api.delete(this.endpoint + this.normalizePath(path));
                 BaseRepository.setLoadingState(requestKey, false);
-                toast.success('Xóa thành công');
                 return response.data;
             } catch (error) {
                 attempts++;
-                console.error(`DELETE request attempt ${attempts} failed:`, error);
 
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);

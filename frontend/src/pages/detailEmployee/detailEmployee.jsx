@@ -12,7 +12,6 @@ import deleteIcon from "../../assets/img/delete-icon.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
-import printIcon from "../../assets/img/print-icon.svg";
 
 import { userApi } from "../../api/apiUser";
 
@@ -70,8 +69,8 @@ const DetailEmployee = () => {
                 const storageRef = ref(storage, `employees/${id}/avatar_${timestamp}.jpg`);
                 const uploadResult = await uploadBytes(storageRef, compressedBlob);
                 const downloadUrl = await getDownloadURL(uploadResult.ref);
-                
-                setEditedEmployee(prev => ({...prev, image: downloadUrl}));
+
+                setEditedEmployee(prev => ({ ...prev, image: downloadUrl }));
                 URL.revokeObjectURL(previewUrl);
             } catch (error) {
                 console.error("Error uploading image:", error);
@@ -140,43 +139,42 @@ const DetailEmployee = () => {
             </div>
 
             <div className="actions">
-                <button className="delete" onClick={async () => {
-                    if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-                        try {
-                            await userApi.deleteUser(id);
-                            navigate('/employee');
-                            toast.success("Xóa nhân viên thành công!");
-                        } catch (err) {
-                            toast.error('Có lỗi xảy ra khi xóa nhân viên');
-                            console.error(err);
-                        }
-                    }
-                }}>
-                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                </button>
                 {!isEditMode ? (
-                    <button className="edit" onClick={handleEditClick}>
-                        <img src={editIcon} alt="Sửa" /> Sửa
-                    </button>
+                    <>
+                        <button className="delete" onClick={async () => {
+                            if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
+                                try {
+                                    await userApi.deleteUser(id);
+                                    navigate('/employee');
+                                    toast.success("Xóa nhân viên thành công!");
+                                } catch (err) {
+                                    toast.error('Có lỗi xảy ra khi xóa nhân viên');
+                                    console.error(err);
+                                }
+                            }
+                        }}>
+                            <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
+                        <button className="edit" onClick={handleEditClick}>
+                            <img src={editIcon} alt="Sửa" /> Sửa
+                        </button>
+                    </>
                 ) : (
                     <>
-                        <button className="save" onClick={handleSave}>
-                            <img src={saveIcon} alt="Lưu" /> {saving ? "Đang lưu..." : "Lưu"}
-                        </button>
                         <button className="cancel" onClick={handleCancel}>
                             <img src={cancelIcon} alt="Hủy" /> Hủy
                         </button>
+                        <button className="save" onClick={handleSave}>
+                            <img src={saveIcon} alt="Lưu" /> {saving ? "Đang lưu..." : "Lưu"}
+                        </button>
                     </>
                 )}
-                <button className="print">
-                    <img src={printIcon} alt="In" /> In
-                </button>
             </div>
 
             <div className="avatar-section">
-                <img 
-                    src={previewImage || employee.image || avatarIcon} 
-                    alt="avatar" 
+                <img
+                    src={previewImage || employee.image || avatarIcon}
+                    alt="avatar"
                     className={`avatar ${uploadingImage ? 'uploading' : ''}`}
                 />
                 {isEditMode && (

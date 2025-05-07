@@ -2,7 +2,6 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Centralized loading state management
 const loadingStates = new Map();
 
 class BaseRepository {
@@ -20,7 +19,7 @@ class BaseRepository {
 
         this.api = axios.create({
             baseURL: this.baseURL,
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
             },
             timeout: 5000
@@ -29,7 +28,7 @@ class BaseRepository {
         this.api.interceptors.request.use((config) => {
             const token = localStorage.getItem('auth_token');
             console.log('Current auth token:', token);
-            
+
             if (token) {
                 // Ensure token is properly formatted
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
@@ -50,7 +49,7 @@ class BaseRepository {
             (error) => {
                 console.error('API Error:', error);
                 console.error('Error response:', error.response);
-                
+
                 // Handle 401 Unauthorized error
                 if (error.response?.status === 401) {
                     const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
@@ -94,19 +93,19 @@ class BaseRepository {
     async get(path = '', params = {}, maxRetries = 3) {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
-        
+
         let attempts = 0;
-        
+
         while (attempts < maxRetries) {
             try {
                 const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-                
+
                 BaseRepository.setLoadingState(requestKey, false);
-                
+
                 if (response && response.data === null) {
                     return [];
                 }
-                
+
                 if (!response || !response.data) {
                     throw new Error('Invalid API response received');
                 }
@@ -119,12 +118,12 @@ class BaseRepository {
             } catch (error) {
                 attempts++;
                 console.error(`GET request attempt ${attempts} failed:`, error);
-                
+
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 2000)));
             }
         }
@@ -133,9 +132,9 @@ class BaseRepository {
     async post(path = '', data = {}, maxRetries = 3) {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
-        
+
         let attempts = 0;
-        
+
         while (attempts < maxRetries) {
             try {
                 const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
@@ -145,12 +144,12 @@ class BaseRepository {
             } catch (error) {
                 attempts++;
                 console.error(`POST request attempt ${attempts} failed:`, error);
-                
+
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
             }
         }
@@ -159,9 +158,9 @@ class BaseRepository {
     async put(path = '', data = {}, maxRetries = 3) {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
-        
+
         let attempts = 0;
-        
+
         while (attempts < maxRetries) {
             try {
                 const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
@@ -171,12 +170,12 @@ class BaseRepository {
             } catch (error) {
                 attempts++;
                 console.error(`PUT request attempt ${attempts} failed:`, error);
-                
+
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
             }
         }
@@ -185,9 +184,9 @@ class BaseRepository {
     async delete(path = '', maxRetries = 3) {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
-        
+
         let attempts = 0;
-        
+
         while (attempts < maxRetries) {
             try {
                 const response = await this.api.delete(this.endpoint + this.normalizePath(path));
@@ -197,12 +196,12 @@ class BaseRepository {
             } catch (error) {
                 attempts++;
                 console.error(`DELETE request attempt ${attempts} failed:`, error);
-                
+
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
             }
         }

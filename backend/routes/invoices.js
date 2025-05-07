@@ -4,42 +4,25 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const router = express.Router();
 
-const validateInvoice = (req, res, next) => {
-  const { promotionID, customerID, exportTime, paymentMethod, tax } = req.body;
-  
-  if (!customerID || !Number.isInteger(parseInt(customerID))) {
-    return res.status(400).json({ error: 'Valid Customer ID is required' });
-  }
-  
-  if (promotionID !== null && (!Number.isInteger(parseInt(promotionID)))) {
-    return res.status(400).json({ error: 'If provided, Promotion ID must be valid' });
-  }
-
-  if (!paymentMethod) {
-    return res.status(400).json({ error: 'Payment method is required' });
-  }
-  
-  if (tax !== undefined && (tax < 0 || tax > 100)) {
-    return res.status(400).json({ error: 'Tax must be between 0 and 100' });
-  }
-
-  next();
-};
-
-router.post('/', validateInvoice, async (req, res) => {
+router.post('/', async (req, res) => {
   const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
   try {
     const result = await prisma.$transaction(async (tx) => {
+      tx.$options = { timeout: 30000 };
+
       if (details && Array.isArray(details)) {
+        const productIds = details.map(detail => detail.productID);
+        const products = await tx.product.findMany({
+          where: { ID: { in: productIds } }
+        });
+
+        const productMap = new Map(products.map(p => [p.ID, p]));
+
         for (const detail of details) {
-          const product = await tx.product.findUnique({
-            where: { ID: detail.productID }
-          });
-          
+          const product = productMap.get(detail.productID);
           if (!product) {
             throw new Error(`Product with ID ${detail.productID} not found`);
           }
-          
           if (product.quantity < detail.quantity) {
             throw new Error(`Insufficient stock for product ${product.name}. Available: ${product.quantity}, Requested: ${detail.quantity}`);
           }
@@ -57,7 +40,6 @@ router.post('/', validateInvoice, async (req, res) => {
         isDelivery
       } = req.body;
 
-      // Create invoice with basic data
       const invoiceData = {
         Customers: {
           connect: { ID: customerID }
@@ -74,13 +56,45 @@ router.post('/', validateInvoice, async (req, res) => {
         })
       };
 
-      // Create invoice and get result
       const cleanInvoice = await tx.invoices.create({
         data: invoiceData
       });
 
-      // Fetch complete invoice with all relations
-      const invoice = await tx.invoices.findUnique({
+      if (isDelivery) {
+        await tx.shipments.create({
+          data: {
+            invoiceID: cleanInvoice.ID,
+            sendTime: new Date(),
+            receiveTime: new Date(),
+            recipientName,
+            recipientPhone,
+            recipientAddress,
+            district: district || '',
+            province: province || '',
+            ward: ward || ''
+          }
+        });
+      }
+
+      if (details && Array.isArray(details)) {
+        await tx.invoiceDetails.createMany({
+          data: details.map(detail => ({
+            productID: detail.productID,
+            quantity: detail.quantity,
+            unitPrice: detail.price,
+            invoiceID: cleanInvoice.ID
+          }))
+        });
+
+        await Promise.all(details.map(detail => 
+          tx.product.update({
+            where: { ID: detail.productID },
+            data: { quantity: { decrement: detail.quantity } }
+          })
+        ));
+      }
+
+      return await tx.invoices.findUnique({
         where: { ID: cleanInvoice.ID },
         include: {
           Customers: true,
@@ -101,56 +115,13 @@ router.post('/', validateInvoice, async (req, res) => {
           Shipments: true
         }
       });
-
-      // Create shipment if delivery is required
-      if (isDelivery) {
-        await tx.shipments.create({
-          data: {
-            invoiceID: invoice.ID,
-            sendTime: new Date(),
-            receiveTime: new Date(),
-            recipientName,
-            recipientPhone,
-            recipientAddress,
-            district: district || '',
-            province: province || '',
-            ward: ward || ''
-          }
-        });
-      }
-
-      // Create invoice details if provided
-      if (details && Array.isArray(details)) {
-        await tx.invoiceDetails.createMany({
-          data: details.map(detail => ({
-            productID: detail.productID,
-            quantity: detail.quantity,
-            unitPrice: detail.price,
-            invoiceID: invoice.ID
-          }))
-        });
-
-        for (const detail of details) {
-          await tx.product.update({
-            where: { ID: detail.productID },
-            data: {
-              quantity: {
-                decrement: detail.quantity
-              }
-            }
-          });
-        }
-      }
-
-      return invoice;
     });
 
     res.status(201).json({
-       redirect: '/invoices',
       success: true,
       message: 'Invoice created successfully',
       data: result,
-     
+      redirect: '/invoices'
     });
   } catch (error) {
     res.status(400).json({
@@ -182,34 +153,33 @@ router.get('/', async (req, res) => {
       if (endDate) where.exportTime.lte = new Date(endDate);
     }
 
-    const total = await prisma.invoices.count({ where });
-
-    const invoices = await prisma.invoices.findMany({
-      skip,
-      take: parseInt(limit),
-      where,
-      include: {
-        Customers: true,
-        Promotions: true,
-        InvoiceDetails: {
-          include: {
-            Products: {
-              select: {
-                ID: true,
-                name: true,
-                unit: true,
-                quantity: true,
-                outPrice: true
+    const [total, invoices] = await Promise.all([
+      prisma.invoices.count({ where }),
+      prisma.invoices.findMany({
+        skip,
+        take: parseInt(limit),
+        where,
+        include: {
+          Customers: true,
+          Promotions: true,
+          InvoiceDetails: {
+            include: {
+              Products: {
+                select: {
+                  ID: true,
+                  name: true,
+                  unit: true,
+                  quantity: true,
+                  outPrice: true
+                }
               }
             }
-          }
+          },
+          Shipments: true
         },
-        Shipments: true
-      },
-      orderBy: {
-        ID: 'desc'
-      }
-    });
+        orderBy: { ID: 'desc' }
+      })
+    ]);
 
     res.status(200).json({
       success: true,
@@ -273,16 +243,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.put('/:id', validateInvoice, async (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
-  
   try {
     const result = await prisma.$transaction(async (tx) => {
       const currentInvoice = await tx.invoices.findUnique({
         where: { ID: parseInt(id) },
-        include: {
-          InvoiceDetails: true
+        select: {
+          ID: true,
+          InvoiceDetails: {
+            select: {
+              productID: true,
+              quantity: true
+            }
+          }
         }
       });
 
@@ -290,96 +264,118 @@ router.put('/:id', validateInvoice, async (req, res) => {
         throw new Error('Invoice not found');
       }
 
-      // Restore previous quantities
-      for (const detail of currentInvoice.InvoiceDetails) {
-        await tx.product.update({
-          where: { ID: detail.productID },
-          data: {
-            quantity: {
-              increment: detail.quantity // Add back the quantities that were previously reduced
+      const { details, ...updateFields } = req.body;
+
+      const updateData = {};
+      
+      if (updateFields.customerID !== undefined) {
+        updateData.Customers = { connect: { ID: updateFields.customerID } };
+      }
+      if (updateFields.promotionID !== undefined) {
+        updateData.Promotions = updateFields.promotionID ? 
+          { connect: { ID: updateFields.promotionID } } : 
+          { disconnect: true };
+      }
+      if (updateFields.exportTime !== undefined) updateData.exportTime = updateFields.exportTime;
+      if (updateFields.paymentMethod !== undefined) updateData.paymentMethod = updateFields.paymentMethod;
+      if (updateFields.tax !== undefined) updateData.tax = updateFields.tax;
+      if (updateFields.isPaid !== undefined) updateData.isPaid = updateFields.isPaid;
+      if (updateFields.isDelivery !== undefined) updateData.isDelivery = updateFields.isDelivery;
+
+      if (updateFields.isDelivery !== undefined || 
+          updateFields.recipientName !== undefined || 
+          updateFields.recipientPhone !== undefined || 
+          updateFields.recipientAddress !== undefined || 
+          updateFields.district !== undefined || 
+          updateFields.province !== undefined || 
+          updateFields.ward !== undefined) {
+        
+        updateData.Shipments = updateFields.isDelivery ? {
+          upsert: {
+            where: { invoiceID: parseInt(id) },
+            create: {
+              sendTime: new Date(),
+              receiveTime: new Date(),
+              recipientName: updateFields.recipientName,
+              recipientPhone: updateFields.recipientPhone,
+              recipientAddress: updateFields.recipientAddress,
+              district: updateFields.district || '',
+              province: updateFields.province || '',
+              ward: updateFields.ward || ''
+            },
+            update: {
+              ...(updateFields.recipientName !== undefined && { recipientName: updateFields.recipientName }),
+              ...(updateFields.recipientPhone !== undefined && { recipientPhone: updateFields.recipientPhone }),
+              ...(updateFields.recipientAddress !== undefined && { recipientAddress: updateFields.recipientAddress }),
+              ...(updateFields.district !== undefined && { district: updateFields.district }),
+              ...(updateFields.province !== undefined && { province: updateFields.province }),
+              ...(updateFields.ward !== undefined && { ward: updateFields.ward })
             }
           }
-        });
+        } : {
+          deleteMany: { invoiceID: parseInt(id) }
+        };
       }
 
-      // Check if new quantities are available
       if (details && Array.isArray(details)) {
+        const productIds = details.map(d => d.productID);
+        const products = await tx.product.findMany({
+          where: { ID: { in: productIds } },
+          select: { ID: true, quantity: true, name: true }
+        });
+        const productMap = new Map(products.map(p => [p.ID, p]));
+
         for (const detail of details) {
-          const product = await tx.product.findUnique({
-            where: { ID: detail.productID }
-          });
-          
+          const product = productMap.get(detail.productID);
           if (!product) {
             throw new Error(`Product with ID ${detail.productID} not found`);
           }
-          
-          if (product.quantity < detail.quantity) {
-            throw new Error(`Insufficient stock for product ${product.name}. Available: ${product.quantity}, Requested: ${detail.quantity}`);
+
+          const currentDetail = currentInvoice.InvoiceDetails.find(d => d.productID === detail.productID);
+          const availableQuantity = product.quantity + (currentDetail?.quantity || 0);
+
+          if (availableQuantity < detail.quantity) {
+            throw new Error(`Insufficient stock for product ${product.name}. Available: ${availableQuantity}, Requested: ${detail.quantity}`);
           }
         }
+
+        await tx.invoiceDetails.deleteMany({
+          where: { invoiceID: parseInt(id) }
+        });
+
+        if (details.length > 0) {
+          await tx.invoiceDetails.createMany({
+            data: details.map(detail => ({
+              productID: detail.productID,
+              quantity: detail.quantity,
+              unitPrice: detail.price,
+              invoiceID: parseInt(id)
+            }))
+          });
+        }
+
+        await Promise.all([
+          ...currentInvoice.InvoiceDetails.map(detail =>
+            tx.product.update({
+              where: { ID: detail.productID },
+              data: { quantity: { increment: detail.quantity } }
+            })
+          ),
+          ...details.map(detail =>
+            tx.product.update({
+              where: { ID: detail.productID },
+              data: { quantity: { decrement: detail.quantity } }
+            })
+          )
+        ]);
       }
 
-      // Update invoice
-      const {
-        recipientName,
-        recipientPhone,
-        recipientAddress,
-        district,
-        province,
-        ward,
-        isPaid,
-        isDelivery
-      } = req.body;
-
-      // Update invoice with basic data first
       const cleanInvoice = await tx.invoices.update({
         where: { ID: parseInt(id) },
-        data: {
-          Customers: {
-            connect: { ID: customerID }
-          },
-          Promotions: promotionID ? {
-            connect: { ID: promotionID }
-          } : {
-            disconnect: true
-          },
-          exportTime,
-          paymentMethod,
-          tax,
-          isPaid: isPaid || false,
-          isDelivery: isDelivery || false,
-          Shipments: isDelivery ? {
-            upsert: {
-              where: { invoiceID: parseInt(id) },
-              create: {
-                sendTime: new Date(),
-                receiveTime: new Date(),
-                recipientName,
-                recipientPhone,
-                recipientAddress,
-                district: district || '',
-                province: province || '',
-                ward: ward || ''
-              },
-              update: {
-                recipientName,
-                recipientPhone,
-                recipientAddress,
-                district: district || '',
-                province: province || '',
-                ward: ward || ''
-              }
-            }
-          } : {
-            deleteMany: {
-              invoiceID: parseInt(id)
-            }
-          }
-        },
+        data: updateData
       });
 
-      // Fetch complete updated invoice with all relations
-      const invoice = await tx.invoices.findUnique({
+      return await tx.invoices.findUnique({
         where: { ID: cleanInvoice.ID },
         include: {
           Customers: true,
@@ -400,37 +396,6 @@ router.put('/:id', validateInvoice, async (req, res) => {
           Shipments: true
         }
       });
-
-      if (details && Array.isArray(details)) {
-        // Delete old invoice details
-        await tx.invoiceDetails.deleteMany({
-          where: { invoiceID: parseInt(id) }
-        });
-
-        // Create new invoice details
-        await tx.invoiceDetails.createMany({
-          data: details.map(detail => ({
-            productID: detail.productID,
-            quantity: detail.quantity,
-            unitPrice: detail.price,
-            invoiceID: parseInt(id)
-          }))
-        });
-
-        // Update product quantities with new values
-        for (const detail of details) {
-          await tx.product.update({
-            where: { ID: detail.productID },
-            data: {
-              quantity: {
-                decrement: detail.quantity
-              }
-            }
-          });
-        }
-      }
-
-      return invoice;
     });
 
     res.status(200).json({
@@ -451,11 +416,16 @@ router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.$transaction(async (tx) => {
-      // Get invoice details to restore quantities
       const invoice = await tx.invoices.findUnique({
         where: { ID: parseInt(id) },
-        include: {
-          InvoiceDetails: true
+        select: {
+          ID: true,
+          InvoiceDetails: {
+            select: {
+              productID: true,
+              quantity: true
+            }
+          }
         }
       });
 
@@ -463,32 +433,23 @@ router.delete('/:id', async (req, res) => {
         throw new Error('Invoice not found');
       }
 
-      // Restore product quantities
-      for (const detail of invoice.InvoiceDetails) {
-        await tx.product.update({
-          where: { ID: detail.productID },
-          data: {
-            quantity: {
-              increment: detail.quantity // Return the quantities back to inventory
-            }
-          }
-        });
+      if (invoice.InvoiceDetails.length > 0) {
+        await Promise.all(invoice.InvoiceDetails.map(detail =>
+          tx.product.update({
+            where: { ID: detail.productID },
+            data: { quantity: { increment: detail.quantity } }
+          })
+        ));
       }
 
-      // Delete related shipments first
-      await tx.shipments.deleteMany({
-        where: { invoiceID: parseInt(id) }
-      });
-
-      // Then delete invoice details
-      await tx.invoiceDetails.deleteMany({
-        where: { invoiceID: parseInt(id) }
-      });
+      // Delete related records
+      await Promise.all([
+        tx.shipments.deleteMany({ where: { invoiceID: parseInt(id) } }),
+        tx.invoiceDetails.deleteMany({ where: { invoiceID: parseInt(id) } })
+      ]);
 
       // Finally delete the invoice
-      await tx.invoices.delete({
-        where: { ID: parseInt(id) }
-      });
+      await tx.invoices.delete({ where: { ID: parseInt(id) } });
     });
 
     res.status(200).json({

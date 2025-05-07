@@ -61,15 +61,20 @@
       color: #fff;
     }
 
-    .save {
-      background: #FBFADA;
-      border: 1px solid #163020;
-      color: #163020;
-    }
+    .edit-actions {
+      display: flex;
+      gap: 10px;
+      
+      .save {
+        background: #FBFADA;
+        border: 1px solid #163020;
+        color: #163020;
+      }
 
-    .cancel {
-      background: #ccc;
-      border: 1px solid #000;
+      .cancel {
+        background: #ccc;
+        border: 1px solid #000;
+      }
     }
   }
 

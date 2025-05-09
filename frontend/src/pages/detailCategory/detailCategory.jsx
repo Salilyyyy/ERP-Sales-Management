@@ -95,7 +95,12 @@ const DetailCategory = () => {
                 <h2>Chi tiết loại sản phẩm</h2>
             </div>
             <div className="actions">
-                <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
+                {isEditing ? null : (
+                    <>
+                        <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
+                        <button className="print"><img src={printIcon} alt="In" /> In </button>
+                    </>
+                )}
                 {isEditing ? (
                     <>
                         <button className="save" onClick={handleSave}>
@@ -110,7 +115,6 @@ const DetailCategory = () => {
                         <img src={editIcon} alt="Sửa" /> Sửa
                     </button>
                 )}
-                <button className="print"><img src={printIcon} alt="In" /> In </button>
             </div>
 
             <div className="detail-category-content">

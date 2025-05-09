@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
-import "./product.scss";
 import { useNavigate } from "react-router-dom";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
+import { Cloudinary } from "@cloudinary/url-gen";
+import "./product.scss";
+
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
+
 import productApi from "../../api/apiProduct";
 import productCategoryApi from "../../api/apiProductCategory";
 
 const Product = () => {
     const navigate = useNavigate();
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectAll, setSelectAll] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState([]);
@@ -24,7 +28,12 @@ const Product = () => {
     const [filterName, setFilterName] = useState("");
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState([]); // Initialize with empty array
+    const [categories, setCategories] = useState([]);
+    const [cld, setCld] = useState(null); // ⚠️ Thêm state cho Cloudinary
+
+    const cloudName = 'dlrm4ccbs';
+    const apiKey = '679573739148611';
+    const apiSecret = '9IqI3iaNI1e9mwTp8V6uomrwFts'; // ⚠️ Không nên commit vào mã nguồn công khai
 
     useEffect(() => {
         fetchProducts();
@@ -36,8 +45,8 @@ const Product = () => {
             const response = await productCategoryApi.getAll();
             setCategories(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
-            console.error('Error fetching categories:', error);
-            setCategories([]); // Ensure categories is always an array
+            console.error("Error fetching categories:", error);
+            setCategories([]);
         }
     };
 
@@ -48,7 +57,7 @@ const Product = () => {
             const productsList = Array.isArray(response.data) ? response.data : [];
             setProducts(productsList);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            console.error("Error fetching products:", error);
             setProducts([]);
         } finally {
             setLoading(false);
@@ -62,9 +71,20 @@ const Product = () => {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        try {
+            const cloudinary = new Cloudinary({
+                cloud: { cloudName, apiKey },
+                url: { secure: true }
+            });
+            setCld(cloudinary);
+            console.log("Cloudinary initialized successfully");
+        } catch (error) {
+            console.error("Error initializing Cloudinary:", error);
+        }
     }, []);
 
     const handleDelete = async () => {
@@ -83,7 +103,7 @@ const Product = () => {
                 setSelectAll(false);
                 toast.success("Xóa sản phẩm thành công!");
             } catch (error) {
-                console.error('Error deleting products:', error);
+                console.error("Error deleting products:", error);
                 toast.error("Có lỗi xảy ra khi xóa sản phẩm!");
             }
         }
@@ -100,7 +120,9 @@ const Product = () => {
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.ID.toString().includes(searchQuery)
         )
-        .filter((product) => (filterType === "all" ? true : String(product.produceCategoriesID) === String(filterType)))
+        .filter((product) =>
+            filterType === "all" ? true : String(product.produceCategoriesID) === String(filterType)
+        )
         .filter((product) => product.name.toLowerCase().includes(filterName.toLowerCase()))
         .sort((a, b) => a.ID - b.ID);
 
@@ -111,7 +133,7 @@ const Product = () => {
     };
 
     const handleSelectProduct = (id) => {
-        let updatedSelection = selectedProducts.includes(id)
+        const updatedSelection = selectedProducts.includes(id)
             ? selectedProducts.filter((productId) => productId !== id)
             : [...selectedProducts, id];
 
@@ -208,7 +230,6 @@ const Product = () => {
                         <th>Giá nhập</th>
                         <th>Giá bán</th>
                         <th>Tồn kho</th>
-                        <th>Đơn vị</th>
                         <th>Hình ảnh</th>
                         <th>Hành động</th>
                     </tr>
@@ -225,8 +246,15 @@ const Product = () => {
                             <td>{product.inPrice?.toLocaleString('vi-VN')} đ</td>
                             <td>{product.outPrice?.toLocaleString('vi-VN')} đ</td>
                             <td>{product.quantity}</td>
-                            <td>{product.unit}</td>
-                            <td><img src={product.image} alt={product.name} className="product-img" /></td>
+                            <td><img
+                                src={
+                                    product.image
+                                        ? `https://res.cloudinary.com/${cloudName}/image/upload/${product.image}`
+                                        : '/default-image.png'
+                                } alt={product.name}
+                                className="product-img"
+                            />
+                            </td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                 <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>

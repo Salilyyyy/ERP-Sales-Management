@@ -55,7 +55,8 @@ const Promotion = () => {
                 }
             } finally {
                 if (isMounted) {
-                    setLoading(false);
+            setLoading(false);
+            toast.success("Tải danh sách khuyến mãi thành công");
                 }
             }
         };
@@ -73,7 +74,7 @@ const Promotion = () => {
             const response = await apiPromotion.getAll();
             setPromotions(response);
         } catch (error) {
-            toast.error(error.message || "Không thể tải danh sách khuyến mãi");
+            toast.error("Không thể tải danh sách khuyến mãi: " + (error.response?.data?.message || error.message));
             setPromotions([]);
         } finally {
             setLoading(false);
@@ -107,17 +108,34 @@ const Promotion = () => {
             for (const id of selectedPromotions) {
                 await apiPromotion.delete(id);
             }
-            toast.success(`Đã xóa ${selectedPromotions.length} khuyến mãi thành công`);
+            toast.success(`Đã xóa ${selectedPromotions.length} khuyến mãi thành công!`);
             await fetchPromotions();
             setSelectedPromotions([]);
         } catch (error) {
-            toast.error(error.message || "Không thể xóa khuyến mãi");
+            toast.error("Không thể xóa khuyến mãi: " + (error.response?.data?.message || error.message));
         }
     };
 
     const handleExport = () => {
-        toast.info("Tính năng xuất dữ liệu sẽ được cập nhật trong thời gian tới");
+        toast.info("Tính năng xuất dữ liệu sẽ được cập nhật trong thời gian tới!");
         setIsDropdownOpen(false);
+    };
+
+    const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+        toast.info("Đang tìm kiếm...");
+    };
+
+    const handleDateFilterChange = (startDate, endDate) => {
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            toast.error("Ngày bắt đầu không thể sau ngày kết thúc!");
+            return;
+        }
+        setStartDateFilter(startDate);
+        setEndDateFilter(endDate);
+        if (startDate || endDate) {
+            toast.info("Đang lọc theo ngày...");
+        }
     };
 
     const filteredPromotions = promotions
@@ -174,7 +192,7 @@ const Promotion = () => {
                         placeholder="Tìm kiếm ..."
                         className="search-bar"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={handleSearch}
                     />
                 </div>
 
@@ -205,14 +223,14 @@ const Promotion = () => {
                     <input
                         type="date"
                         value={startDateFilter}
-                        onChange={(e) => setStartDateFilter(e.target.value)}
+                        onChange={(e) => handleDateFilterChange(e.target.value, endDateFilter)}
                         placeholder="Start date"
                     />
                     <label className="label">Đến ngày</label>
                     <input
                         type="date"
                         value={endDateFilter}
-                        onChange={(e) => setEndDateFilter(e.target.value)}
+                        onChange={(e) => handleDateFilterChange(startDateFilter, e.target.value)}
                         placeholder="End date"
                     />
                 </div>
@@ -221,6 +239,7 @@ const Promotion = () => {
                     onClick={() => {
                         setStartDateFilter("");
                         setEndDateFilter("");
+                        toast.info("Đã xóa bộ lọc");
                     }}
                 >
                     Xoá lọc

@@ -9,6 +9,7 @@ import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import apiShipping from "../../api/apiShipping";
+import apiPostOffice from "../../api/apiPostOffice";
 
 const DetailShipping = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ const DetailShipping = () => {
   const [editedOrder, setEditedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [postOffices, setPostOffices] = useState([]);
 
   useEffect(() => {
     const fetchShipment = async () => {
@@ -36,6 +38,18 @@ const DetailShipping = () => {
     };
 
     fetchShipment();
+
+    const fetchPostOffices = async () => {
+      try {
+        const result = await apiPostOffice.getAll();
+        setPostOffices(result);
+      } catch (err) {
+        console.error("Error fetching post offices:", err);
+        toast.error("Không thể tải danh sách bưu cục");
+      }
+    };
+
+    fetchPostOffices();
   }, [id, isEditMode]);
 
   useEffect(() => {
@@ -79,6 +93,18 @@ const DetailShipping = () => {
     setEditedOrder(null);
   };
 
+  const handleDelete = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa vận đơn này không?")) {
+      try {
+        await apiShipping.delete(id);
+        toast.success("Xóa vận đơn thành công!");
+        navigate("/shipping-list");
+      } catch (err) {
+        toast.error("Lỗi khi xóa vận đơn: " + err.message);
+      }
+    }
+  };
+
   if (loading) return <div className="order-detail-container">Đang tải dữ liệu...</div>;
   if (error) return <div className="order-detail-container">Lỗi: {error}</div>;
   if (!order) return <div className="order-detail-container">Không tìm thấy đơn hàng</div>;
@@ -94,9 +120,15 @@ const DetailShipping = () => {
 
       <div className="actions">
         {!isEditMode ? (
-          <button className="edit" onClick={handleEditClick}>
-            <img src={editIcon} alt="Sửa" /> Sửa
-          </button>
+          <>
+            <button className="edit" onClick={handleEditClick}>
+              <img src={editIcon} alt="Sửa" /> Sửa
+            </button>
+            <button className="delete" onClick={handleDelete}>
+              <img src={deleteIcon} alt="Xóa" /> Xóa
+            </button>
+            <button className="print"><img src={printIcon} alt="In" /> In</button>
+          </>
         ) : (
           <>
             <button className="save" onClick={handleSave}>
@@ -107,7 +139,6 @@ const DetailShipping = () => {
             </button>
           </>
         )}
-        <button className="print"><img src={printIcon} alt="In" /> In</button>
       </div>
 
       <div className="content">
@@ -125,7 +156,22 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Bưu cục gửi</div>
-            <div className="info-value">{order.PostOffices?.name}</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <select
+                  value={editedOrder.postOfficeId}
+                  onChange={(e) => handleChange("postOfficeId", parseInt(e.target.value))}
+                >
+                  {postOffices.map((office) => (
+                    <option key={office.ID} value={office.ID}>
+                      {office.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                order.PostOffices?.name
+              )}
+            </div>
           </div>
         </div>
 
@@ -178,11 +224,33 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Thời gian gửi</div>
-            <div className="info-value">{formatDate(order.sendTime)}</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <input
+                  className="info-value-time"
+                  type="datetime-local"
+                  value={new Date(editedOrder.sendTime).toISOString().slice(0, 16)}
+                  onChange={(e) => handleChange("sendTime", new Date(e.target.value))}
+                />
+              ) : (
+                formatDate(order.sendTime)
+              )}
+            </div>
           </div>
           <div className="info-item">
             <div className="info-label">Thời gian nhận dự kiến</div>
-            <div className="info-value">{formatDate(order.receiveTime)}</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <input
+                  className="info-value-time"
+                  type="datetime-local"
+                  value={new Date(editedOrder.receiveTime).toISOString().slice(0, 16)}
+                  onChange={(e) => handleChange("receiveTime", new Date(e.target.value))}
+                />
+              ) : (
+                formatDate(order.receiveTime)
+              )}
+            </div>
           </div>
         </div>
 

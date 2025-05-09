@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import CustomerRepository from "../../api/apiCustomer"; 
+import CustomerRepository from "../../api/apiCustomer";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -15,7 +15,7 @@ const DetailCustomer = () => {
     const [editedCustomer, setEditedCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
     const [isEditing, setIsEditing] = useState(isEditMode);
@@ -91,9 +91,6 @@ const DetailCustomer = () => {
             </div>
 
             <div className="actions">
-                <button className="delete">
-                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                </button>
                 {isEditing ? (
                     <>
                         <button className="save" onClick={handleSave}>
@@ -102,13 +99,18 @@ const DetailCustomer = () => {
                         <button className="cancel" onClick={handleCancel}>Hủy</button>
                     </>
                 ) : (
-                    <button className="edit" onClick={handleEditClick}>
-                        <img src={editIcon} alt="Sửa" /> Sửa
-                    </button>
+                    <>
+                        <button className="delete">
+                            <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
+                        <button className="edit" onClick={handleEditClick}>
+                            <img src={editIcon} alt="Sửa" /> Sửa
+                        </button>
+                        <button className="print">
+                            <img src={printIcon} alt="In" /> In
+                        </button>
+                    </>
                 )}
-                <button className="print">
-                    <img src={printIcon} alt="In" /> In
-                </button>
             </div>
 
             <div className="detail-customer-content">
@@ -232,7 +234,7 @@ const DetailCustomer = () => {
                         </thead>
                         <tbody>
                             {customer.Invoices.map((invoice) => (
-                            <tr key={invoice.ID} onClick={() => navigate(`/invoice/${invoice.ID}`)}>
+                                <tr key={invoice.ID} onClick={() => navigate(`/invoice/${invoice.ID}`)}>
                                     <td>#{invoice.ID}</td>
                                     <td>{new Date(invoice.exportTime).toLocaleDateString()}</td>
                                     <td>{invoice.tax} VND</td>

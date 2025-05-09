@@ -98,24 +98,26 @@ const DetailSupplier = () => {
             </div>
 
             <div className="actions">
-                <button className="delete">
-                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                </button>
-                {isEditing ? (
+                {!isEditing ? (
+                    <>
+                        <button className="delete">
+                            <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
+                        <button className="edit" onClick={handleEditClick}>
+                            <img src={editIcon} alt="Sửa" /> Sửa
+                        </button>
+                        <button className="print">
+                            <img src={printIcon} alt="In" /> In
+                        </button>
+                    </>
+                ) : (
                     <>
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
                         </button>
                         <button className="cancel" onClick={handleCancel}>Hủy</button>
                     </>
-                ) : (
-                    <button className="edit" onClick={handleEditClick}>
-                        <img src={editIcon} alt="Sửa" /> Sửa
-                    </button>
                 )}
-                <button className="print">
-                    <img src={printIcon} alt="In" /> In
-                </button>
             </div>
 
             <div className="detail-supplier-content">
@@ -176,11 +178,11 @@ const DetailSupplier = () => {
                                 <input
                                     type="text"
                                     className="info-input"
-                                    value={editedSupplier.tax || ''}
-                                    onChange={(e) => handleInputChange('tax', e.target.value)}
+                                    value={editedSupplier.taxId || ''}
+                                    onChange={(e) => handleInputChange('taxId', e.target.value)}
                                 />
                             ) : (
-                                <div className="info-value">{supplier.tax}</div>
+                                <div className="info-value">{supplier.taxId}</div>
                             )}
                         </div>
                         <div className="info-item">
@@ -272,7 +274,7 @@ const DetailSupplier = () => {
                     </div>
                 </div>
             </div>
-            
+
             <div className="supplier-products">
                 <h3>Sản phẩm của nhà cung cấp</h3>
                 <div className="table-container">

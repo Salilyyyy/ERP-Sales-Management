@@ -71,9 +71,16 @@ $text-color: #1a3300;
       background: #E9762B;
       color: #fff;
     }
-    .save{
-      background: #4CAF50;
-      color: #fff;
+
+    .save {
+      background: #FBFADA;
+      border: 1px solid #163020;
+      color: #163020;
+    }
+
+    .cancel {
+      background: #ccc;
+      border: 1px solid #000;
     }
   }
 

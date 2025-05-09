@@ -92,9 +92,11 @@ const DetailPostOffice = () => {
             </div>
 
             <div className="actions">
-                <button className="delete">
-                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                </button>
+                {!isEditMode && (
+                    <button className="delete">
+                        <img src={deleteIcon} alt="Xóa" /> Xóa
+                    </button>
+                )}
 
                 {!isEditMode ? (
                     <button className="edit" onClick={handleEditClick}>
@@ -111,10 +113,13 @@ const DetailPostOffice = () => {
                     </>
                 )}
 
-                <button className="print">
-                    <img src={printIcon} alt="In" /> In
-                </button>
+                {!isEditMode && (
+                    <button className="print">
+                        <img src={printIcon} alt="In" /> In
+                    </button>
+                )}
             </div>
+
 
             <div className="detail-postOffice-content">
                 <div className="info-row">
@@ -186,24 +191,9 @@ const DetailPostOffice = () => {
                     </div>
                 </div>
 
-                <div className="info-row">
-                    <div className="info-item">
-                        <div className="info-label">Ghi chú</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    value={editedOffice.note || ""}
-                                    onChange={(e) => handleChange("note", e.target.value)}
-                                />
-                            ) : (
-                                office.note
-                            )}
-                        </div>
-                    </div>
-                </div>
+
             </div>
-        </div>
+        </div >
     );
 };
 

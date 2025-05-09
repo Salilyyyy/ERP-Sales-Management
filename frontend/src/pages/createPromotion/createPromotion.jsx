@@ -39,7 +39,6 @@ const CreatePromotion = () => {
     };
 
     const handleSubmit = async () => {
-        try {
             const payload = {
                 name: formData.name,
                 dateCreate: new Date(formData.dateCreate).toISOString(),
@@ -49,14 +48,9 @@ const CreatePromotion = () => {
                 quantity: parseInt(formData.quantity, 10),
                 type: formData.type 
             };
-            console.log("Sending data:", payload);
-
             await apiPromotion.create(payload);
             navigate("/promotion");
-        } catch (error) {
-            console.error("Error creating promotion:", error);
-            alert(error.message || "Tạo khuyến mãi thất bại!");
-        }
+       
     };
 
     return (

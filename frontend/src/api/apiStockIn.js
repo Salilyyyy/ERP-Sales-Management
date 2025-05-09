@@ -53,11 +53,15 @@ class StockInRepository extends BaseRepository {
 
     async update(id, data) {
         try {
+            const stockinDate = new Date(data.stockinDate);
+            const isoDate = stockinDate.toISOString();
+
             const response = await this.put(`/${id}`, {
-                stockinDate: data.stockinDate,
+                stockinDate: isoDate,
                 notes: data.notes,
+                supplierID: data.supplierID,
                 DetailStockins: data.DetailStockins.map(detail => ({
-                    ID: detail.ID, // Include ID for existing details
+                    ID: detail.ID,
                     productID: detail.productID,
                     quantity: detail.quantity,
                     unitPrice: detail.unitPrice
@@ -69,9 +73,9 @@ class StockInRepository extends BaseRepository {
         }
     }
 
-    async delete(id) {
+    async deleteStockIn(id) {
         try {
-            const response = await this.delete(`/${id}`);
+            const response = await super.delete(`/${id}`);
             return response;
         } catch (error) {
             this.handleError(error, 'Failed to delete stock-in');
@@ -115,8 +119,9 @@ class StockInRepository extends BaseRepository {
 
     async deleteDetail(stockInId, detailId) {
         try {
-            const response = await this.delete(`/${stockInId}/details/${detailId}`);
-            return response;
+            const response = await super.delete(`/${stockInId}/details/${detailId}`);
+            const updatedData = await this.getById(stockInId);
+            return updatedData;
         } catch (error) {
             this.handleError(error, 'Failed to delete stock-in detail');
         }

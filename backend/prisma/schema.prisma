@@ -26,12 +26,13 @@ model Invoices {
   exportTime     DateTime
   paymentMethod  String
   tax            Float
+  total          Float   @default(0)
+  isPaid         Boolean          @default(false)
+  isDelivery     Boolean          @default(false)
   InvoiceDetails InvoiceDetails[]
-  Shipments      Shipments[]
   Customers      Customers        @relation(fields: [customerID], references: [ID])
   Promotions     Promotions?      @relation(fields: [promotionID], references: [ID])
-  isPaid          Boolean          @default(false)
-  isDelivery      Boolean          @default(false) 
+  Shipments      Shipments[]
 }
 
 model InvoiceDetails {
@@ -42,11 +43,11 @@ model InvoiceDetails {
   quantity  Int
   notes     String?
   Invoices  Invoices @relation(fields: [invoiceID], references: [ID])
-  Products  Product @relation(fields: [productID], references: [ID])
+  Products  Product  @relation(fields: [productID], references: [ID])
 }
 
 model Product {
-  ID                  Int                @id @default(autoincrement())
+  ID                  Int               @id @default(autoincrement())
   produceCategoriesID Int
   unit                String
   image               String?
@@ -62,14 +63,14 @@ model Product {
   quantity            Int
   title               String
   description         String?
-  InvoiceDetails      InvoiceDetails[]   
-  DetailStockins      DetailStockins[]   
-  productCategory     ProductCategories  @relation(fields: [produceCategoriesID], references: [ID]) 
-  supplier            Suppliers          @relation(fields: [supplierID], references: [ID]) 
+  DetailStockins      DetailStockins[]
+  InvoiceDetails      InvoiceDetails[]
+  productCategory     ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
+  supplier            Suppliers         @relation(fields: [supplierID], references: [ID])
 }
 
 model ProductCategories {
-  ID          Int        @id @default(autoincrement())
+  ID          Int       @id @default(autoincrement())
   name        String
   unit        String?
   status      String?
@@ -93,7 +94,7 @@ model Suppliers {
   taxId          String?
   notes          String?
   Products       Product[]
-  Stockins      Stockins[]
+  Stockins       Stockins[]
 }
 
 model Customers {
@@ -112,7 +113,7 @@ model Customers {
 }
 
 model Shipments {
-  ID               Int         @id @default(autoincrement())
+  ID               Int          @id @default(autoincrement())
   invoiceID        Int
   postOfficeID     Int?
   receiverName     String?
@@ -129,7 +130,7 @@ model Shipments {
   recipientName    String?
   recipientPhone   String?
   ward             String?
-  Invoices         Invoices    @relation(fields: [invoiceID], references: [ID])
+  Invoices         Invoices     @relation(fields: [invoiceID], references: [ID])
   PostOffices      PostOffices? @relation(fields: [postOfficeID], references: [ID])
 }
 
@@ -143,20 +144,20 @@ model PostOffices {
 }
 
 model Users {
-  ID           Int      @id @default(autoincrement())
-  name         String
-  address      String
-  image        String?
-  email        String   @unique
-  password     String
-  birthday     DateTime
-  phoneNumber  String
-  department   String
-  IdentityCard String
-  userType     String
-  createAt     DateTime
-  status       String
-  resetToken   String?
+  ID               Int       @id @default(autoincrement())
+  name             String
+  address          String
+  image            String?
+  email            String    @unique
+  password         String
+  birthday         DateTime
+  phoneNumber      String
+  department       String
+  IdentityCard     String
+  userType         String
+  createAt         DateTime
+  status           String
+  resetToken       String?
   resetTokenExpiry DateTime?
 }
 
@@ -164,11 +165,10 @@ model Stockins {
   ID             Int              @id @default(autoincrement())
   stockinDate    DateTime
   notes          String?
-  supplierID     Int              
-  supplier       Suppliers        @relation(fields: [supplierID], references: [ID])
+  supplierID     Int
   DetailStockins DetailStockins[]
+  supplier       Suppliers        @relation(fields: [supplierID], references: [ID])
 }
-
 
 model DetailStockins {
   ID        Int      @id @default(autoincrement())
@@ -177,5 +177,5 @@ model DetailStockins {
   quantity  Int
   unitPrice Float
   Stockins  Stockins @relation(fields: [StockinID], references: [ID])
-  Products  Product @relation(fields: [productID], references: [ID])
+  Products  Product  @relation(fields: [productID], references: [ID])
 }

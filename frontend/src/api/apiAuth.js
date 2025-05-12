@@ -10,7 +10,6 @@ class AuthRepository extends BaseRepository {
             const response = await this.post('/login', { email, password });
             console.log('Login response:', response);
             if (response.token) {
-                // Store token with Bearer prefix
                 localStorage.setItem('auth_token', `Bearer ${response.token}`);
                 localStorage.setItem('user', JSON.stringify(response.user));
                 console.log('Auth token stored:', localStorage.getItem('auth_token'));
@@ -39,6 +38,20 @@ class AuthRepository extends BaseRepository {
                 status: error.status
             });
             
+            throw error;
+        }
+    }
+
+    async verifyResetToken(token) {
+        try {
+            const response = await this.get(`/verify-reset-token/${token}`);
+            return response;
+        } catch (error) {
+            console.error('Verify reset token error:', {
+                message: error.message,
+                details: error.details,
+                status: error.status
+            });
             throw error;
         }
     }

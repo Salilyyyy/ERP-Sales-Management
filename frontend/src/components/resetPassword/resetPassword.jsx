@@ -4,6 +4,7 @@ import "./resetPassword.scss";
 import passwordIcon from "../../assets/img/password-icon.svg";
 import eyeOpen from "../../assets/img/eye.svg";
 import eyeClosed from "../../assets/img/close-eye.svg";
+import  verifyIcon from "../../assets/img/verify-icon.svg";
 import AuthRepository from "../../api/apiAuth";
 
 const ResetPassword = () => {
@@ -19,11 +20,9 @@ const ResetPassword = () => {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
-  // Get token from URL query params
   const token = new URLSearchParams(location.search).get('token');
 
   useEffect(() => {
-    // Verify token when component mounts
     const verifyToken = async () => {
       if (!token) {
         setError("Token không hợp lệ");
@@ -154,7 +153,7 @@ const ResetPassword = () => {
             {passwordError && <div className="validation-message">{passwordError}</div>}
 
             <div className="input-group">
-              <img src={passwordIcon} alt="Password Icon" className="icon" />
+              <img src={verifyIcon} alt="Password Icon" className="icon" />
               <input
                 type={confirmPasswordVisible ? "text" : "password"}
                 placeholder="Xác nhận mật khẩu mới"

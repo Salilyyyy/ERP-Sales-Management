@@ -42,6 +42,38 @@ router.post('/forgot-password',
     }
 });
 
+router.get('/verify-reset-token/:token', async (req, res) => {
+  try {
+    const token = req.params.token;
+    const user = await prisma.users.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        error: 'INVALID_RESET_TOKEN',
+        message: 'Token không hợp lệ hoặc đã hết hạn'
+      });
+    }
+
+    res.json({ 
+      valid: true,
+      message: 'Token hợp lệ'
+    });
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ 
+      error: 'SERVER_ERROR',
+      message: 'Đã xảy ra lỗi khi xác thực token' 
+    });
+  }
+});
+
 router.post('/reset-password',
   [
     body('token').notEmpty(),

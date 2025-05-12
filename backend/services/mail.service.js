@@ -1,23 +1,29 @@
-const nodemailer = require('nodemailer');
+const Nodemailer = require("nodemailer");
+const { MailtrapTransport } = require("mailtrap");
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
+const TOKEN = "6e29c7ec3c06f067d52f50598fc195cf";
+
+const transporter = Nodemailer.createTransport(
+    MailtrapTransport({
+        token: TOKEN,
+    })
+);
+
+const sender = {
+    address: "hello@erpsystem.io.vn",
+    name: "ERP System's support team",
+};
 
 const sendEmail = async (to, subject, html) => {
     try {
         console.log('Preparing to send email...');
 
         const mailOptions = {
-            from: process.env.SMTP_FROM,
+            from: sender,
             to: to,
             subject: subject,
-            html: html
+            html: html,
+            category: "ERP System Email"
         };
 
         console.log('Sending with options:', {
@@ -29,12 +35,10 @@ const sendEmail = async (to, subject, html) => {
         
         console.log('Email sent successfully');
         console.log('Message ID:', info.messageId);
-        console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
 
         return {
             success: true,
-            messageId: info.messageId,
-            previewUrl: nodemailer.getTestMessageUrl(info)
+            messageId: info.messageId
         };
     } catch (error) {
         console.error('Failed to send email:', error);
@@ -42,7 +46,6 @@ const sendEmail = async (to, subject, html) => {
     }
 };
 
-// Test connection on startup
 (async () => {
     try {
         await transporter.verify();

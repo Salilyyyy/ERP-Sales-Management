@@ -19,7 +19,6 @@ const LoginPage = () => {
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Check for saved credentials on component mount
   useEffect(() => {
     const savedCredentials = localStorage.getItem('rememberedCredentials');
     if (savedCredentials) {
@@ -69,7 +68,6 @@ const LoginPage = () => {
     try {
       await AuthRepository.login(email, password);
       
-      // Save credentials if remember me is checked
       if (rememberMe) {
         localStorage.setItem('rememberedCredentials', JSON.stringify({
           savedEmail: email,
@@ -83,7 +81,11 @@ const LoginPage = () => {
       navigate(redirectTo);
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
-      // Handle specific error types from apiAuth
+      if (error.message === "Email hoặc mật khẩu không đúng") {
+        setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
+        return;
+      }
+      
       switch (error.message) {
         case 'EMAIL_PASSWORD_INVALID':
           setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");

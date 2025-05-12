@@ -69,11 +69,23 @@ const CustomerForm = () => {
     }, [selectedDistrict]);
 
     const handleCreateCustomer = () => {
-        const cityObj = cities.find(c => c.code === selectedCity);
-        const districtObj = districts.find(d => d.code === selectedDistrict);
-        const wardObj = wards.find(w => w.code === selectedWard);
-        const fullAddress = `${address}${wardObj ? ", " + wardObj.name : ""}${districtObj ? ", " + districtObj.name : ""}${cityObj ? ", " + cityObj.name : ""}`;
+        // Validate required location fields
+        if (!selectedCity || !selectedDistrict || !selectedWard) {
+            alert("Vui lòng chọn đầy đủ Thành phố/Tỉnh, Quận/Huyện, và Phường/Xã");
+            return;
+        }
 
+        const cityObj = cities.find(c => c.code === parseInt(selectedCity));
+        const districtObj = districts.find(d => d.code === parseInt(selectedDistrict));
+        const wardObj = wards.find(w => w.code === parseInt(selectedWard));
+
+        if (!cityObj || !districtObj || !wardObj) {
+            alert("Có lỗi khi lấy thông tin địa chỉ. Vui lòng thử lại.");
+            return;
+        }
+
+        const fullAddress = `${address}, ${wardObj.name}, ${districtObj.name}, ${cityObj.name}`;
+        
         apiCustomer.create({
             name: customerName,
             organization,

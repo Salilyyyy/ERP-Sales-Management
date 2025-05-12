@@ -8,8 +8,6 @@ router.post('/', async (req, res) => {
   const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
   try {
     const result = await prisma.$transaction(async (tx) => {
-      tx.$options = { timeout: 30000 };
-
       if (details && Array.isArray(details)) {
         const productIds = details.map(detail => detail.productID);
         const products = await tx.product.findMany({
@@ -47,6 +45,7 @@ router.post('/', async (req, res) => {
         exportTime: exportTime || new Date(),
         paymentMethod,
         tax,
+        total: req.body.total || 0,
         isPaid: isPaid || false,
         isDelivery: isDelivery || false,
         ...(promotionID && {
@@ -94,33 +93,37 @@ router.post('/', async (req, res) => {
         ));
       }
 
-      return await tx.invoices.findUnique({
-        where: { ID: cleanInvoice.ID },
-        include: {
-          Customers: true,
-          Promotions: true,
-          InvoiceDetails: {
-            include: {
-              Products: {
-                select: {
-                  ID: true,
-                  name: true,
-                  unit: true,
-                  quantity: true,
-                  outPrice: true
-                }
+      return cleanInvoice;
+    }, {
+      timeout: 30000 
+    });
+
+    const invoice = await prisma.invoices.findUnique({
+      where: { ID: result.ID },
+      include: {
+        Customers: true,
+        Promotions: true,
+        InvoiceDetails: {
+          include: {
+            Products: {
+              select: {
+                ID: true,
+                name: true,
+                unit: true,
+                quantity: true,
+                outPrice: true
               }
             }
-          },
-          Shipments: true
-        }
-      });
+          }
+        },
+        Shipments: true
+      }
     });
 
     res.status(201).json({
       success: true,
       message: 'Invoice created successfully',
-      data: result,
+      data: invoice,
       redirect: '/invoices'
     });
   } catch (error) {
@@ -279,6 +282,7 @@ router.put('/:id', async (req, res) => {
       if (updateFields.exportTime !== undefined) updateData.exportTime = updateFields.exportTime;
       if (updateFields.paymentMethod !== undefined) updateData.paymentMethod = updateFields.paymentMethod;
       if (updateFields.tax !== undefined) updateData.tax = updateFields.tax;
+      if (updateFields.total !== undefined) updateData.total = updateFields.total;
       if (updateFields.isPaid !== undefined) updateData.isPaid = updateFields.isPaid;
       if (updateFields.isDelivery !== undefined) updateData.isDelivery = updateFields.isDelivery;
 
@@ -375,33 +379,37 @@ router.put('/:id', async (req, res) => {
         data: updateData
       });
 
-      return await tx.invoices.findUnique({
-        where: { ID: cleanInvoice.ID },
-        include: {
-          Customers: true,
-          Promotions: true,
-          InvoiceDetails: {
-            include: {
-              Products: {
-                select: {
-                  ID: true,
-                  name: true,
-                  unit: true,
-                  quantity: true,
-                  outPrice: true
-                }
+      return cleanInvoice;
+    }, {
+      timeout: 30000
+    });
+
+    const invoice = await prisma.invoices.findUnique({
+      where: { ID: result.ID },
+      include: {
+        Customers: true,
+        Promotions: true,
+        InvoiceDetails: {
+          include: {
+            Products: {
+              select: {
+                ID: true,
+                name: true,
+                unit: true,
+                quantity: true,
+                outPrice: true
               }
             }
-          },
-          Shipments: true
-        }
-      });
+          }
+        },
+        Shipments: true
+      }
     });
 
     res.status(200).json({
       success: true,
       message: 'Invoice updated successfully',
-      data: result,
+      data: invoice,
       redirect: '/invoices'
     });
   } catch (error) {
@@ -427,7 +435,9 @@ router.delete('/:id', async (req, res) => {
             }
           }
         }
-      });
+    }, {
+      timeout: 30000
+    });
 
       if (!invoice) {
         throw new Error('Invoice not found');
@@ -442,13 +452,11 @@ router.delete('/:id', async (req, res) => {
         ));
       }
 
-      // Delete related records
       await Promise.all([
         tx.shipments.deleteMany({ where: { invoiceID: parseInt(id) } }),
         tx.invoiceDetails.deleteMany({ where: { invoiceID: parseInt(id) } })
       ]);
 
-      // Finally delete the invoice
       await tx.invoices.delete({ where: { ID: parseInt(id) } });
     });
 

@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import apiProduct from "../../api/apiProduct";
+import apiInvoice from "../../api/apiInvoice";
+import apiStockIn from "../../api/apiStockIn";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -27,23 +30,113 @@ const Dashboard = () => {
   const [exportType, setExportType] = useState("pdf");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  const lineChartData = {
-    labels: ["Aug 1", "Aug 2", "Aug 3", "Aug 4", "Aug 5"],
+  const [timeFilter, setTimeFilter] = useState("day");
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [revenueData, setRevenueData] = useState({
+    labels: [],
     datasets: [
       {
         label: "Doanh thu",
-        data: [60, 80, 45, 65, 96],
+        data: [],
         borderColor: "#6D6DFF",
         tension: 0.4,
       },
       {
         label: "Đơn hàng",
-        data: [30, 70, 50, 40, 13],
+        data: [],
         borderColor: "#E08AFF",
         tension: 0.4,
       },
     ],
+  });
+
+  const calculateRevenueData = (invoices, period) => {
+    const data = new Map();
+    const orderCounts = new Map();
+    let totalRev = 0;
+    let totalOrd = 0;
+    
+    invoices.forEach(invoice => {
+      if (!invoice.exportTime) return;
+
+      const date = new Date(invoice.exportTime);
+      if (isNaN(date.getTime())) return;
+
+      const invoiceTotal = invoice.total || invoice.totalAmount || 0;
+      
+      console.log('Processing invoice:', {
+        id: invoice.ID || invoice.id,
+        exportTime: invoice.exportTime || invoice.createdAt,
+        total: invoiceTotal,
+        details: invoice.InvoiceDetails,
+        originalInvoice: invoice
+      });
+
+      totalRev += invoiceTotal;
+      totalOrd += 1;
+
+      let dateKey;
+      
+      switch(period) {
+        case 'day':
+          dateKey = date.getFullYear() + '-' + 
+            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(date.getDate()).padStart(2, '0');
+          break;
+        case 'week':
+          const firstDayOfWeek = new Date(date);
+          firstDayOfWeek.setDate(date.getDate() - date.getDay());
+          const weekNum = Math.ceil((date.getDate() - firstDayOfWeek.getDate() + 1) / 7);
+          dateKey = `${date.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+          break;
+        case 'month':
+          dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        case 'year':
+          dateKey = date.getFullYear().toString();
+          break;
+        default:
+          dateKey = date.getFullYear() + '-' + 
+            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(date.getDate()).padStart(2, '0');
+      }
+      
+      const roundedTotal = Math.round(invoiceTotal * 100) / 100;
+      data.set(dateKey, (data.get(dateKey) || 0) + roundedTotal);
+      orderCounts.set(dateKey, (orderCounts.get(dateKey) || 0) + 1);
+    });
+
+    setTotalRevenue(totalRev);
+    setTotalOrders(totalOrd);
+
+    const sortedDates = Array.from(data.keys()).sort();
+    
+    return {
+      labels: sortedDates.map(date => {
+        switch(period) {
+          case 'day':
+            return new Date(date).toLocaleDateString('vi-VN');
+        case 'week':
+            const [year, week] = date.split('-W');
+            return `Tuần ${week}/${year}`;
+          case 'month':
+            return `Tháng ${date.split('-')[1]}/${date.split('-')[0]}`;
+          default:
+            return date;
+        }
+      }),
+      datasets: [
+        {
+          ...revenueData.datasets[0],
+          data: sortedDates.map(date => data.get(date) || 0)
+        },
+        {
+          ...revenueData.datasets[1],
+          data: sortedDates.map(date => orderCounts.get(date) || 0)
+        }
+      ]
+    };
   };
 
   const lineChartOptions = {
@@ -57,18 +150,169 @@ const Dashboard = () => {
     },
   };
 
-  const topProducts = [
-    { id: 1, name: "Chén sứ", price: "350.000VND", quantity: 250, revenue: "87.500.000 VND" },
-    { id: 2, name: "Ly sứ", price: "350.000VND", quantity: 250, revenue: "87.500.000 VND" },
-    { id: 3, name: "Tranh điêu khắc", price: "350.000VND", quantity: 250, revenue: "87.500.000 VND" },
-  ];
+  const [topProducts, setTopProducts] = useState([]);
 
-  const stockStats = [
-    { label: "Chén Bát Tràng", width: "100%", change: "+42.1%", icon: upIcon, color: "green" },
-    { label: "Ly sứ thuỷ tinh", width: "70%", change: "-16.6%", icon: downIcon, color: "red" },
-    { label: "Ly pha lê", width: "85%", change: "+22%", icon: upIcon, color: "green" },
-    { label: "Tranh Đông Hồ", width: "95%", change: "+45.32%", icon: upIcon, color: "green" },
-  ];
+  useEffect(() => {
+    const fetchRevenueData = async () => {
+      try {
+        const response = await apiInvoice.getAll();
+        console.log('Raw invoice response:', response);
+        const invoices = response?.data || [];
+        console.log('Filtered invoices:', invoices.filter(invoice => invoice.exportTime));
+        const chartData = calculateRevenueData(invoices, timeFilter);
+        console.log('Generated chart data:', chartData);
+        setRevenueData(chartData);
+      } catch (error) {
+        console.error("Failed to fetch revenue data:", error);
+      }
+    };
+    
+    fetchRevenueData();
+  }, [timeFilter]);
+
+  useEffect(() => {
+    const fetchTopProducts = async () => {
+      try {
+        const [invoiceResponse, stockInResponse] = await Promise.all([
+          apiInvoice.getAll(),
+          apiStockIn.getAll()
+        ]);
+
+        const invoices = invoiceResponse?.data || [];
+        const stockIns = stockInResponse?.data || [];
+        
+        const productData = new Map();
+        
+        stockIns.forEach(stockIn => {
+          if (!stockIn?.DetailStockins) return;
+          
+          stockIn.DetailStockins.forEach(detail => {
+            if (!detail?.Products) return;
+            
+            const productId = detail.Products.ID;
+            const productName = detail.Products.name;
+            const quantity = parseInt(detail.quantity || 0, 10);
+            const unitPrice = parseFloat(detail.unitPrice || 0);
+            
+            if (productId && productName) {
+              console.log('Processing stock-in:', {
+                productId,
+                name: productName,
+                quantity,
+                unitPrice
+              });
+              
+              if (!productData.has(productId)) {
+                productData.set(productId, {
+                  id: productId,
+                  name: productName,
+                  stockInQuantity: 0,
+                  salesQuantity: 0,
+                  price: unitPrice,
+                  revenue: 0
+                });
+              }
+              
+              const product = productData.get(productId);
+              product.stockInQuantity += quantity;
+            }
+          });
+        });
+        
+        invoices.forEach(invoice => {
+          if (!invoice?.InvoiceDetails) return;
+          
+          invoice.InvoiceDetails.forEach(detail => {
+            if (!detail?.Products) return;
+            
+            const productId = detail.Products.ID;
+            const quantity = parseInt(detail.quantity || 0, 10);
+            const unitPrice = parseFloat(detail.unitPrice || 0);
+            
+            if (productId && productData.has(productId)) {
+              console.log('Processing sale:', {
+                productId,
+                name: detail.Products.name,
+                quantity,
+                unitPrice
+              });
+              
+              const product = productData.get(productId);
+              product.salesQuantity += quantity;
+              product.revenue += quantity * unitPrice;
+              product.price = unitPrice;
+            }
+          });
+        });
+
+        console.log('Final product data:', Array.from(productData.values()));
+        
+        const sortedProducts = Array.from(productData.values())
+          .map(product => ({
+            ...product,
+            salesRate: product.salesQuantity / (product.stockInQuantity || 1) 
+          }))
+          .sort((a, b) => b.salesRate - a.salesRate)
+          .slice(0, 3)
+          .map(product => ({
+            id: product.id,
+            name: product.name,
+            price: `${product.price.toLocaleString('vi-VN')}đ`,
+            quantity: product.salesQuantity,
+            revenue: `${product.revenue.toLocaleString('vi-VN')}đ`,
+            stockIn: product.stockInQuantity,
+            salesRate: (product.salesRate * 100).toFixed(1) + '%'
+          }));
+        
+        console.log('Sorted products:', sortedProducts);
+        setTopProducts(sortedProducts);
+      } catch (error) {
+        console.error("Failed to fetch top products:", error);
+        console.error("Error details:", error.message);
+      }
+    };
+
+    fetchTopProducts();
+  }, []);
+
+  const [lowestStock, setLowestStock] = useState([]);
+  const [highestStock, setHighestStock] = useState([]);
+
+  useEffect(() => {
+    const fetchInventoryData = async () => {
+      try {
+        const response = await apiProduct.getAll();
+        const products = response.data;
+        
+        const sortedProducts = [...products].sort((a, b) => a.quantity - b.quantity);
+        
+        const lowest = sortedProducts.slice(0, 3);
+        const highest = sortedProducts.slice(-3).reverse();
+
+        setLowestStock(lowest.map(product => ({
+          label: product.name,
+          width: `${(product.quantity / 100) * 100}%`,
+          change: `${product.quantity} sản phẩm`,
+          icon: downIcon,
+          color: "red"
+        })));
+
+        setHighestStock(highest.map(product => ({
+          label: product.name,
+          width: `${(product.quantity / 100) * 100}%`,
+          change: `${product.quantity} sản phẩm`,
+          icon: upIcon,
+          color: "green"
+        })));
+      } catch (error) {
+        console.error("Failed to fetch inventory data:", error);
+      }
+    };
+
+    fetchInventoryData();
+  }, []);
+
+  const stockStats = [...lowestStock, ...highestStock];
 
   const donutCards = ["Khuyến mãi", "Khách hàng mới"];
 
@@ -79,11 +323,10 @@ const Dashboard = () => {
       const doc = new jsPDF();
       doc.text("Bảng sản phẩm bán chạy", 10, 10);
 
-      const tableRows = filteredData.map(p => [p.id, p.name, p.price, p.quantity, p.revenue]);
+      const tableRows = filteredData.map(p => [p.id, p.name, p.price, p.quantity, p.stockIn, p.salesRate, p.revenue]);
 
-      // 👉 Gọi autoTable từ function đã import
       autoTable(doc, {
-        head: [["STT", "Tên sản phẩm", "Giá bán", "Số lượng", "Doanh thu"]],
+        head: [["STT", "Tên sản phẩm", "Giá bán", "Đã bán", "Nhập vào", "Tỷ lệ BH", "Doanh thu"]],
         body: tableRows,
         startY: 20,
       });
@@ -112,8 +355,32 @@ const Dashboard = () => {
 
       <div className="grid-container">
         <div className="card chart-card">
-          <h4>Thống kê doanh thu & đơn hàng</h4>
-          <Line data={lineChartData} options={lineChartOptions} />
+          <div className="chart-header">
+      <h4>Thống kê doanh thu & đơn hàng</h4>
+      <div className="statistics-summary">
+        <div className="stat-item">
+          <label>Tổng doanh thu:</label>
+          <span>{totalRevenue.toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div className="stat-item">
+          <label>Tổng đơn hàng:</label>
+          <span>{totalOrders}</span>
+        </div>
+      </div>
+            <div className="time-filter-container">
+              <select 
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="time-filter"
+              >
+                <option value="day">Theo ngày</option>
+                <option value="week">Theo tuần</option>
+                <option value="month">Theo tháng</option>
+                <option value="year">Theo năm</option>
+              </select>
+            </div>
+          </div>
+          <Line data={revenueData} options={lineChartOptions} />
         </div>
 
         <div className="card stock-card">
@@ -139,7 +406,9 @@ const Dashboard = () => {
                 <th>STT</th>
                 <th>Tên sản phẩm</th>
                 <th>Giá bán</th>
-                <th>Số lượng</th>
+                <th>Đã bán</th>
+                <th>Nhập vào</th>
+                <th>Tỷ lệ BH</th>
                 <th>Doanh thu</th>
               </tr>
             </thead>
@@ -150,6 +419,8 @@ const Dashboard = () => {
                   <td>{product.name}</td>
                   <td>{product.price}</td>
                   <td>{product.quantity}</td>
+                  <td>{product.stockIn}</td>
+                  <td>{product.salesRate}</td>
                   <td>{product.revenue}</td>
                 </tr>
               ))}

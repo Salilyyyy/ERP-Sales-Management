@@ -59,7 +59,7 @@ const CreateInvoice = () => {
 
   const [vat, setVat] = useState(0);
   const [discount, setDiscount] = useState(0);
-  const [grandTotal, setGrandTotal] = useState(0)
+  const [grandTotal, setGrandTotal] = useState(0);
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -175,6 +175,7 @@ const CreateInvoice = () => {
       bonusPoints: 0,
     });
   };
+
   useEffect(() => {
     const vatValue = (totalAmount * vatRate) / 100;
     const discountValue = selectedPromotion
@@ -242,9 +243,8 @@ const CreateInvoice = () => {
         recipientAddress: shippingOption === "ship" ? 
           [
             recipientAddress,
-            wards.find((w) => w.code === selectedWard)?.name,
-            districts.find((d) => d.code === selectedDistrict)?.name,
-            provinces.find((p) => p.code === selectedProvince)?.name
+            "quận " + (districts.find((d) => d.code === selectedDistrict)?.name || "").replace(/^(quận|huyện)\s*/i, ""),
+            "thành phố " + (provinces.find((p) => p.code === selectedProvince)?.name || "").replace(/^(thành phố|tỉnh)\s*/i, "")
           ].filter(Boolean).map(part => part.trim()).join(", ")
           : recipientAddress,
         note,
@@ -255,7 +255,7 @@ const CreateInvoice = () => {
         district: "",
         ward: "",
         discount: discount,
-        totalAmount: grandTotal,
+        total: grandTotal,
         bonusPoints: bonusPoints,
       };
 
@@ -332,7 +332,6 @@ const CreateInvoice = () => {
     fetchCustomers();
   }, []);
 
-  // Fetch provinces data
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -346,7 +345,6 @@ const CreateInvoice = () => {
     fetchProvinces();
   }, []);
 
-  // Fetch districts when province changes
   useEffect(() => {
     const fetchDistricts = async () => {
       if (!selectedProvince) return;
@@ -364,7 +362,6 @@ const CreateInvoice = () => {
     fetchDistricts();
   }, [selectedProvince]);
 
-  // Fetch wards when district changes
   useEffect(() => {
     const fetchWards = async () => {
       if (!selectedDistrict) return;
@@ -444,93 +441,78 @@ const CreateInvoice = () => {
     setSelectedCustomerId(customerId);
 
     const selectedCustomer = customers.find((c) => c.ID === customerId);
-    if (selectedCustomer) {
-      setRecipientName(selectedCustomer.name ?? "");
-      setRecipientPhone(selectedCustomer.phoneNumber ?? "");
+    if (!selectedCustomer) return;
 
-      // Parse customer address into components
-      const address = selectedCustomer.address ?? "";
-      const parts = address.split(",").map(part => part.trim());
-      if (parts.length >= 4) {
-        setShippingOption("ship"); // Enable shipping to show the address fields
-        setRecipientAddress(parts[0]); // Street address
+    setRecipientName(selectedCustomer.name ?? "");
+    setRecipientPhone(selectedCustomer.phoneNumber ?? "");
 
-        // Find and set province first
-        const provinceName = parts[3];
-        console.log("Looking for province:", provinceName);
-        console.log("Provinces:", provinces);
-        console.log("Parts:", parts);
-        const foundProvince = provinces.find(p => {
-          console.log("Checking province:", p.name);
-          const normalizedProvinceName = p.name.toLowerCase()
-            .replace(/thành phố /g, '')
-            .replace(/tỉnh /g, '')
+    const address = selectedCustomer.address ?? "";
+    const parts = address.split(",").map(part => part.trim());
+    if (parts.length >= 3) {
+      setShippingOption("ship"); 
+      setRecipientAddress(parts[0]); 
+
+      const provinceName = parts[parts.length - 1];
+      const foundProvince = provinces.find(p => {
+        const normalizedProvinceName = p.name.toLowerCase()
+          .replace(/^tỉnh\s+/i, "")
+          .replace(/^thành phố\s+/i, "")
+          .trim();
+        const normalizedSearchName = provinceName.toLowerCase()
+          .replace(/^tỉnh\s+/i, "")
+          .replace(/^thành phố\s+/i, "")
+          .trim();
+        return normalizedProvinceName === normalizedSearchName;
+      });
+      
+      if (!foundProvince) return;
+
+      setSelectedProvince(foundProvince.code);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const response = await axios.get(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`);
+      const districtList = response.data.districts;
+      setDistricts(districtList);
+
+      const districtName = parts[parts.length - 2];
+      const foundDistrict = districtList.find(d => {
+        const normalizedDistrictName = d.name.toLowerCase()
+          .replace(/^(quận|huyện|thị xã)\s+/i, '')
+          .trim();
+        const normalizedSearchName = districtName.toLowerCase()
+          .replace(/^(quận|huyện|thị xã)\s+/i, '')
+          .trim();
+        return normalizedDistrictName.includes(normalizedSearchName) || 
+               normalizedSearchName.includes(normalizedDistrictName);
+      });
+
+      if (!foundDistrict) return;
+
+      try {
+        setSelectedDistrict(foundDistrict.code);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const wardResponse = await axios.get(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`);
+        const wardList = wardResponse.data.wards;
+        setWards(wardList);
+
+        const wardName = parts[parts.length - 3];
+        const foundWard = wardList.find(w => {
+          const normalizedWardName = w.name.toLowerCase()
+            .replace(/^(phường|xã|thị trấn)\s+/i, '')
             .trim();
-          const normalizedSearchName = provinceName.toLowerCase()
-            .replace(/thành phố /g, '')
-            .replace(/tỉnh /g, '')
+          const normalizedSearchName = wardName.toLowerCase()
+            .replace(/^(phường|xã|thị trấn)\s+/i, '')
             .trim();
-          return normalizedProvinceName === normalizedSearchName;
+          return normalizedWardName.includes(normalizedSearchName) || 
+                 normalizedSearchName.includes(normalizedWardName);
         });
-        if (foundProvince) {
-          setSelectedProvince(foundProvince.code);
 
-          // Fetch districts for this province
-          try {
-            const response = await axios.get(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`);
-            setDistricts(response.data.districts);
-
-            // Find and set district
-            const districtName = parts[2];
-            console.log("Districts:", response.data.districts);
-            const foundDistrict = response.data.districts.find(d => {
-              console.log("Checking district:", d.name);
-              const normalizedDistrictName = d.name.toLowerCase()
-                .replace(/quận /g, '')
-                .replace(/huyện /g, '')
-                .trim();
-              const normalizedSearchName = districtName.toLowerCase()
-                .replace(/quận /g, '')
-                .replace(/huyện /g, '')
-                .trim();
-              return normalizedDistrictName === normalizedSearchName;
-            });
-            if (foundDistrict) {
-              setSelectedDistrict(foundDistrict.code);
-
-              // Fetch wards for this district
-              try {
-                const wardResponse = await axios.get(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`);
-                setWards(wardResponse.data.wards);
-
-                // Find and set ward
-                const wardName = parts[1];
-                console.log("Wards:", wardResponse.data.wards);
-                const foundWard = wardResponse.data.wards.find(w => {
-                  console.log("Checking ward:", w.name);
-                  const normalizedWardName = w.name.toLowerCase()
-                    .replace(/phường /g, '')
-                    .replace(/xã /g, '')
-                    .trim();
-                  const normalizedSearchName = wardName.toLowerCase()
-                    .replace(/phường /g, '')
-                    .replace(/xã /g, '')
-                    .trim();
-                  return normalizedWardName === normalizedSearchName;
-                });
-                if (foundWard) {
-                  setSelectedWard(foundWard.code);
-                }
-              } catch (error) {
-                console.error("Error fetching wards:", error);
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching districts:", error);
-          }
+        if (foundWard) {
+          setSelectedWard(foundWard.code);
         }
-      } else {
-        setRecipientAddress(address);
+      } catch (error) {
+        console.error("Error setting district/ward:", error);
       }
     }
   };
@@ -559,14 +541,12 @@ const CreateInvoice = () => {
 
       setRecipientName(createdCustomer.name);
       setRecipientPhone(createdCustomer.phoneNumber);
-      
-      // Format address properly for new customer
+
       const address = createdCustomer.address ?? "";
       const parts = address.split(",").map(part => part.trim());
       if (parts.length >= 4) {
         setShippingOption("ship");
         setRecipientAddress(parts[0]);
-        // Try to match province/district/ward later when needed
       } else {
         setRecipientAddress(address);
         setShippingOption("noShip");
@@ -963,7 +943,6 @@ const CreateInvoice = () => {
                     onClick={() => removeItem(index)}
                   />
                 </td>
-
               </tr>
             ))}
           </tbody>
@@ -999,6 +978,7 @@ const CreateInvoice = () => {
               value={vatRate}
               onChange={(e) => setVatRate(Number(e.target.value))}
             >
+              <option value="0">0%</option>
               <option value="5">5%</option>
               <option value="8">8%</option>
               <option value="10">10%</option>

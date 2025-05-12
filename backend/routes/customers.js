@@ -16,13 +16,9 @@ router.post('/', async (req, res) => {
     postalCode,
     bonusPoints,
     notes,
-    address,
-    ward,
-    district,
-    city
+    address
   } = req.body;
   const parsedBonusPoints = bonusPoints ? parseInt(bonusPoints) : 0;
-  const fullAddress = `${address}${ward ? `, ${ward}` : ''}${district ? `, ${district}` : ''}${city ? `, ${city}` : ''}`;
   try {
     const customer = await prisma.customers.create({
       data: {
@@ -35,7 +31,7 @@ router.post('/', async (req, res) => {
         postalCode,
         bonusPoints: parsedBonusPoints,
         notes,
-        address: fullAddress,
+        address
       },
     });
     res.status(201).json(customer);
@@ -51,7 +47,17 @@ router.get('/', async (req, res) => {
     console.log('Attempting to fetch customers from database...');
     const customers = await prisma.customers.findMany({
       include: {
-        Invoices: true
+        Invoices: {
+          select: {
+            ID: true,
+            exportTime: true,
+            paymentMethod: true,
+            tax: true,
+            total: true,
+            isPaid: true,
+            isDelivery: true
+          }
+        }
       }
     });
     
@@ -90,7 +96,17 @@ router.get('/:id', async (req, res) => {
     const customer = await prisma.customers.findUnique({
       where: { ID: parseInt(id) },
       include: {
-        Invoices: true
+        Invoices: {
+          select: {
+            ID: true,
+            exportTime: true,
+            paymentMethod: true,
+            tax: true,
+            total: true,
+            isPaid: true,
+            isDelivery: true
+          }
+        }
       }
     });
     if (customer) {
@@ -116,13 +132,8 @@ router.put('/:id', async (req, res) => {
     postalCode,
     bonusPoints,
     notes,
-    address,
-    ward,
-    district,
-    city
+    address
   } = req.body;
-  const updatedFullAddress = `${address}, ${ward}, ${district}, ${city}`;
-
   try {
     const customer = await prisma.customers.update({
       where: { ID: parseInt(id) },
@@ -136,7 +147,7 @@ router.put('/:id', async (req, res) => {
         postalCode,
         bonusPoints,
         notes,
-        address: updatedFullAddress,
+        address
       },
     });
     res.status(200).json(customer);
@@ -180,7 +191,17 @@ router.get('/export', async (req, res) => {
   try {
     const customers = await prisma.customers.findMany({
       include: {
-        Invoices: true
+        Invoices: {
+          select: {
+            ID: true,
+            exportTime: true,
+            paymentMethod: true,
+            tax: true,
+            total: true,
+            isPaid: true,
+            isDelivery: true
+          }
+        }
       }
     });
     res.status(200).json(customers);

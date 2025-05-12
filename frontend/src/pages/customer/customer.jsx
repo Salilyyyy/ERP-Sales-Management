@@ -250,7 +250,14 @@ const Customer = () => {
                             <td>{customer.phoneNumber}</td>
                             <td>{customer.email}</td>
                             <td>{customer.Invoices?.length || 0}</td>
-                            <td>{customer.address}</td>
+                            <td>
+                                {customer.address && customer.address.split(',').map((part, index) => (
+                                    <React.Fragment key={index}>
+                                        {part.trim()}
+                                        {index < customer.address.split(',').length - 1 ? ', ' : ''}
+                                    </React.Fragment>
+                                ))}
+                            </td>
                             <td className="action-buttons">
                 <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
                 <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>

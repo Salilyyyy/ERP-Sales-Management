@@ -17,16 +17,21 @@ class InvoiceRepository extends BaseRepository {
 
     async getAll(params = {}) {
         try {
-            const response = await this.get('', {
-                page: params.page || 1,
-                limit: params.limit || 10,
+            const queryParams = {
                 customerID: params.customerID,
                 startDate: params.startDate,
                 endDate: params.endDate,
                 paymentMethod: params.paymentMethod,
                 sortBy: params.sortBy || 'exportTime',
                 sortOrder: params.sortOrder || 'desc'
-            });
+            };
+
+            if (params.page) {
+                queryParams.page = params.page;
+                queryParams.limit = params.limit || 10;
+            }
+
+            const response = await this.get('', queryParams);
 
             const formattedData = response.data?.map(this.formatInvoiceResponse);
             return { ...response, data: formattedData };
@@ -71,16 +76,16 @@ class InvoiceRepository extends BaseRepository {
     }
 
     formatInvoiceResponse(invoice) {
-        return {
+        const formatted = {
+            ...invoice,
             id: invoice.ID,
             createdAt: invoice.exportTime,
             customerName: invoice.Customers?.name || 'Không xác định',
-            isPaid: !!invoice.isPaid, 
+            isPaid: !!invoice.isPaid,
             isDelivery: !!invoice.isDelivery,
-            totalAmount: invoice.InvoiceDetails?.reduce((total, item) => {
-                return total + parseFloat(item.unitPrice) * parseInt(item.quantity, 10);
-            }, 0).toFixed(2), // Assuming totalValue is a number
+            totalAmount: parseFloat(invoice.total || 0)
         };
+        return formatted;
     }
 }
 

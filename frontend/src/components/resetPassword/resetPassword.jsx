@@ -111,7 +111,7 @@ const ResetPassword = () => {
       <div className="reset-password-container">
         <div className="reset-password-box">
           <div className="error-state">
-            <h2>Không thể đặt lại mật khẩu</h2>
+            <h2>Không thể đặt mật khẩu</h2>
             <p>{error}</p>
             <button type="button" className="back-button" onClick={() => navigate("/login")}>
               Quay lại đăng nhập
@@ -125,7 +125,7 @@ const ResetPassword = () => {
   return (
     <div className="reset-password-container">
       <div className="reset-password-box">
-        <h2 className="reset-password-title">Đặt lại mật khẩu</h2>
+        <h2 className="reset-password-title">Đặt mật khẩu</h2>
         {!success ? (
           <form onSubmit={handleSubmit}>
             <div className="input-group">

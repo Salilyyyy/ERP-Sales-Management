@@ -3,9 +3,6 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./detailEmployee.scss";
 import { toast } from 'react-toastify';
 import { compressImage } from "../../utils/imageUtils";
-import { storage } from "../../firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
 import avatarIcon from "../../assets/img/avatar.png";
 import editIcon from "../../assets/img/white-edit.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
@@ -65,12 +62,27 @@ const DetailEmployee = () => {
                 const previewUrl = URL.createObjectURL(compressedBlob);
                 setPreviewImage(previewUrl);
 
-                const timestamp = new Date().getTime();
-                const storageRef = ref(storage, `employees/${id}/avatar_${timestamp}.jpg`);
-                const uploadResult = await uploadBytes(storageRef, compressedBlob);
-                const downloadUrl = await getDownloadURL(uploadResult.ref);
+                // Create form data for Cloudinary upload
+                const formData = new FormData();
+                formData.append('file', compressedBlob);
+                formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
+                formData.append('upload_preset', 'ml_default');
 
-                setEditedEmployee(prev => ({ ...prev, image: downloadUrl }));
+                // Upload to Cloudinary
+                const response = await fetch(
+                    `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                    {
+                        method: 'POST',
+                        body: formData,
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                const data = await response.json();
+                setEditedEmployee(prev => ({ ...prev, image: data.secure_url }));
                 URL.revokeObjectURL(previewUrl);
             } catch (error) {
                 console.error("Error uploading image:", error);

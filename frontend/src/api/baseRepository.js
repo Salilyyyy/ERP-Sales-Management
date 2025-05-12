@@ -43,7 +43,6 @@ class BaseRepository {
             },
             (error) => {
                 console.error('API Error:', error);
-                console.error('Error response:', error.response);
 
                 if (error.response?.status === 401) {
                     const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
@@ -61,17 +60,22 @@ class BaseRepository {
                     return Promise.reject(new Error(errorMessage));
                 }
 
+                if (error.response?.data?.error?.includes("Unique constraint failed on the fields: (`email`)")) {
+                    const errorMessage = "Email đã được đăng ký. Vui lòng sử dụng email khác";
+                    toast.error(errorMessage);
+                    const enhancedError = new Error(errorMessage);
+                    enhancedError.status = error.response?.status;
+                    enhancedError.isValidationError = true;
+                    return Promise.reject(enhancedError);
+                }
+
                 const errorMessage = error.response?.data?.error || error.message;
                 toast.error(errorMessage);
 
-                const enhancedError = new Error(error.response?.data?.error || error.message);
+                const enhancedError = new Error(errorMessage);
                 enhancedError.status = error.response?.status;
                 enhancedError.details = error.response?.data?.details;
                 enhancedError.originalError = error;
-
-                if (error.response?.data?.error) {
-                    enhancedError.message = error.response.data.error;
-                }
 
                 return Promise.reject(enhancedError);
             }
@@ -124,23 +128,42 @@ class BaseRepository {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
 
-        let attempts = 0;
-
-        while (attempts < maxRetries) {
-            try {
-                const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
-                BaseRepository.setLoadingState(requestKey, false);
-                return response.data;
-            } catch (error) {
-                attempts++;
-
-                if (attempts === maxRetries) {
-                    BaseRepository.setLoadingState(requestKey, false);
-                    throw error;
-                }
-
-                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+        try {
+            const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
+            BaseRepository.setLoadingState(requestKey, false);
+            
+            if (!response || !response.data) {
+                throw new Error('Invalid API response received');
             }
+            
+            return response.data;
+        } catch (error) {
+            BaseRepository.setLoadingState(requestKey, false);
+
+            if (error.isValidationError) {
+                throw error;
+            }
+
+            let attempts = 1; 
+            while (attempts < maxRetries) {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+                    const retryResponse = await this.api.post(this.endpoint + this.normalizePath(path), data);
+                    
+                    if (!retryResponse || !retryResponse.data) {
+                        throw new Error('Invalid API response received');
+                    }
+                    
+                    BaseRepository.setLoadingState(requestKey, false);
+                    return retryResponse.data;
+                } catch (retryError) {
+                    attempts++;
+                    if (attempts === maxRetries) {
+                        throw retryError;
+                    }
+                }
+            }
+            throw error;
         }
     }
 
@@ -157,8 +180,6 @@ class BaseRepository {
                 return response.data;
             } catch (error) {
                 attempts++;
-                console.error(`PUT request attempt ${attempts} failed:`, error);
-
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;

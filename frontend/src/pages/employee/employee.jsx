@@ -48,50 +48,29 @@ const Employee = () => {
             setLoading(true);
 
             const currentUser = AuthRepository.getCurrentUser();
-            console.log('Current user from AuthRepository:', currentUser);
-            
             const userType = currentUser?.userType;
-            console.log('Extracted userType:', userType);
-            
             setCurrentUserRole(userType);
 
             const users = await userApi.getAllUsers();
-            console.log('Users received:', users);
             
-            // Prepare the data based on user role
             let filteredUsers;
-            console.log('Raw users data:', users);
-            
-            // Default to 'unknown' if userType is null/undefined
-            const normalizedUserType = (userType || 'unknown').toLowerCase();
             const allUsers = Array.isArray(users) ? users : [users];
+            const normalizedUserType = (userType || 'unknown').toLowerCase();
 
             if (normalizedUserType === 'admin') {
-                console.log('Admin role - showing staff and manager users');
                 filteredUsers = allUsers.filter(user => {
                     const userTypeLC = user.userType?.toLowerCase();
                     return userTypeLC === 'staff' || userTypeLC === 'manager';
                 });
             } else if (normalizedUserType === 'manager') {
-                console.log('Manager role - filtering staff only');
-                filteredUsers = allUsers.filter(user => {
-                    const isStaff = user.userType?.toLowerCase() === 'staff';
-                    console.log(`User ${user.email}: userType=${user.userType}, isStaff=${isStaff}`);
-                    return isStaff;
-                });
-            } else if (normalizedUserType === 'staff') {
-                console.log('Staff role - showing no data');
-                filteredUsers = [];
+                filteredUsers = allUsers.filter(user => 
+                    user.userType?.toLowerCase() === 'staff'
+                );
             } else {
-                console.log('Unknown role - showing no data');
                 filteredUsers = [];
             }
             
-            console.log('Filtered users to display:', filteredUsers);
-
-            console.log('Setting filtered users:', filteredUsers);
             setEmployees(filteredUsers);
-
             setError(null);
         } catch (err) {
             setError("Không thể tải danh sách nhân viên");
@@ -144,12 +123,7 @@ const Employee = () => {
         }
     };
 
-    useEffect(() => {
-        console.log('Employees data changed:', employees);
-    }, [employees]);
-
     const filteredEmployees = React.useMemo(() => {
-        console.log('Filtering employees:', employees);
         return employees
             .filter((employee) => {
                 const searchMatch = !searchQuery || 
@@ -158,9 +132,7 @@ const Employee = () => {
                     (employee.name && employee.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
                 const typeMatch = filterType === "all" || employee.userType === filterType;
-
-                const departmentMatch = !filterDepartment || 
-                    employee.department === filterDepartment;
+                const departmentMatch = !filterDepartment || employee.department === filterDepartment;
 
                 return searchMatch && typeMatch && departmentMatch;
             })
@@ -271,11 +243,9 @@ const Employee = () => {
                     <thead>
                         <tr>
                             <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                            <th>Mã nhân viên</th>
-                            <th>Tên nhân viên</th>
+                            <th>Họ và tên</th>
                             <th>Chức vụ</th>
                             <th>Phòng ban</th>
-                            <th>Điện thoại</th>
                             <th>Email</th>
                             <th>Hành động</th>
                         </tr>
@@ -284,11 +254,9 @@ const Employee = () => {
                         {paginatedEmployees.map((user) => (
                             <tr key={user.ID}>
                                 <td><input type="checkbox" checked={selectedEmployees.includes(user.ID)} onChange={() => handleSelectEmployee(user.ID)} /></td>
-                                <td>{user.ID}</td>
-                                <td>{user.name|| "N/A"}</td>
+                                <td>{user.name || "N/A"}</td>
                                 <td>{user.userType}</td>
                                 <td>{user.department}</td>
-                                <td>{user.phoneNumber}</td>
                                 <td>{user.email}</td>
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>

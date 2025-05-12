@@ -1,93 +1,90 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import { compressImage } from "../../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { userApi } from "../../api/apiUser";
+import crypto from 'crypto-js';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "./createEmployee.scss";
-
-import userIcon from "../../assets/img/avatar.png";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
+import userIcon from "../../assets/img/avatar.png";
+
+const generateSignature = (timestamp) => {
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+    const apiSecret = process.env.REACT_APP_CLOUDINARY_API_SECRET;
+    const str = `timestamp=${timestamp}${apiSecret}`;
+    return crypto.SHA1(str).toString();
+};
 
 const CreateEmployee = () => {
-    const navigate = useNavigate();
-
-    // Avatar upload
     const fileInputRef = useRef(null);
     const [previewImage, setPreviewImage] = useState(userIcon);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                setPreviewImage(event.target.result);
+                setPreviewImage(`https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload/v1/${event.target.result}`);
             };
             reader.readAsDataURL(file);
+
+            try {
+                const compressedImage = await compressImage(file);
+
+                const timestamp = Math.round((new Date()).getTime() / 1000);
+                const signature = generateSignature(timestamp);
+
+                const formData = new FormData();
+                formData.append('file', compressedImage);
+                formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
+                formData.append('timestamp', timestamp);
+                formData.append('signature', signature);
+
+                const response = await fetch(
+                    `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                    {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+                const publicId = data.public_id.split('/').pop();
+                setFormData(prev => ({ ...prev, image: publicId }));
+                setPreviewImage(data.secure_url);
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                toast.error('Không thể tải lên hình ảnh. Vui lòng thử lại.');
+            }
         }
     };
-
-    const resetForm = () => {
-        console.log("Form reset");
-        setPreviewImage(userIcon);
-        setSelectedCity("");
-        setSelectedDistrict("");
-        setSelectedWard("");
-        setFormData({
-            userType: "employee",
-            status: "ACTIVE",
-            password: "password123"
-        });
-        setErrors({});
-    };
-
-    // Location selection
-    const [cities, setCities] = useState([]);
-    const [districts, setDistricts] = useState([]);
-    const [wards, setWards] = useState([]);
-
-    const [selectedCity, setSelectedCity] = useState("");
-    const [selectedDistrict, setSelectedDistrict] = useState("");
-    const [selectedWard, setSelectedWard] = useState("");
-
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         userType: "employee",
-        status: "ACTIVE",
-        password: "password123" 
+        status: "ACTIVE"
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
 
-    useEffect(() => {
-        axios.get("https://provinces.open-api.vn/api/?depth=1")
-            .then(response => setCities(response.data))
-            .catch(error => console.error("Lỗi khi lấy danh sách tỉnh/thành phố:", error));
-    }, []);
-
-    useEffect(() => {
-        if (selectedCity) {
-            axios.get(`https://provinces.open-api.vn/api/p/${selectedCity}?depth=2`)
-                .then(response => setDistricts(response.data.districts))
-                .catch(error => console.error("Lỗi khi lấy danh sách quận/huyện:", error));
-        } else {
-            setDistricts([]);
-            setSelectedDistrict("");
-        }
-    }, [selectedCity]);
-
-    useEffect(() => {
-        if (selectedDistrict) {
-            axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
-                .then(response => setWards(response.data.wards))
-                .catch(error => console.error("Lỗi khi lấy danh sách xã/phường:", error));
-        } else {
-            setWards([]);
-            setSelectedWard("");
-        }
-    }, [selectedDistrict]);
+    const resetForm = () => {
+        setFormData({
+            userType: "employee",
+            status: "ACTIVE"
+        });
+        setErrors({});
+        setPreviewImage(userIcon);
+    };
 
     return (
         <div className="create-employee">
+            <ToastContainer />
             <div className="header">
                 <div className="back" onClick={() => navigate("/employee")}>
                     <img src={backIcon} alt="Quay lại" />
@@ -100,47 +97,45 @@ const CreateEmployee = () => {
                     <img src={deleteIcon} alt="Xóa" /> Xóa
                 </button>
                 <button className="create" onClick={async () => {
-                    // Validate form
                     const newErrors = {};
                     if (!formData.email?.trim()) newErrors.email = "Email is required";
                     if (!formData.name?.trim()) newErrors.name = "Name is required";
-                    if (!formData.address?.trim()) newErrors.address = "Address is required";
-                    if (!formData.phoneNumber?.trim()) newErrors.phoneNumber = "Phone number is required";
                     if (!formData.department?.trim()) newErrors.department = "Department is required";
-                    if (!formData.IdentityCard?.trim()) newErrors.IdentityCard = "Identity card is required";
-                    if (!formData.birthday) newErrors.birthday = "Birthday is required";
+                    if (!formData.userType?.trim()) newErrors.userType = "Position is required";
 
                     if (Object.keys(newErrors).length > 0) {
                         setErrors(newErrors);
-                        alert("Please fill in all required fields");
+                        toast.error("Vui lòng điền đầy đủ thông tin");
                         return;
                     }
 
                     try {
                         setLoading(true);
-                        // Get the selected location names instead of codes
-                        const selectedCityName = cities.find(c => c.code === parseInt(selectedCity))?.name || '';
-                        const selectedDistrictName = districts.find(d => d.code === parseInt(selectedDistrict))?.name || '';
-                        const selectedWardName = wards.find(w => w.code === parseInt(selectedWard))?.name || '';
-                        
-                        // Combine address components
-                        const fullAddress = [
-                            formData.address,
-                            selectedWardName,
-                            selectedDistrictName,
-                            selectedCityName
-                        ].filter(Boolean).join(', ');
-
-                        const dataToSend = {
+                        const response = await userApi.createUser({
                             ...formData,
-                            address: fullAddress,
-                            image: previewImage !== userIcon ? previewImage : null
-                        };
-                        await userApi.createUser(dataToSend);
+                            needsPasswordReset: true
+                        });
+
+                        if (!response || !response.ID) {
+                            toast.error("Không thể tạo nhân viên. Vui lòng thử lại sau.");
+                            return;
+                        }
+
+                        try {
+                            await userApi.sendInvitationEmail({
+                                email: formData.email,
+                                name: formData.name,
+                                userId: response.ID
+                            });
+                            toast.success("Tạo nhân viên thành công");
+                        } catch (emailError) {
+                            console.error("Error sending invitation email:", emailError);
+                            toast.warning("Nhân viên đã được tạo nhưng không thể gửi email mời. Vui lòng thử lại sau.");
+                        }
                         navigate("/employee");
                     } catch (error) {
                         console.error("Error creating employee:", error);
-                        alert(error.response?.data?.error || "Failed to create employee. Please try again.");
+                        toast.error(error.message || "Có lỗi xảy ra khi tạo nhân viên");
                     } finally {
                         setLoading(false);
                     }
@@ -182,6 +177,7 @@ const CreateEmployee = () => {
                         <select
                             onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
                             className={errors.userType ? "error" : ""}
+                            value={formData.userType}
                         >
                             <option value="">Chọn chức vụ</option>
                             <option value="admin">Quản lý</option>
@@ -198,35 +194,8 @@ const CreateEmployee = () => {
                             <option value="">Chọn phòng ban</option>
                             <option value="sales">Kinh doanh</option>
                             <option value="accounting">Kế toán</option>
-                            <option value="wavehouse">Kho</option>
+                            <option value="warehouse">Kho</option>
                         </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Ngày sinh</label>
-                        <input
-                            type="date"
-                            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                            className={errors.birthday ? "error" : ""}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Số CMND/CCCD</label>
-                        <input
-                            type="text"
-                            onChange={(e) => setFormData({ ...formData, IdentityCard: e.target.value })}
-                            className={errors.IdentityCard ? "error" : ""}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Số điện thoại</label>
-                        <input
-                            type="text"
-                            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                            className={errors.phoneNumber ? "error" : ""}
-                        />
                     </div>
 
                     <div className="form-group">
@@ -236,82 +205,6 @@ const CreateEmployee = () => {
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             className={errors.email ? "error" : ""}
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Mật khẩu</label>
-                        <input
-                            type="password"
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className={errors.password ? "error" : ""}
-                            placeholder="Mặc định: password123"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Địa chỉ (Số nhà, tên đường)</label>
-                        <input
-                            type="text"
-                            placeholder="Nhập số nhà, tên đường"
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            className={errors.address ? "error" : ""}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Tỉnh/Thành phố</label>
-                        <select
-                            value={selectedCity}
-                            onChange={(e) => {
-                                setSelectedCity(e.target.value);
-                                setFormData({ ...formData, city: e.target.value });
-                            }}
-                        >
-                            <option value="">Chọn Tỉnh/Thành phố</option>
-                            {cities.map(city => (
-                                <option key={city.code} value={city.code}>
-                                    {city.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Quận/Huyện</label>
-                        <select
-                            value={selectedDistrict}
-                            onChange={(e) => {
-                                setSelectedDistrict(e.target.value);
-                                setFormData({ ...formData, district: e.target.value });
-                            }}
-                            disabled={!selectedCity}
-                        >
-                            <option value="">Chọn Quận/Huyện</option>
-                            {districts.map(d => (
-                                <option key={d.code} value={d.code}>
-                                    {d.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Xã/Phường</label>
-                        <select
-                            value={selectedWard}
-                            onChange={(e) => {
-                                setSelectedWard(e.target.value);
-                                setFormData({ ...formData, ward: e.target.value });
-                            }}
-                            disabled={!selectedDistrict}
-                        >
-                            <option value="">Chọn Phường/Xã</option>
-                            {wards.map(w => (
-                                <option key={w.code} value={w.code}>
-                                    {w.name}
-                                </option>
-                            ))}
-                        </select>
                     </div>
                 </div>
             </div>

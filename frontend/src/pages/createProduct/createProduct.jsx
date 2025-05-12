@@ -9,7 +9,7 @@ import apiCountry from "../../api/apiCountry";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
-import { storage, ref, uploadBytes, getDownloadURL } from "../../firebase";
+import { compressImage } from "../../utils/imageUtils";
 
 import "./createProduct.scss";
 
@@ -81,16 +81,32 @@ const CreateProduct = () => {
   const handleImageUpload = async (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const storageRef = ref(storage, `products/${file.name}`); // có thể đổi tên folder tùy ý
-
+      
       try {
-        const snapshot = await uploadBytes(storageRef, file);
-        console.log('Upload thành công!', snapshot);
-        const downloadURL = await getDownloadURL(storageRef);
-        console.log('URL ảnh:', downloadURL);
-        setProductImage(downloadURL);
+        const compressedImage = await compressImage(file);
+                
+        const formData = new FormData();
+        formData.append('file', compressedImage);
+        formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
+        formData.append('upload_preset', 'ml_default');
+
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: 'POST',
+            body: formData
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+        
+        const data = await response.json();
+        setProductImage(data.secure_url);
       } catch (error) {
-        console.error('Lỗi upload ảnh:', error);
+        console.error('Error uploading image:', error);
+        alert('Failed to upload image. Please try again.');
       }
     }
   };

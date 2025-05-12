@@ -38,8 +38,7 @@ class UserApi extends BaseRepository {
 
   createUser = async (userData) => {
     try {
-      const response = await this.post(this.route, userData);
-      return response.data;
+      return await this.post(this.route, userData);
     } catch (error) {
       throw error;
     }
@@ -65,6 +64,15 @@ class UserApi extends BaseRepository {
   changePassword = async (passwordData) => {
     try {
       const response = await this.put(`${this.route}/change-password`, passwordData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  sendInvitationEmail = async (inviteData) => {
+    try {
+      const response = await this.post(`${this.route}/send-invitation`, inviteData);
       return response.data;
     } catch (error) {
       throw error;

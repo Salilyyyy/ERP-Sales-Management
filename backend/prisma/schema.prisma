@@ -146,14 +146,14 @@ model PostOffices {
 model Users {
   ID               Int       @id @default(autoincrement())
   name             String
-  address          String
+  address          String?
   image            String?
   email            String    @unique
-  password         String
-  birthday         DateTime
-  phoneNumber      String
-  department       String
-  IdentityCard     String
+  password         String?
+  birthday         DateTime?
+  phoneNumber      String?
+  department       String?
+  IdentityCard     String?
   userType         String
   createAt         DateTime
   status           String

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { compressImage, generateSHA1 } from "../../utils/imageUtils";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./detailEmployee.scss";
 import { toast } from 'react-toastify';
-import { compressImage } from "../../utils/imageUtils";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import avatarIcon from "../../assets/img/avatar.png";
 import editIcon from "../../assets/img/white-edit.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
@@ -15,16 +16,17 @@ import { userApi } from "../../api/apiUser";
 const DetailEmployee = () => {
     const navigate = useNavigate();
     const { id } = useParams();
-    const fileInputRef = useRef(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
     const [employee, setEmployee] = useState(null);
     const [editedEmployee, setEditedEmployee] = useState(null);
+    const [modifiedFields, setModifiedFields] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         const fetchEmployee = async () => {
@@ -47,46 +49,55 @@ const DetailEmployee = () => {
 
     useEffect(() => {
         if (isEditMode && employee) {
-            setEditedEmployee({ ...employee });
+            const employeeData = {
+                ...employee,
+                birthday: employee.birthday || null
+            };
+            setEditedEmployee(employeeData);
             setPreviewImage(employee.image);
         }
     }, [isEditMode, employee]);
 
-    const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
+    const handleImageUpload = async (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
             setUploadingImage(true);
-            await new Promise(resolve => setTimeout(resolve, 500));
+
             try {
-                const compressedBlob = await compressImage(file);
-                const previewUrl = URL.createObjectURL(compressedBlob);
-                setPreviewImage(previewUrl);
+                const compressedImage = await compressImage(file);
 
-                // Create form data for Cloudinary upload
+                const timestamp = Math.round(new Date().getTime() / 1000);
+                const signString = `timestamp=${timestamp}${process.env.REACT_APP_CLOUDINARY_API_SECRET}`;
+
+                const signature = await generateSHA1(signString);
+
                 const formData = new FormData();
-                formData.append('file', compressedBlob);
+                formData.append('file', compressedImage);
                 formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
-                formData.append('upload_preset', 'ml_default');
+                formData.append('timestamp', timestamp);
+                formData.append('signature', signature);
 
-                // Upload to Cloudinary
                 const response = await fetch(
-                    `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                    `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/upload`,
                     {
                         method: 'POST',
-                        body: formData,
+                        body: formData
                     }
                 );
 
                 if (!response.ok) {
-                    throw new Error('Failed to upload image');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'Upload failed');
                 }
 
                 const data = await response.json();
+                setPreviewImage(data.secure_url);
                 setEditedEmployee(prev => ({ ...prev, image: data.secure_url }));
-                URL.revokeObjectURL(previewUrl);
+                setModifiedFields(prev => new Set([...prev, 'image']));
+                toast.success('Tải ảnh lên thành công');
             } catch (error) {
-                console.error("Error uploading image:", error);
-                toast.error("Có lỗi xảy ra khi tải ảnh lên");
+                console.error('Error uploading image:', error);
+                toast.error(`Có lỗi khi tải ảnh lên: ${error.message}`);
             } finally {
                 setUploadingImage(false);
             }
@@ -94,14 +105,19 @@ const DetailEmployee = () => {
     };
 
     const handleEditClick = () => {
-        setEditedEmployee({ ...employee });
+        setEditedEmployee({
+            ...employee,
+            birthday: employee.birthday || null
+        });
         setPreviewImage(employee.image);
+        setModifiedFields(new Set());
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.set("edit", "true");
         setSearchParams(newSearchParams);
     };
 
     const handleChange = (field, value) => {
+        setModifiedFields(prev => new Set([...prev, field]));
         setEditedEmployee(prev => ({
             ...prev,
             [field]: value
@@ -109,25 +125,39 @@ const DetailEmployee = () => {
     };
 
     const handleSave = async () => {
-        if (uploadingImage) {
-            toast.warning('Đang tải ảnh lên, vui lòng đợi');
-            return;
-        }
-        setSaving(true);
-        try {
-            await userApi.updateUser(id, editedEmployee);
-            setEmployee(editedEmployee);
-            setPreviewImage(null);
-            const newSearchParams = new URLSearchParams(searchParams);
-            newSearchParams.delete("edit");
-            setSearchParams(newSearchParams);
-            toast.success("Cập nhật thành công!");
-        } catch (err) {
-            toast.error("Cập nhật thất bại: " + err.message);
-        } finally {
-            setSaving(false);
-        }
-    };
+    if (uploadingImage) {
+        toast.warning('Đang tải ảnh lên, vui lòng đợi');
+        return;
+    }
+
+    setSaving(true);
+    try {
+        const allFields = [
+            'name', 'birthday', 'userType', 'department',
+            'phoneNumber', 'email', 'address', 'status', 'image'
+        ];
+
+        const updatedFields = {};
+        allFields.forEach(field => {
+            updatedFields[field] = editedEmployee[field] !== undefined && editedEmployee[field] !== ''
+                ? editedEmployee[field]
+                : null;
+        });
+
+        await userApi.updateUser(id, updatedFields);
+        setEmployee(editedEmployee);
+        setPreviewImage(null);
+
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
+        toast.success("Cập nhật thành công!");
+    } catch (err) {
+        toast.error("Cập nhật thất bại: " + err.message);
+    } finally {
+        setSaving(false);
+    }
+};
 
     const handleCancel = () => {
         const newSearchParams = new URLSearchParams(searchParams);
@@ -153,18 +183,7 @@ const DetailEmployee = () => {
             <div className="actions">
                 {!isEditMode ? (
                     <>
-                        <button className="delete" onClick={async () => {
-                            if (window.confirm('Bạn có chắc chắn muốn xóa nhân viên này?')) {
-                                try {
-                                    await userApi.deleteUser(id);
-                                    navigate('/employee');
-                                    toast.success("Xóa nhân viên thành công!");
-                                } catch (err) {
-                                    toast.error('Có lỗi xảy ra khi xóa nhân viên');
-                                    console.error(err);
-                                }
-                            }
-                        }}>
+                        <button className="delete" onClick={() => setShowDeleteConfirm(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
                         <button className="edit" onClick={handleEditClick}>
@@ -185,24 +204,22 @@ const DetailEmployee = () => {
 
             <div className="avatar-section">
                 <img
-                    src={previewImage || employee.image || avatarIcon}
+                    src={previewImage || (employee.image ? employee.image : avatarIcon)}
                     alt="avatar"
                     className={`avatar ${uploadingImage ? 'uploading' : ''}`}
                 />
                 {isEditMode && (
                     <>
-                        <p
-                            className="edit-photo"
-                            onClick={() => !uploadingImage && fileInputRef.current.click()}
-                        >
+                        <label className="edit-photo-btn" htmlFor="image-upload">
                             {uploadingImage ? "Đang tải ảnh..." : "Sửa hình ảnh"}
-                        </p>
+                        </label>
                         <input
                             type="file"
+                            id="image-upload"
                             accept="image/*"
-                            ref={fileInputRef}
-                            style={{ display: "none" }}
-                            onChange={handleFileChange}
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage}
+                            hidden
                         />
                     </>
                 )}
@@ -227,14 +244,17 @@ const DetailEmployee = () => {
                         <input
                             type="date"
                             value={editedEmployee.birthday?.split('T')[0] || ""}
-                            onChange={(e) => handleChange("birthday", e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value || '';
+                                handleChange("birthday", value);
+                            }}
                         />
                     ) : (
-                        <span>{new Date(employee.birthday).toLocaleDateString('vi-VN', {
+                        <span>{employee.birthday ? new Date(employee.birthday).toLocaleDateString('vi-VN', {
                             year: 'numeric',
                             month: '2-digit',
                             day: '2-digit'
-                        })}</span>
+                        }) : ''}</span>
                     )}
                 </div>
                 <div className="info-row">
@@ -321,6 +341,23 @@ const DetailEmployee = () => {
                     )}
                 </div>
             </div>
+
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc muốn xóa nhân viên này không?"
+                onConfirm={async () => {
+                    try {
+                        await userApi.deleteUser(id);
+                        navigate('/employee');
+                        toast.success("Xóa nhân viên thành công!");
+                    } catch (err) {
+                        toast.error('Có lỗi xảy ra khi xóa nhân viên');
+                        console.error(err);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

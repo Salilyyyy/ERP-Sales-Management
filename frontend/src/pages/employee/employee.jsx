@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, createRef } from "react";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import "./employee.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import { userApi } from "../../api/apiUser";
+import EmployeeTemplate from "../../components/employeeTemplate/employeeTemplate";
 import AuthRepository from "../../api/apiAuth";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
@@ -26,6 +30,7 @@ const Employee = () => {
     const [filterType, setFilterType] = useState("all");
     const [filterDepartment, setFilterDepartment] = useState("");
     const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -80,46 +85,69 @@ const Employee = () => {
         }
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (selectedEmployees.length === 0) {
             toast.warning("Vui lòng chọn nhân viên để xóa");
             return;
         }
-
-        if (window.confirm("Bạn có chắc chắn muốn xóa những nhân viên đã chọn?")) {
-            try {
-                await Promise.all(
-                    selectedEmployees.map(id =>
-                        userApi.deleteUser(id)
-                    )
-                );
-                getCurrentUserAndEmployees();
-                setSelectedEmployees([]);
-                setIsDropdownOpen(false);
-                toast.success("Xóa nhân viên thành công");
-            } catch (err) {
-                console.error("Error deleting employees:", err);
-                toast.error("Có lỗi xảy ra khi xóa nhân viên");
-            }
-        }
+        setShowDeleteConfirm(true);
     };
 
+    const [selectedEmployeeData, setSelectedEmployeeData] = useState(null);
+    const employeeTemplateRef = useRef(null);
+    const [isPrinting, setIsPrinting] = useState(false);
+
     const handleExport = async () => {
+        if (selectedEmployees.length === 0) {
+            toast.warning("Vui lòng chọn nhân viên để xuất PDF");
+            return;
+        }
+
         try {
-            const response = await userApi.get(`${userApi.route}/export`, {
-                responseType: 'blob'
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'employees.xlsx');
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            setIsPrinting(true);
+            const selectedUsers = employees.filter(emp => selectedEmployees.includes(emp.ID));
+            
+            if (!selectedUsers.length) {
+                toast.error("Không tìm thấy thông tin nhân viên");
+                return;
+            }
+
+            const doc = new jsPDF('p', 'pt', 'a4');
+
+            for (let i = 0; i < selectedUsers.length; i++) {
+                setSelectedEmployeeData(selectedUsers[i]);
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                if (i > 0) {
+                    doc.addPage();
+                }
+
+                const canvas = await html2canvas(employeeTemplateRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
+            }
+
+            doc.save('employees.pdf');
+            setIsPrinting(false);
             setIsDropdownOpen(false);
+            setSelectedEmployeeData(null);
+            toast.success("Xuất PDF thành công");
         } catch (err) {
-            console.error("Error exporting employees:", err);
-            toast.error("Có lỗi xảy ra khi xuất danh sách");
+            console.error("Error exporting employees to PDF:", err);
+            toast.error("Có lỗi xảy ra khi xuất PDF");
+            setIsPrinting(false);
         }
     };
 
@@ -179,7 +207,15 @@ const Employee = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
+            </div>
+            
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={employeeTemplateRef}>
+                    {isPrinting && selectedEmployeeData && (
+                        <EmployeeTemplate user={selectedEmployeeData} />
+                    )}
                 </div>
+            </div>
 
                 <div className="button">
                     <button className="btn add" onClick={() => navigate("/create-employee")}>Thêm mới</button>
@@ -194,7 +230,7 @@ const Employee = () => {
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
+                                    <img src={exportIcon} alt="Xuất PDF" /> Xuất
                                 </li>
                             </ul>
                         )}
@@ -267,6 +303,29 @@ const Employee = () => {
                     </tbody>
                 </table>
             )}
+
+            <ConfirmPopup 
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xóa những nhân viên đã chọn?"
+                onConfirm={async () => {
+                    try {
+                        await Promise.all(
+                            selectedEmployees.map(id =>
+                                userApi.deleteUser(id)
+                            )
+                        );
+                        getCurrentUserAndEmployees();
+                        setSelectedEmployees([]);
+                        setIsDropdownOpen(false);
+                        toast.success("Xóa nhân viên thành công");
+                    } catch (err) {
+                        console.error("Error deleting employees:", err);
+                        toast.error("Có lỗi xảy ra khi xóa nhân viên");
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
 
             <div className="pagination-container">
                 <div className="pagination-left">

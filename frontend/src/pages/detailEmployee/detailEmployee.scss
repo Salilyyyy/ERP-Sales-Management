@@ -79,15 +79,21 @@ $text-color: #1a3300;
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
+        padding: 20px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 800px;
 
         .avatar {
-            width: 100px;
-            height: 100px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             object-fit: cover;
             background-color: #e0e0e0;
+            margin-bottom: 15px;
             transition: opacity 0.3s;
+            border: 2px solid #436850;
 
             &.uploading {
                 opacity: 0.6;
@@ -95,21 +101,26 @@ $text-color: #1a3300;
             }
         }
 
-        .add-photo {
-            margin-top: 8px;
-            color: #6c757d;
+        .edit-photo-btn {
+            color: #436850;
             font-size: 14px;
-        }
-
-        .edit-photo {
-            margin-top: 8px;
-            color: #163020;
-            font-size: 12px;
             font-style: italic;
             cursor: pointer;
-            
+            background: none;
+            border: none;
+            padding: 5px 15px;
+            border: 1px solid #436850;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+
             &:hover {
-                text-decoration: underline;
+                background-color: #436850;
+                color: white;
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
             }
         }
     }

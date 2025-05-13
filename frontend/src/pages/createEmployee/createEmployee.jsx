@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { compressImage } from "../../utils/imageUtils";
+import { uploadToCloudinary } from "../../utils/cloudinaryUtils";
 import { useNavigate } from "react-router-dom";
 import { userApi } from "../../api/apiUser";
-import crypto from 'crypto-js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "./createEmployee.scss";
@@ -11,13 +11,6 @@ import createIcon from "../../assets/img/create-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
 import userIcon from "../../assets/img/avatar.png";
 
-const generateSignature = (timestamp) => {
-    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-    const apiSecret = process.env.REACT_APP_CLOUDINARY_API_SECRET;
-    const str = `timestamp=${timestamp}${apiSecret}`;
-    return crypto.SHA1(str).toString();
-};
-
 const CreateEmployee = () => {
     const fileInputRef = useRef(null);
     const [previewImage, setPreviewImage] = useState(userIcon);
@@ -25,40 +18,15 @@ const CreateEmployee = () => {
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setPreviewImage(`https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload/v1/${event.target.result}`);
-            };
-            reader.readAsDataURL(file);
+            setPreviewImage(URL.createObjectURL(file));
 
             try {
                 const compressedImage = await compressImage(file);
 
-                const timestamp = Math.round((new Date()).getTime() / 1000);
-                const signature = generateSignature(timestamp);
+                const responseData = await uploadToCloudinary(compressedImage);
 
-                const formData = new FormData();
-                formData.append('file', compressedImage);
-                formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
-                formData.append('timestamp', timestamp);
-                formData.append('signature', signature);
-
-                const response = await fetch(
-                    `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload`,
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
-                }
-
-                const data = await response.json();
-                const publicId = data.public_id.split('/').pop();
-                setFormData(prev => ({ ...prev, image: publicId }));
-                setPreviewImage(data.secure_url);
+                setFormData(prev => ({ ...prev, image: responseData.secure_url }));
+                setPreviewImage(responseData.secure_url);
             } catch (error) {
                 console.error('Error uploading image:', error);
                 toast.error('Không thể tải lên hình ảnh. Vui lòng thử lại.');
@@ -128,6 +96,7 @@ const CreateEmployee = () => {
                                 userId: response.ID
                             });
                             toast.success("Tạo nhân viên thành công");
+                            toast.success("Email mời đã được gửi thành công");
                         } catch (emailError) {
                             console.error("Error sending invitation email:", emailError);
                             toast.warning("Nhân viên đã được tạo nhưng không thể gửi email mời. Vui lòng thử lại sau.");
@@ -180,8 +149,8 @@ const CreateEmployee = () => {
                             value={formData.userType}
                         >
                             <option value="">Chọn chức vụ</option>
-                            <option value="admin">Quản lý</option>
-                            <option value="employee">Nhân viên</option>
+                            <option value="manager">Quản lý</option>
+                            <option value="staff">Nhân viên</option>
                         </select>
                     </div>
 

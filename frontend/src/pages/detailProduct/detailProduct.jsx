@@ -114,7 +114,6 @@ const DetailProduct = () => {
 
       return { public_id: result.public_id, secure_url: result.secure_url };
     } catch (error) {
-      console.error('Upload error:', error);
       setUploadError(error.message);
       throw error;
     } finally {
@@ -131,7 +130,6 @@ const DetailProduct = () => {
         setProduct(prev => ({ ...prev, image: newImage }));
       } catch (error) {
         setError('Lỗi khi tải lên hình ảnh');
-        console.error('Upload error:', error);
       }
     } else {
       setEditedProduct(prev => ({ ...prev, [field]: value }));
@@ -261,19 +259,24 @@ const DetailProduct = () => {
         {product && (
           <div className="content-wrapper">
             <div className="product-image">
-              {product.image && cld ? (
-                <AdvancedImage
-                  key={product.image}
-                  cldImg={cld.image(product.image)
-                    .format('auto')
-                    .quality('auto')
-                    .resize(auto().gravity(autoGravity()).width(500).height(500))}
-                  alt={product.name}
-                  className="img-product"
-                />
-              ) : (
-                <img src={product.image || ProductImg} alt={product.name} className="img-product" />
-              )}
+              {
+                product.image && product.image.startsWith('http') ? (
+                  <img src={product.image} alt={product.name} className="img-product" />
+                ) : product.image && cld ? (
+                  <AdvancedImage
+                    key={product.image}
+                    cldImg={cld.image(product.image)
+                      .format('auto')
+                      .quality('auto')
+                      .resize(auto().gravity(autoGravity()).width(500).height(500))}
+                    alt={product.name}
+                    className="img-product"
+                  />
+                ) : (
+                  <div className="img-product no-image" />
+                )
+              }
+
               {isEditing && (
                 <div className="edit-image">
                   {uploading ? (

@@ -124,12 +124,12 @@ class BaseRepository {
         }
     }
 
-    async post(path = '', data = {}, maxRetries = 3) {
+    async post(path = '', data = {}, config = {}, maxRetries = 3) {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
 
         try {
-            const response = await this.api.post(this.endpoint + this.normalizePath(path), data);
+            const response = await this.api.post(this.endpoint + this.normalizePath(path), data, config);
             BaseRepository.setLoadingState(requestKey, false);
             
             if (!response || !response.data) {

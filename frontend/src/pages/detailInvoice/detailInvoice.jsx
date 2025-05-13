@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom/client";
+import InvoiceTemplate from "../../components/invoiceTemplate/invoiceTemplate";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from 'react-toastify';
@@ -10,8 +14,8 @@ import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
-import printIcon from "../../assets/img/print-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
+import exportIcon from "../../assets/img/white-export.svg";
 
 const OrderDetails = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -34,7 +38,6 @@ const OrderDetails = () => {
         toast.error(response.message || "Không thể xóa hóa đơn!");
       }
     } catch (error) {
-      console.error("Error deleting invoice:", error);
       if (error.message?.includes('Foreign key constraint')) {
         toast.error("Không thể xóa hóa đơn vì có dữ liệu liên quan! Vui lòng xóa vận đơn trước khi xóa hóa đơn.");
       } else {
@@ -138,78 +141,51 @@ const OrderDetails = () => {
     navigate(-1);
   };
 
-  const handlePrint = () => {
-    const printContent = document.createElement('div');
-    printContent.innerHTML = `
-      <html>
-        <head>
-          <title>Hóa đơn #${invoice?.ID}</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .info-section { margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            .summary { margin-top: 20px; text-align: right; }
-            .total { font-weight: bold; font-size: 1.2em; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>HÓA ĐƠN BÁN HÀNG</h1>
-            <p>#ĐH-${invoice?.ID}</p>
-            <p>Ngày: ${new Date(invoice?.exportTime).toLocaleString("vi-VN")}</p>
-          </div>
+  const handlePrint = async () => {
+    try {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = ReactDOM.createRoot(container);
+      
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.padding = '20px';
+      container.style.width = '210mm';
+      container.style.backgroundColor = 'white';
 
-          <div class="info-section">
-            <p><strong>Khách hàng:</strong> ${invoice?.Customers?.name}</p>
-            <p><strong>Địa chỉ:</strong> ${invoice?.Customers?.address}</p>
-            <p><strong>Số điện thoại:</strong> ${invoice?.Customers?.phoneNumber}</p>
-            <p><strong>Hình thức thanh toán:</strong> ${invoice?.paymentMethod === "tienMat" ? "Tiền mặt" :
-        invoice?.paymentMethod === "chuyenKhoan" ? "Chuyển khoản" :
-          invoice?.paymentMethod === "the" ? "Thẻ" : "N/A"
-      }</p>
-          </div>
+      root.render(
+        <InvoiceTemplate
+          invoice={invoice}
+          totalItems={totalItems}
+          taxAmount={taxAmount}
+          promotionDiscount={promotionDiscount}
+          totalPayment={totalPayment}
+        />
+      );
 
-          <table>
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Tên sản phẩm</th>
-                <th>Đơn vị</th>
-                <th>Số lượng</th>
-                <th>Đơn giá</th>
-                <th>Thành tiền</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${invoice?.InvoiceDetails?.map((item, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>${item.Products?.name || "N/A"}</td>
-                  <td>${item.Products?.unit || "N/A"}</td>
-                  <td>${item.quantity}</td>
-                  <td>${(item.unitPrice || 0).toLocaleString("vi-VN")} VND</td>
-                  <td>${((item.unitPrice || 0) * (item.quantity || 0)).toLocaleString("vi-VN")} VND</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-          <div class="summary">
-            <p><strong>Tổng tiền hàng:</strong> ${totalItems.toLocaleString("vi-VN")} VND</p>
-            <p><strong>Thuế GTGT (${invoice?.tax || 0}%):</strong> ${taxAmount.toLocaleString("vi-VN")} VND</p>
-            <p><strong>Khuyến mãi:</strong> ${promotionDiscount.toLocaleString("vi-VN")} VND</p>
-            <p class="total"><strong>Tổng thanh toán:</strong> ${totalPayment.toLocaleString("vi-VN")} VND</p>
-          </div>
-        </body>
-      </html>
-    `;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      try {
+        const canvas = await html2canvas(container, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent.innerHTML);
-    printWindow.document.close();
-    printWindow.print();
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 0, 0, 210, (canvas.height * 210) / canvas.width);
+
+        doc.save(`hoa-don-${invoice.ID}.pdf`);
+      } catch (error) {
+        toast.error('Không thể tạo PDF. Vui lòng thử lại sau.');
+      }
+
+      document.body.removeChild(container);
+    } catch (error) {
+      toast.error('Không thể tạo PDF. Vui lòng thử lại sau.');
+    }
   };
 
   const { id } = useParams();
@@ -460,7 +436,6 @@ const OrderDetails = () => {
         setError(null);
       } catch (err) {
         setError("Không thể tải thông tin hóa đơn");
-        console.error("Error fetching invoice:", err);
       } finally {
         setLoading(false);
       }
@@ -519,7 +494,7 @@ const OrderDetails = () => {
                 <img src={editIcon} alt="Sửa" /> Sửa
               </button>
               <button className="print" onClick={handlePrint}>
-                <img src={printIcon} alt="In" /> In
+                <img src={exportIcon} alt="Xuất" /> Xuất
               </button>
             </>
           )}
@@ -549,20 +524,22 @@ const OrderDetails = () => {
                 invoice.isPaid ? "Đã thanh toán" : "Chưa thanh toán"
               )}
             </div>
-            <div>
-              <strong>Trạng thái giao hàng:</strong>
-              {isEditing ? (
-                <select
-                  value={editedInvoice.isDelivery}
-                  onChange={(e) => setEditedInvoice({ ...editedInvoice, isDelivery: e.target.value === 'true' })}
-                >
-                  <option value="true">Đã giao hàng</option>
-                  <option value="false">Chưa giao hàng</option>
-                </select>
-              ) : (
-                invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"
-              )}
-            </div>
+            {(isEditing || invoice.isDelivery) && (
+              <div>
+                <strong>Trạng thái giao hàng:</strong>
+                {isEditing ? (
+                  <select
+                    value={editedInvoice.isDelivery}
+                    onChange={(e) => setEditedInvoice({ ...editedInvoice, isDelivery: e.target.value === 'true' })}
+                  >
+                    <option value="true">Đã giao hàng</option>
+                    <option value="false">Chưa giao hàng</option>
+                  </select>
+                ) : (
+                  invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"
+                )}
+              </div>
+            )}
             <div>
               <strong>Hình thức thanh toán:</strong>
               {isEditing ? (

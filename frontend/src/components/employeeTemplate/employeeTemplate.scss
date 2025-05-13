@@ -1,0 +1,155 @@
+.employee-template {
+  padding: 40px;
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #3b4d35;
+    padding-bottom: 20px;
+
+    .company-info {
+      h1 {
+        color: #3b4d35;
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+
+      p {
+        color: #666;
+        font-size: 18px;
+      }
+    }
+  }
+
+  .content {
+    margin: 20px 0;
+
+    .employee-photo {
+      text-align: center;
+      margin-bottom: 20px;
+
+      .photo {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #3b4d35;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+
+        &.loaded {
+          opacity: 1;
+        }
+      }
+
+      .placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 3px solid #3b4d35;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: #3b4d35;
+        margin: 0 auto;
+      }
+    }
+
+    .personal-info {
+      text-align: center;
+      margin-bottom: 30px;
+
+      h2 {
+        color: #3b4d35;
+        font-size: 24px;
+        margin-bottom: 15px;
+      }
+    }
+
+    .contact-info,
+    .additional-info {
+      margin-bottom: 30px;
+
+      h3 {
+        color: #3b4d35;
+        font-size: 18px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+      }
+    }
+
+    .info-row {
+      display: flex;
+      margin-bottom: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+
+      .label {
+        flex: 0 0 150px;
+        font-weight: bold;
+        color: #666;
+      }
+
+      .value {
+        flex: 1;
+        color: #333;
+      }
+    }
+  }
+
+  .footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+  }
+}
+
+@media print {
+  .employee-template {
+    padding: 0;
+    
+    .header {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    .content {
+      page-break-inside: avoid;
+    }
+
+    .employee-photo {
+      .photo {
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        max-width: 150px !important;
+        max-height: 150px !important;
+        -webkit-print-color-adjust: exact;
+        forced-color-adjust: exact;
+      }
+
+      .placeholder {
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        background-color: #f0f0f0 !important;
+      }
+    }
+
+    .info-row {
+      break-inside: avoid;
+    }
+
+    @page {
+      margin: 0.5cm;
+      size: A4 portrait;
+    }
+  }
+}

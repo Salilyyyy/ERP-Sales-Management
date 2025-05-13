@@ -29,11 +29,11 @@ const Product = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState([]);
-    const [cld, setCld] = useState(null); // ⚠️ Thêm state cho Cloudinary
+    const [cld, setCld] = useState(null);
 
     const cloudName = 'dlrm4ccbs';
     const apiKey = '679573739148611';
-    const apiSecret = '9IqI3iaNI1e9mwTp8V6uomrwFts'; // ⚠️ Không nên commit vào mã nguồn công khai
+    const apiSecret = '9IqI3iaNI1e9mwTp8V6uomrwFts';
 
     useEffect(() => {
         fetchProducts();
@@ -246,14 +246,21 @@ const Product = () => {
                             <td>{product.inPrice?.toLocaleString('vi-VN')} đ</td>
                             <td>{product.outPrice?.toLocaleString('vi-VN')} đ</td>
                             <td>{product.quantity}</td>
-                            <td><img
-                                src={
-                                    product.image
-                                        ? `https://res.cloudinary.com/${cloudName}/image/upload/${product.image}`
-                                        : '/default-image.png'
-                                } alt={product.name}
-                                className="product-img"
-                            />
+                            <td>{product.image && (
+                                <img
+                                    src={
+                                        product.image.startsWith('http')
+                                            ? product.image
+                                            : `https://res.cloudinary.com/${cloudName}/image/upload/${product.image}`
+                                    }
+                                    alt={product.name}
+                                    className="product-img"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                    }}
+                                />
+                            )}
+
                             </td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/product/${product.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>

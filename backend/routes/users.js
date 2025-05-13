@@ -3,13 +3,13 @@ const { PrismaClient } = require('@prisma/client');
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const { sendEmail } = require('../services/mail.service');
+const PDFDocument = require('pdfkit');
 
 const prisma = new PrismaClient();
 const router = express.Router();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const SALT_ROUNDS = 10;
 
-// Kiểm tra ID hợp lệ
 const isValidId = (id) => {
   const num = Number(id);
   return !isNaN(num) && Number.isInteger(num) && num > 0;
@@ -189,6 +189,54 @@ router.put('/:id', userValidation, async (req, res) => {
   }
 });
 
+router.post('/export-pdf', async (req, res) => {
+  const { userIds } = req.body;
+  
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    return res.status(400).json({ error: 'User IDs array is required' });
+  }
+
+  try {
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 0,
+      bufferPages: true 
+    });
+    
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=employees.pdf');
+      res.setHeader('Content-Length', pdfData.length);
+      res.end(pdfData);
+    });
+
+    const users = await prisma.users.findMany({
+      where: {
+        ID: {
+          in: userIds.map(Number)
+        }
+      }
+    });
+
+    users.forEach((_, index) => {
+      if (index > 0) {
+        doc.addPage();
+      }
+    });
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate PDF' });
+    }
+  }
+});
+
 // Delete a user by ID
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
@@ -211,11 +259,8 @@ router.post('/send-invitation', async (req, res) => {
   const { email, name, userId } = req.body;
 
   try {
-    // Generate a unique reset token
     const resetToken = bcrypt.hashSync(Date.now().toString(), SALT_ROUNDS).replace(/[/]/g, '_');
-    
-    // Update user with reset token
-    await prisma.users.update({
+        await prisma.users.update({
       where: { ID: userId },
       data: {
         resetToken,
@@ -223,7 +268,6 @@ router.post('/send-invitation', async (req, res) => {
       }
     });
 
-    // Send invitation email
     const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
     const html = `
 <!doctype html>

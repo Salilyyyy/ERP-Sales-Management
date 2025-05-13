@@ -1,114 +1,166 @@
 .profile-container {
-    padding: 40px;
-    font-family: Arial, sans-serif;
-    color: #163020;
-    position: relative;
     width: 75%;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+    h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #163020;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .profile-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            img {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .edit-btn {
+            background-color: #163020;
+            color: #fff;
+            &:hover {
+                background-color: #436850;
+                color: #fff;
+                border: 1px solid #163020;
+            }
+        }
+
+        .save-btn {
+            background-color: #FBFADA;
+            border:  1px solid #163020;
+            color: #163020;
+            &:hover {
+                background-color: #436850;
+            }
+        }
+    }
+
+    .avatar-section {
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #436850;
+        }
+
+        .add-photo-text {
+            color: #436850;
+            cursor: pointer;
+            margin-top: 10px;
+            font-style: italic;
+            font-size: 14px;
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .user-type-display {
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 200;
+        font-style: italic;
+        color: #163020;
+        text-transform: uppercase;
+        background-color: #f6f8eb;
+        padding: 6px 12px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    .user-name {
+        text-align: center;
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #163020;
+    }
+
+    .profile-form {
+        background-color: #f6f8eb;
+        padding: 30px;
+        border-radius: 10px;
+        margin-top: 20px;
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+
+            label {
+                width: 200px;
+                font-weight: 500;
+                color: #163020;
+                margin-left: 30%;
+                display: flex;
+            }
+
+            input, select {
+                width: 250px;
+                padding: 8px 12px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 1rem;
+
+                &:disabled {
+                    background-color: #f8f9fa;
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+
+                &:focus {
+                    outline: none;
+                    border-color: #436850;
+                }
+            }
+
+            select {
+                width: 270px;
+            }
+        }
+    }
 
     .error-message {
-        background-color: #ffebee;
-        color: #c62828;
+        color: #dc3545;
+        text-align: center;
+        margin: 10px 0;
         padding: 10px;
+        background-color: #fde8e8;
         border-radius: 4px;
-        margin-bottom: 20px;
     }
 
     .loading-message {
         text-align: center;
-        color: #666;
-        padding: 10px;
+        color: #436850;
+        margin: 20px 0;
         font-style: italic;
     }
-  
-    h2 {
-      font-size: 28px;
-      font-weight: bold;
-      color: #163020;
-    }
-  
-    .profile-actions {
-      position: absolute;
-      top: 40px;
-      right: 40px;
-  
-      .edit-btn,
-      .save-btn {
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 14px;
-        cursor: pointer;
-      }
-  
-      .edit-btn {
-        background-color: #163020;
-        color: white;
-      }
-  
-      .save-btn {
-        background-color: #f4f4d4;
-        color: #163020;
-        border: 1px solid #ccc;
-      }
-    }
-  
-    .avatar-section {
-      text-align: center;
-      margin: 40px 0;
-  
-      .avatar {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background-color: #ddd;
-        object-fit: cover;
-      }
-  
-      .add-photo-text {
-        margin-top: 10px;
-        color: #6c8f66;
-        font-style: italic;
-      }
-      p{
-        cursor: pointer;
-      }
-    }
-  
-    .profile-form {
-      background-color: #f8fbe9;
-      padding: 30px;
-      border-radius: 10px;
-      margin: auto;
-  
-      .form-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-  
-        label {
-          width: 130px;
-          font-weight: bold;
-          display: flex;
-          margin-left: 30%;
-        }
-  
-        input,
-        select {
-          width: 250px;
-          padding: 6px 10px;
-          border-radius: 6px;
-          border: 1px solid #ccc;
-        }
-        select{
-            width: 270px;
-        }
-  
-        .change-password-text {
-          color: #6c8f66;
-          cursor: pointer;
-          font-size: 14px;
-          font-style: italic;
-        }
-      }
-    }
-  }
+}

@@ -78,6 +78,21 @@ class UserApi extends BaseRepository {
       throw error;
     }
   };
+
+  exportToPdf = async (userIds) => {
+    try {
+      const response = await this.api.post(this.route + '/export-pdf', { userIds }, {
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf',
+          'Content-Type': 'application/json'
+        }
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
 }
 
 export const userApi = new UserApi();

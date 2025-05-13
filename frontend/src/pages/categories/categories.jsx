@@ -238,16 +238,7 @@ const Categories = () => {
                                 >
                                     <img src={editIcon} alt="Sửa" /> Sửa
                                 </button>
-                                <button 
-                                    className="btn-icon"
-                                    onClick={() => {
-                                        if (window.confirm('Bạn có chắc chắn muốn xóa mục này?')) {
-                                            handleSingleDelete(category.ID);
-                                        }
-                                    }}
-                                >
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </button>
+                                
                             </td>
                         </tr>
                     ))}

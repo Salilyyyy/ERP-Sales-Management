@@ -64,14 +64,6 @@ const Dashboard = () => {
       if (isNaN(date.getTime())) return;
 
       const invoiceTotal = invoice.total || invoice.totalAmount || 0;
-      
-      console.log('Processing invoice:', {
-        id: invoice.ID || invoice.id,
-        exportTime: invoice.exportTime || invoice.createdAt,
-        total: invoiceTotal,
-        details: invoice.InvoiceDetails,
-        originalInvoice: invoice
-      });
 
       totalRev += invoiceTotal;
       totalOrd += 1;
@@ -154,17 +146,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchRevenueData = async () => {
-      try {
+     
         const response = await apiInvoice.getAll();
-        console.log('Raw invoice response:', response);
         const invoices = response?.data || [];
-        console.log('Filtered invoices:', invoices.filter(invoice => invoice.exportTime));
         const chartData = calculateRevenueData(invoices, timeFilter);
-        console.log('Generated chart data:', chartData);
         setRevenueData(chartData);
-      } catch (error) {
-        console.error("Failed to fetch revenue data:", error);
-      }
     };
     
     fetchRevenueData();
@@ -172,7 +158,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchTopProducts = async () => {
-      try {
         const [invoiceResponse, stockInResponse] = await Promise.all([
           apiInvoice.getAll(),
           apiStockIn.getAll()
@@ -230,12 +215,6 @@ const Dashboard = () => {
             const unitPrice = parseFloat(detail.unitPrice || 0);
             
             if (productId && productData.has(productId)) {
-              console.log('Processing sale:', {
-                productId,
-                name: detail.Products.name,
-                quantity,
-                unitPrice
-              });
               
               const product = productData.get(productId);
               product.salesQuantity += quantity;
@@ -244,8 +223,6 @@ const Dashboard = () => {
             }
           });
         });
-
-        console.log('Final product data:', Array.from(productData.values()));
         
         const sortedProducts = Array.from(productData.values())
           .map(product => ({
@@ -264,12 +241,8 @@ const Dashboard = () => {
             salesRate: (product.salesRate * 100).toFixed(1) + '%'
           }));
         
-        console.log('Sorted products:', sortedProducts);
         setTopProducts(sortedProducts);
-      } catch (error) {
-        console.error("Failed to fetch top products:", error);
-        console.error("Error details:", error.message);
-      }
+    
     };
 
     fetchTopProducts();
@@ -280,7 +253,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchInventoryData = async () => {
-      try {
         const response = await apiProduct.getAll();
         const products = response.data;
         
@@ -304,9 +276,7 @@ const Dashboard = () => {
           icon: upIcon,
           color: "green"
         })));
-      } catch (error) {
-        console.error("Failed to fetch inventory data:", error);
-      }
+     
     };
 
     fetchInventoryData();

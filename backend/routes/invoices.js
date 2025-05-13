@@ -5,9 +5,17 @@ const prisma = new PrismaClient();
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  const { promotionID, customerID, exportTime, paymentMethod, tax, details } = req.body;
+const { promotionID, customerID, employeeName, exportTime, paymentMethod, tax, details } = req.body;
   try {
     const result = await prisma.$transaction(async (tx) => {
+      const creator = await tx.users.findFirst({
+        where: { name: employeeName }
+      });
+
+      if (!creator) {
+        throw new Error(`Creator with name ${employeeName} not found`);
+      }
+
       if (details && Array.isArray(details)) {
         const productIds = details.map(detail => detail.productID);
         const products = await tx.product.findMany({
@@ -40,9 +48,12 @@ router.post('/', async (req, res) => {
 
       const invoiceData = {
         Customers: {
-          connect: { ID: customerID }
-        },
-        exportTime: exportTime || new Date(),
+        connect: { ID: customerID }
+      },
+      Creator: {
+        connect: { ID: creator.ID }
+      },
+      exportTime: exportTime || new Date(),
         paymentMethod,
         tax,
         total: req.body.total || 0,
@@ -100,9 +111,10 @@ router.post('/', async (req, res) => {
 
     const invoice = await prisma.invoices.findUnique({
       where: { ID: result.ID },
-      include: {
-        Customers: true,
-        Promotions: true,
+        include: {
+          Customers: true,
+          Creator: true,
+          Promotions: true,
         InvoiceDetails: {
           include: {
             Products: {
@@ -164,6 +176,7 @@ router.get('/', async (req, res) => {
         where,
         include: {
           Customers: true,
+          Creator: true,
           Promotions: true,
           InvoiceDetails: {
             include: {
@@ -209,6 +222,7 @@ router.get('/:id', async (req, res) => {
       where: { ID: parseInt(id) },
       include: {
         Customers: true,
+        Creator: true,
         Promotions: true,
         InvoiceDetails: {
           include: {
@@ -273,6 +287,9 @@ router.put('/:id', async (req, res) => {
       
       if (updateFields.customerID !== undefined) {
         updateData.Customers = { connect: { ID: updateFields.customerID } };
+      }
+      if (updateFields.creatorID !== undefined) {
+        updateData.Creator = { connect: { ID: updateFields.creatorID } };
       }
       if (updateFields.promotionID !== undefined) {
         updateData.Promotions = updateFields.promotionID ? 
@@ -388,6 +405,7 @@ router.put('/:id', async (req, res) => {
       where: { ID: result.ID },
       include: {
         Customers: true,
+        Creator: true,
         Promotions: true,
         InvoiceDetails: {
           include: {

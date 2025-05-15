@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef } from 'react';
 import './employeeTemplate.scss';
 
-const EmployeeTemplate = ({ user }) => {
+const EmployeeTemplate = forwardRef((props, ref) => {
+  const { user } = props;
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [base64Image, setBase64Image] = useState('');
@@ -41,8 +42,9 @@ const EmployeeTemplate = ({ user }) => {
       loadImage();
     }
   }, [user.image, convertImageToBase64]);
+
   return (
-    <div className="employee-template">
+    <div ref={ref} className="employee-template">
       <div className="header">
         <div className="company-info">
           <h1>Hệ Thống ERP</h1>
@@ -51,7 +53,7 @@ const EmployeeTemplate = ({ user }) => {
       </div>
 
       <div className="content">
-      <div className="employee-photo">
+        <div className="employee-photo">
           {user.image && !imageError ? (
             <img 
               src={base64Image || user.image} 
@@ -125,6 +127,8 @@ const EmployeeTemplate = ({ user }) => {
       </div>
     </div>
   );
-};
+});
+
+EmployeeTemplate.displayName = 'EmployeeTemplate';
 
 export default EmployeeTemplate;

@@ -1,19 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { compressImage, generateSHA1 } from "../../utils/imageUtils";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "./detailEmployee.scss";
 import { toast } from 'react-toastify';
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
+import EmployeeTemplate from "../../components/employeeTemplate/employeeTemplate";
+import { generateEmployeePDF } from "../../utils/pdfUtils";
 import avatarIcon from "../../assets/img/avatar.png";
 import editIcon from "../../assets/img/white-edit.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
 import backIcon from "../../assets/img/back-icon.svg";
+import exportIcon from "../../assets/img/white-export.svg";
 
 import { userApi } from "../../api/apiUser";
 
 const DetailEmployee = () => {
+    const employeeTemplateRef = useRef(null);
     const navigate = useNavigate();
     const { id } = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -27,6 +31,7 @@ const DetailEmployee = () => {
     const [previewImage, setPreviewImage] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [generating, setGenerating] = useState(false);
 
     useEffect(() => {
         const fetchEmployee = async () => {
@@ -57,6 +62,28 @@ const DetailEmployee = () => {
             setPreviewImage(employee.image);
         }
     }, [isEditMode, employee]);
+
+    const handleExport = async () => {
+        if (generating) return;
+        setGenerating(true);
+        try {
+            if (!employeeTemplateRef.current) {
+                throw new Error("Template not ready");
+            }
+
+            // Wait for images to load
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const pdf = await generateEmployeePDF([employee], employeeTemplateRef.current);
+            pdf.save(`employee-${employee.ID}.pdf`);
+            toast.success("Xuất thông tin nhân viên thành công!");
+        } catch (error) {
+            toast.error("Có lỗi khi xuất thông tin nhân viên");
+            console.error(error);
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     const handleImageUpload = async (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -125,39 +152,39 @@ const DetailEmployee = () => {
     };
 
     const handleSave = async () => {
-    if (uploadingImage) {
-        toast.warning('Đang tải ảnh lên, vui lòng đợi');
-        return;
-    }
+        if (uploadingImage) {
+            toast.warning('Đang tải ảnh lên, vui lòng đợi');
+            return;
+        }
 
-    setSaving(true);
-    try {
-        const allFields = [
-            'name', 'birthday', 'userType', 'department',
-            'phoneNumber', 'email', 'address', 'status', 'image'
-        ];
+        setSaving(true);
+        try {
+            const allFields = [
+                'name', 'birthday', 'userType', 'department',
+                'phoneNumber', 'email', 'address', 'status', 'image'
+            ];
 
-        const updatedFields = {};
-        allFields.forEach(field => {
-            updatedFields[field] = editedEmployee[field] !== undefined && editedEmployee[field] !== ''
-                ? editedEmployee[field]
-                : null;
-        });
+            const updatedFields = {};
+            allFields.forEach(field => {
+                updatedFields[field] = editedEmployee[field] !== undefined && editedEmployee[field] !== ''
+                    ? editedEmployee[field]
+                    : null;
+            });
 
-        await userApi.updateUser(id, updatedFields);
-        setEmployee(editedEmployee);
-        setPreviewImage(null);
+            await userApi.updateUser(id, updatedFields);
+            setEmployee(editedEmployee);
+            setPreviewImage(null);
 
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete("edit");
-        setSearchParams(newSearchParams);
-        toast.success("Cập nhật thành công!");
-    } catch (err) {
-        toast.error("Cập nhật thất bại: " + err.message);
-    } finally {
-        setSaving(false);
-    }
-};
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("edit");
+            setSearchParams(newSearchParams);
+            toast.success("Cập nhật thành công!");
+        } catch (err) {
+            toast.error("Cập nhật thất bại: " + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleCancel = () => {
         const newSearchParams = new URLSearchParams(searchParams);
@@ -185,6 +212,9 @@ const DetailEmployee = () => {
                     <>
                         <button className="delete" onClick={() => setShowDeleteConfirm(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
+                        <button className="export" onClick={handleExport} disabled={generating}>
+                            <img src={exportIcon} alt="Xuất" /> {generating ? "Đang xuất..." : "Xuất"}
                         </button>
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
@@ -358,6 +388,12 @@ const DetailEmployee = () => {
                 }}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div style={{ width: '794px', background: '#fff', padding: '20px' }}>
+                    <EmployeeTemplate ref={employeeTemplateRef} user={employee} />
+                </div>
+            </div>
         </div>
     );
 };

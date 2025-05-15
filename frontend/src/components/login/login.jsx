@@ -80,7 +80,6 @@ const LoginPage = () => {
       const redirectTo = location.state?.from?.pathname || "/dashboard";
       navigate(redirectTo);
     } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
       if (error.message === "Email hoặc mật khẩu không đúng") {
         setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
         return;

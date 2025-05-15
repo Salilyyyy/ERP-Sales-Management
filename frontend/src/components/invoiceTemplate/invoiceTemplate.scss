@@ -82,7 +82,9 @@
         }
 
         strong {
+          display: flex;
           font-weight: 600;
+          width: 250px;
         }
       }
     }

@@ -1,13 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import "./invoices.scss";
 import { toast } from 'react-toastify';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 import checkIcon from "../../assets/img/tick-icon.svg";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
+import InvoiceTemplate from "../../components/invoiceTemplate/invoiceTemplate";
+import { generateInvoicePDF } from "../../utils/pdfUtils";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
@@ -111,8 +115,62 @@ const Invoices = () => {
         setIsDropdownOpen(false);
     };
 
-    const handleExport = () => {
-        toast.info("Tính năng xuất đơn hàng đang phát triển");
+    const invoiceTemplateRef = useRef(null);
+    const [currentInvoice, setCurrentInvoice] = useState(null);
+
+    const handleExport = async () => {
+        if (selectedInvoices.length === 0) {
+            toast.warning("Vui lòng chọn ít nhất một đơn hàng để xuất!");
+            return;
+        }
+
+        try {
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            let isFirstPage = true;
+
+            for (const invoiceId of selectedInvoices) {
+                const invoice = invoices.find(inv => inv.id === invoiceId);
+                if (!invoice) continue;
+
+                // Set current invoice to render template
+                setCurrentInvoice(invoice);
+                
+                // Wait for the template to render properly
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Capture the template as image
+                const canvas = await html2canvas(invoiceTemplateRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: true,
+                    width: invoiceTemplateRef.current.offsetWidth,
+                    height: invoiceTemplateRef.current.offsetHeight,
+                    backgroundColor: '#ffffff',
+                });
+
+                // Add new page for all invoices except the first one
+                if (!isFirstPage) {
+                    pdf.addPage();
+                }
+                isFirstPage = false;
+
+                // Add invoice to PDF
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
+            }
+            
+            // Clear current invoice and save PDF
+            setCurrentInvoice(null);
+            pdf.save('invoices.pdf');
+            
+            toast.success("Xuất hóa đơn thành công!");
+        } catch (error) {
+            console.error("Error exporting invoices:", error);
+            toast.error("Không thể xuất hóa đơn!");
+        }
         setIsDropdownOpen(false);
     };
 
@@ -125,51 +183,68 @@ const Invoices = () => {
     };
 
     return (
-        <div className="invoices">
-            <h2 className="title">Danh sách đơn hàng</h2>
-
-            <div className="top-actions">
-                <div className="search-container">
-                    <img src={searchIcon} alt="Search" className="search-icon" />
-                    <input
-                        type="text"
-                        className="search-bar"
-                        placeholder="Tìm kiếm ..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-
-                <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-invoice")}>
-                        Thêm mới
-                    </button>
-
-                    <div className="dropdown" ref={dropdownRef}>
-                        <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động <img src={downIcon} alt="▼" />
-                        </button>
-                        {isDropdownOpen && (
-                            <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
-                                <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
-                                </li>
-                            </ul>
-                        )}
+        <div className="page-container">
+            <div style={{ position: 'absolute', left: '-9999px', top: 0, height: 'auto', width: '793px' }}>
+                {currentInvoice && (
+                    <div ref={invoiceTemplateRef}>
+                        <InvoiceTemplate
+                            invoice={currentInvoice}
+                            totalItems={currentInvoice.InvoiceDetails?.reduce((sum, detail) => 
+                                sum + (detail.quantity * detail.unitPrice), 0) || 0}
+                            taxAmount={(currentInvoice.InvoiceDetails?.reduce((sum, detail) => 
+                                sum + (detail.quantity * detail.unitPrice), 0) || 0) * (currentInvoice.tax || 0) / 100}
+                            promotionDiscount={currentInvoice.promotionDiscount || 0}
+                            totalPayment={currentInvoice.totalAmount || 0}
+                        />
                     </div>
-                </div>
+                )}
             </div>
 
-            {isLoading ? (
-                <LoadingSpinner />
-            ) : error ? (
-                <div className="error">{error}</div>
-            ) : (
-                <>
-                    <table className="order-table">
+            <div className="invoices">
+                <h2 className="title">Danh sách đơn hàng</h2>
+
+                <div className="top-actions">
+                    <div className="search-container">
+                        <img src={searchIcon} alt="Search" className="search-icon" />
+                        <input
+                            type="text"
+                            className="search-bar"
+                            placeholder="Tìm kiếm ..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="button">
+                        <button className="btn add" onClick={() => navigate("/create-invoice")}>
+                            Thêm mới
+                        </button>
+
+                        <div className="dropdown" ref={dropdownRef}>
+                            <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                                Hành động <img src={downIcon} alt="▼" />
+                            </button>
+                            {isDropdownOpen && (
+                                <ul className="dropdown-menu">
+                                    <li className="dropdown-item" onClick={handleDelete}>
+                                        <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    </li>
+                                    <li className="dropdown-item" onClick={handleExport}>
+                                        <img src={exportIcon} alt="Xuất" /> Xuất
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {isLoading ? (
+                    <LoadingSpinner />
+                ) : error ? (
+                    <div className="error">{error}</div>
+                ) : (
+                    <>
+                        <table className="order-table">
                             <thead>
                                 <tr>
                                     <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
@@ -201,42 +276,43 @@ const Invoices = () => {
                                             <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
                                                 <img src={viewIcon} alt="Xem" /> Xem
                                             </button>
-                            <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}?edit=true`)}>
-                                <img src={editIcon} alt="Sửa" /> Sửa
-                            </button>
+                                            <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}?edit=true`)}>
+                                                <img src={editIcon} alt="Sửa" /> Sửa
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
-                    </table>
-                    <div className="pagination-container">
-                        <div className="pagination-left">
-                            <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                                <option value={5}>5 hàng</option>
-                                <option value={10}>10 hàng</option>
-                                <option value={15}>15 hàng</option>
-                            </select>
-                            <span>
-                                Hiển thị {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, totalItems)} trên {totalItems}
-                            </span>
-                        </div>
+                        </table>
+                        <div className="pagination-container">
+                            <div className="pagination-left">
+                                <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
+                                    <option value={5}>5 hàng</option>
+                                    <option value={10}>10 hàng</option>
+                                    <option value={15}>15 hàng</option>
+                                </select>
+                                <span>
+                                    Hiển thị {(currentPage - 1) * rowsPerPage + 1} - {Math.min(currentPage * rowsPerPage, totalItems)} trên {totalItems}
+                                </span>
+                            </div>
 
-                        <div className="pagination">
-                            <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
-                            {Array.from({ length: totalPages }).map((_, i) => (
-                                <button
-                                    key={`page-${i + 1}`}
-                                    className={`btn-page ${currentPage === i + 1 ? "active" : ""}`}
-                                    onClick={() => handlePageChange(i + 1)}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
-                            <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
+                            <div className="pagination">
+                                <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
+                                {Array.from({ length: totalPages }).map((_, i) => (
+                                    <button
+                                        key={`page-${i + 1}`}
+                                        className={`btn-page ${currentPage === i + 1 ? "active" : ""}`}
+                                        onClick={() => handlePageChange(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                                <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
+                            </div>
                         </div>
-                    </div>
-                </>
-            )}
+                    </>
+                )}
+            </div>
         </div>
     );
 };

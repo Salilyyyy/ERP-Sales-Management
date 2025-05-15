@@ -79,21 +79,17 @@ const Customer = () => {
         .filter((customer) => {
             const nameMatch = (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase());
             const idMatch = customer.ID ? customer.ID.toString().includes(searchQuery) : false;
-            console.log(`Search filter for ${customer.name}: nameMatch=${nameMatch}, idMatch=${idMatch}`);
             return nameMatch || idMatch;
         })
         .filter((customer) => {
             const typeMatch = filterType === "all" ? true : customer.ID === parseInt(filterType);
-            console.log(`Type filter for ${customer.name}: typeMatch=${typeMatch}`);
             return typeMatch;
         })
         .filter((customer) => {
             const nameFilterMatch = filterName === "" ? true : (customer.name || '').toLowerCase().includes(filterName.toLowerCase());
-            console.log(`Name filter for ${customer.name}: nameFilterMatch=${nameFilterMatch}`);
             return nameFilterMatch;
-        });
-
-    console.log('After filtering - filteredCustomers:', filteredCustomers);
+        })
+        .sort((a, b) => a.ID - b.ID);
     
     const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;

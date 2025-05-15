@@ -35,10 +35,12 @@ class StockInRepository extends BaseRepository {
 
     async create(data) {
         try {
+            const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Unknown';
             const response = await this.post('', {
                 stockinDate: data.stockinDate,
                 notes: data.notes,
                 supplierID: data.supplierID,
+                updatedBy: currentUser,
                 DetailStockins: data.DetailStockins.map(detail => ({
                     productID: detail.productID,
                     quantity: detail.quantity,
@@ -55,11 +57,13 @@ class StockInRepository extends BaseRepository {
         try {
             const stockinDate = new Date(data.stockinDate);
             const isoDate = stockinDate.toISOString();
+            const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Unknown';
 
             const response = await this.put(`/${id}`, {
                 stockinDate: isoDate,
                 notes: data.notes,
                 supplierID: data.supplierID,
+                updatedBy: currentUser,
                 DetailStockins: data.DetailStockins.map(detail => ({
                     ID: detail.ID,
                     productID: detail.productID,

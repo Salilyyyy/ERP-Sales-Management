@@ -97,6 +97,7 @@ $input-focus-color: #1a3300;
       justify-content: space-between;
       padding: 10px;
       margin-bottom: 15px; 
+      align-items: center;
 
       .info-label {
         font-weight: bold;
@@ -112,10 +113,14 @@ $input-focus-color: #1a3300;
         width: 60%;
       }
 
-      .info-input {
+      select {
+        width: 265px !important;
+      }
+
+     .info-input {
         color: #333;
         padding: 8px;
-        width: 60%;
+        width: 250px;
         border-radius: 5px;
         border: 1px solid $input-border-color;
         background-color: #fff;

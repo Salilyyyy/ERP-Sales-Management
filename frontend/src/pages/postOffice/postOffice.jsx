@@ -76,7 +76,7 @@ const PostOffice = () => {
         setIsDropdownOpen(false);
     };
 
-    const filteredPostOffices = postOffices
+const filteredPostOffices = postOffices
     .filter((office) =>
         office.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         office.ID.toString().includes(searchQuery)
@@ -84,7 +84,8 @@ const PostOffice = () => {
     .filter((office) => 
         filterType === "all" ? true : office.ID === parseInt(filterType)
     )
-    .filter((office) => office.name.toLowerCase().includes(filterName.toLowerCase()));
+    .filter((office) => office.name.toLowerCase().includes(filterName.toLowerCase()))
+    .sort((a, b) => a.ID - b.ID);
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
@@ -199,7 +200,7 @@ const PostOffice = () => {
                             <td>{office.ID}</td>
                             <td>{office.name}</td>  
                             <td>{office.phoneNumber}</td>  
-                            <td>{office.address}</td>  
+                            <td>{office.address}</td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                 <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>

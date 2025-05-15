@@ -6,6 +6,12 @@ import { useNavigate } from "react-router-dom";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 import { useState } from "react";
 
+const units = [
+  "Cái",
+  "Chiếc", 
+  "Bộ"
+];
+
 const CreateCategory = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -53,7 +59,6 @@ const CreateCategory = () => {
       navigate("/categories");
     } catch (error) {
       console.error('Failed to create category:', error);
-      // You might want to add error handling UI here
     }
   };
 
@@ -100,33 +105,16 @@ const CreateCategory = () => {
 
         <div className="form-group">
           <label htmlFor="unit">Đơn vị tính</label>
-          <input
-            type="text"
+          <select
             id="unit"
             value={formData.information.unit}
             onChange={handleChange}
-          />
-        </div>
-
-
-        <div className="form-group">
-          <label htmlFor="promotion">Khuyến mãi</label>
-          <input
-            type="text"
-            id="promotion"
-            value={formData.information.promotion}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="tax">Thuế</label>
-          <input
-            type="text"
-            id="tax"
-            value={formData.information.tax}
-            onChange={handleChange}
-          />
+          >
+            <option value="">Chọn đơn vị tính</option>
+            {units.map((unit) => (
+              <option key={unit} value={unit}>{unit}</option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

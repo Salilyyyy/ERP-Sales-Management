@@ -196,6 +196,22 @@ $text-color: #1a3300;
             background-color: $bg-light;
             font-weight: bold;
             text-align: center;
+            
+            &.sortable {
+                cursor: pointer;
+                transition: background-color 0.3s;
+                user-select: none;
+                
+                &:hover {
+                    background-color: darken($bg-light, 5%);
+                }
+
+                span {
+                    display: inline-block;
+                    margin-left: 5px;
+                    font-size: 12px;
+                }
+            }
         }
 
         td {

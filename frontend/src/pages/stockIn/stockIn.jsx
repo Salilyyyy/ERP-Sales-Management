@@ -25,12 +25,20 @@ const Stockin = () => {
     const [filterName, setFilterName] = useState("");
     const [stockInData, setStockInData] = useState([]);
     const [error, setError] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: 'updatedAt', direction: 'desc' });
 
     useEffect(() => {
         const fetchStockIns = async () => {
             try {
                 const data = await apiStockIn.getAll();
-                setStockInData(data);
+                const sortedData = [...data].sort((a, b) => {
+                    return sortConfig.key === 'updatedAt' 
+                        ? (sortConfig.direction === 'desc' 
+                            ? new Date(b.updatedAt) - new Date(a.updatedAt)
+                            : new Date(a.updatedAt) - new Date(b.updatedAt))
+                        : new Date(b.stockinDate) - new Date(a.stockinDate);
+                });
+                setStockInData(sortedData);
                 setError(null);
             } catch (err) {
                 setError(err.message);
@@ -39,9 +47,8 @@ const Stockin = () => {
         };
 
         fetchStockIns();
-    }, []);
+    }, [sortConfig]);
 
-    // Get loading state from BaseRepository
     const requestKey = apiStockIn.endpoint;
     const isLoading = BaseRepository.getLoadingState(requestKey);
 
@@ -66,8 +73,11 @@ const Stockin = () => {
                     await apiStockIn.delete(id);
                 }
 
-                const updatedData = await apiStockIn.getAll();
-                setStockInData(updatedData);
+                const data = await apiStockIn.getAll();
+                const sortedData = [...data].sort((a, b) => {
+                    return new Date(b.stockinDate) - new Date(a.stockinDate);
+                });
+                setStockInData(sortedData);
                 setSelectedStockIns([]);
                 setSelectAll(false);
                 setIsDropdownOpen(false);
@@ -87,9 +97,9 @@ const Stockin = () => {
         .filter((stockIn) => {
             const supplierName = stockIn.supplier?.name || '';
             const stockInId = stockIn.ID?.toString() || '';
-            return searchQuery === '' || 
-                   supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                   stockInId.includes(searchQuery);
+            return searchQuery === '' ||
+                supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                stockInId.includes(searchQuery);
         })
         .filter((stockIn) => {
             const supplierName = stockIn.supplier?.name || '';
@@ -97,7 +107,7 @@ const Stockin = () => {
         })
         .filter((stockIn) => {
             if (filterName === "") return true;
-            return (stockIn.DetailStockins || []).some(detail => 
+            return (stockIn.DetailStockins || []).some(detail =>
                 (detail.Products?.name || '').toLowerCase().includes(filterName.toLowerCase())
             );
         });
@@ -214,7 +224,7 @@ const Stockin = () => {
                                         onChange={(e) => setFilterName(e.target.value)}
                                     >
                                         <option value="">Mặt hàng</option>
-                                        {[...new Set(stockInData.flatMap(item => 
+                                        {[...new Set(stockInData.flatMap(item =>
                                             (item.DetailStockins || []).map(detail => detail.Products?.name || 'Unknown')
                                         ))].map(name => (
                                             <option key={name} value={name}>{name}</option>
@@ -230,6 +240,17 @@ const Stockin = () => {
                                     <tr>
                                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
                                         <th>Ngày nhập</th>
+                                        <th className="sortable" onClick={() => {
+                                            setSortConfig({
+                                                key: 'updatedAt',
+                                                direction: sortConfig.direction === 'asc' ? 'desc' : 'asc'
+                                            });
+                                        }}>
+                                            Ngày sửa {sortConfig.key === 'updatedAt' && (
+                                                <span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                                            )}
+                                        </th>
+                                        <th>Người sửa</th>
                                         <th>Tên nhà cung cấp</th>
                                         <th>Mặt hàng</th>
                                         <th>Loại</th>
@@ -251,6 +272,8 @@ const Stockin = () => {
                                                 <tr key={stockItem.ID}>
                                                     <td><input type="checkbox" checked={selectedStockIns.includes(stockItem.ID)} onChange={() => handleSelectStockIn(stockItem.ID)} /></td>
                                                     <td>{new Date(stockItem.stockinDate).toLocaleDateString()}</td>
+                                                    <td>{new Date(stockItem.updatedAt).toLocaleString()}</td>
+                                                    <td>{stockItem.updatedBy || 'N/A'}</td>
                                                     <td>{stockItem.supplier?.name || 'N/A'}</td>
                                                     <td colSpan="6">Không có sản phẩm</td>
                                                 </tr>
@@ -270,6 +293,8 @@ const Stockin = () => {
                                                             />
                                                         </td>
                                                         <td rowSpan={rowSpan}>{new Date(stockItem.stockinDate).toLocaleDateString()}</td>
+                                                        <td rowSpan={rowSpan}>{new Date(stockItem.updatedAt).toLocaleString()}</td>
+                                                        <td rowSpan={rowSpan}>{stockItem.updatedBy || 'N/A'}</td>
                                                         <td rowSpan={rowSpan}>{stockItem.supplier?.name || 'N/A'}</td>
                                                     </>
                                                 )}

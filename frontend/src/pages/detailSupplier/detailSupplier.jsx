@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
+import downIcon from "../../assets/img/down-icon.svg";
+import apiCountry from "../../api/apiCountry";
 import "./detailSupplier.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import supplierApi from "../../api/apiSupplier";
@@ -20,6 +22,34 @@ const DetailSupplier = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
     const [isEditing, setIsEditing] = useState(isEditMode);
+    const [countries, setCountries] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const selectRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (selectRef.current && !selectRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const countriesData = await apiCountry.getAll();
+                setCountries(countriesData);
+            } catch (error) {
+                console.error("Error fetching countries:", error);
+            }
+        };
+        fetchCountries();
+    }, []);
 
     const handleInputChange = (field, value) => {
         setEditedSupplier(prev => ({
@@ -143,6 +173,19 @@ const DetailSupplier = () => {
                     </div>
                     <div className="info-row">
                         <div className="info-item">
+                            <div className="info-label">Email</div>
+                            {isEditing ? (
+                                <input
+                                    type="email"
+                                    className="info-input"
+                                    value={editedSupplier.email}
+                                    onChange={(e) => handleInputChange('email', e.target.value)}
+                                />
+                            ) : (
+                                <div className="info-value">{supplier.email}</div>
+                            )}
+                        </div>
+                        <div className="info-item">
                             <div className="info-label">Số điện thoại</div>
                             {isEditing ? (
                                 <input
@@ -158,20 +201,67 @@ const DetailSupplier = () => {
                     </div>
                     <div className="info-row">
                         <div className="info-item">
-                            <div className="info-label">Email</div>
+                            <div className="info-label">Quốc gia</div>
                             {isEditing ? (
-                                <input
-                                    type="email"
-                                    className="info-input"
-                                    value={editedSupplier.email}
-                                    onChange={(e) => handleInputChange('email', e.target.value)}
-                                />
+                                <div className="custom-select" ref={selectRef}>
+                                    <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                                        <div className="selected-content">
+                                            {editedSupplier.country ? (
+                                                <>
+                                                    <img
+                                                        src={countries.find(c => c.name === editedSupplier.country)?.flag}
+                                                        alt={editedSupplier.country}
+                                                        className="country-flag"
+                                                    />
+                                                    <span>{editedSupplier.country}</span>
+                                                </>
+                                            ) : (
+                                                <span className="placeholder">Chọn quốc gia</span>
+                                            )}
+                                        </div>
+                                        <img
+                                            src={downIcon}
+                                            alt="down"
+                                            className={`down-icon ${isOpen ? 'rotate' : ''}`}
+                                        />
+                                    </div>
+                                    {isOpen && (
+                                        <div className="options-list">
+                                            {countries.map((country) => (
+                                                <div
+                                                    key={country.code}
+                                                    className="option"
+                                                    onClick={() => {
+                                                        handleInputChange('country', country.name);
+                                                        setIsOpen(false);
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={country.flag}
+                                                        alt={country.name}
+                                                        className="country-flag"
+                                                    />
+                                                    <span>{country.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
-                                <div className="info-value">{supplier.email}</div>
+                                <div className="info-value">
+                                    {supplier.country && (
+                                        <>
+                                            <img
+                                                src={countries.find(c => c.name === supplier.country)?.flag}
+                                                alt={supplier.country}
+                                                className="country-flag"
+                                            />
+                                            <span>{supplier.country}</span>
+                                        </>
+                                    )}
+                                </div>
                             )}
                         </div>
-                    </div>
-                    <div className="info-row">
                         <div className="info-item">
                             <div className="info-label">Mã số thuế</div>
                             {isEditing ? (
@@ -185,6 +275,8 @@ const DetailSupplier = () => {
                                 <div className="info-value">{supplier.taxId}</div>
                             )}
                         </div>
+                    </div>
+                    <div className="info-row">
                         <div className="info-item">
                             <div className="info-label">Mã bưu chính</div>
                             {isEditing ? (
@@ -198,51 +290,6 @@ const DetailSupplier = () => {
                                 <div className="info-value">{supplier.postalCode}</div>
                             )}
                         </div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-item">
-                            <div className="info-label">Quốc gia</div>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="info-input"
-                                    value={editedSupplier.country || ''}
-                                    onChange={(e) => handleInputChange('country', e.target.value)}
-                                />
-                            ) : (
-                                <div className="info-value">{supplier.country}</div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="info-row">
-                        <div className="info-item">
-                            <div className="info-label">Đại diện</div>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="info-input"
-                                    value={editedSupplier.representative}
-                                    onChange={(e) => handleInputChange('representative', e.target.value)}
-                                />
-                            ) : (
-                                <div className="info-value">{supplier.representative}</div>
-                            )}
-                        </div>
-                        <div className="info-item">
-                            <div className="info-label">Điện thoại người đại diện</div>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="info-input"
-                                    value={editedSupplier.phoneNumberRep}
-                                    onChange={(e) => handleInputChange('phoneNumberRep', e.target.value)}
-                                />
-                            ) : (
-                                <div className="info-value">{supplier.phoneNumberRep}</div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="info-row full-width">
                         <div className="info-item">
                             <div className="info-label">Địa chỉ</div>
                             {isEditing ? (
@@ -257,7 +304,7 @@ const DetailSupplier = () => {
                             )}
                         </div>
                     </div>
-                    <div className="info-row full-width">
+                    <div className="info-row">
                         <div className="info-item">
                             <div className="info-label">Ghi chú</div>
                             {isEditing ? (

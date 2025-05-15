@@ -8,6 +8,12 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 
+const units = [
+    "Cái",
+    "Chiếc",
+    "Bộ",
+];
+
 const DetailCategory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -134,12 +140,16 @@ const DetailCategory = () => {
                 <div className="info-item">
                     <div className="info-label">Đơn vị tính</div>
                     {isEditing ? (
-                        <input
-                            type="text"
+                        <select
                             value={editedCategory.unit}
                             onChange={(e) => handleInputChange('unit', e.target.value)}
                             className="info-input"
-                        />
+                        >
+                            <option value="">Chọn đơn vị tính</option>
+                            {units.map((unit) => (
+                                <option key={unit} value={unit}>{unit}</option>
+                            ))}
+                        </select>
                     ) : (
                         <div className="info-value">{category.unit}</div>
                     )}
@@ -155,32 +165,6 @@ const DetailCategory = () => {
                         />
                     ) : (
                         <div className="info-value">{category.status}</div>
-                    )}
-                </div>
-                <div className="info-item">
-                    <div className="info-label">Khuyến mãi</div>
-                    {isEditing ? (
-                        <input
-                            type="text"
-                            value={editedCategory.promotion || ''}
-                            onChange={(e) => handleInputChange('promotion', e.target.value)}
-                            className="info-input"
-                        />
-                    ) : (
-                        <div className="info-value">{category.promotion || '5%'}</div>
-                    )}
-                </div>
-                <div className="info-item">
-                    <div className="info-label">Thuế</div>
-                    {isEditing ? (
-                        <input
-                            type="text"
-                            value={editedCategory.tax || ''}
-                            onChange={(e) => handleInputChange('tax', e.target.value)}
-                            className="info-input"
-                        />
-                    ) : (
-                        <div className="info-value">{category.tax || '10%'}</div>
                     )}
                 </div>
                 <div className="info-item">

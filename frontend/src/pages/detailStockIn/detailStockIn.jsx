@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 import apiStockIn from "../../api/apiStockIn";
+import apiSupplier from "../../api/apiSupplier";
 import { toast } from 'react-toastify';
 
 const DetailStockIn = () => {
@@ -21,6 +22,7 @@ const DetailStockIn = () => {
     const [isEditing, setIsEditing] = useState(isEditMode);
     const [editedData, setEditedData] = useState(null);
     const [isLoadingRequest, setLoading] = useState(false);
+    const [suppliers, setSuppliers] = useState([]);
 
     const handleDeleteProduct = async (detailId) => {
         if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi đơn nhập kho?")) return;
@@ -43,7 +45,7 @@ const DetailStockIn = () => {
         }
     };
 
-    const handleEditClick = () => {
+    const handleEditClick = async () => {
         if (!stockinData || !stockinData.stockinDate) {
             toast.error("Không thể sửa: Dữ liệu không hợp lệ");
             return;
@@ -52,8 +54,13 @@ const DetailStockIn = () => {
             const date = new Date(stockinData.stockinDate);
             setEditedData({
                 stockinDate: date.toISOString().split('T')[0],
-                notes: stockinData.notes || ''
+                notes: stockinData.notes || '',
+                supplierID: stockinData.supplierID
             });
+
+            // Fetch suppliers list
+            const fetchedSuppliers = await apiSupplier.getAll();
+            setSuppliers(fetchedSuppliers);
             const newSearchParams = new URLSearchParams(searchParams);
             newSearchParams.set("edit", "true");
             setSearchParams(newSearchParams);
@@ -79,7 +86,8 @@ const DetailStockIn = () => {
                 ...stockinData,
                 stockinDate: editedData.stockinDate,
                 notes: editedData.notes,
-                DetailStockins: stockinData.DetailStockins 
+                supplierID: editedData.supplierID,
+                DetailStockins: stockinData.DetailStockins
             };
             await apiStockIn.update(id, updatedData);
             setStockinData(updatedData);
@@ -108,8 +116,12 @@ const DetailStockIn = () => {
                 if (isEditMode && data.stockinDate) {
                     setEditedData({
                         stockinDate: new Date(data.stockinDate).toISOString().split('T')[0],
-                        notes: data.notes || ''
+                        notes: data.notes || '',
+                        supplierID: data.supplierID
                     });
+                    // Fetch suppliers list when in edit mode
+                    const fetchedSuppliers = await apiSupplier.getAll();
+                    setSuppliers(fetchedSuppliers);
                 }
                 setError(null);
             } catch (err) {
@@ -206,7 +218,31 @@ const DetailStockIn = () => {
                 </div>
                 <div className="info-item">
                     <div className="info-label">Nhà cung cấp</div>
-                    <div className="info-value">{stockinData.supplier?.name || 'N/A'}</div>
+                    {isEditing ? (
+                        <select 
+                            className="info-value supplier-select"
+                            value={editedData?.supplierID || stockinData.supplierID}
+                            onChange={(e) => {
+                                const selectedSupplier = suppliers.find(s => s.ID === parseInt(e.target.value));
+                                setEditedData(prev => ({ 
+                                    ...prev, 
+                                    supplierID: parseInt(e.target.value)
+                                }));
+                                setStockinData(prev => ({
+                                    ...prev,
+                                    supplier: selectedSupplier
+                                }));
+                            }}
+                        >
+                            {suppliers.map(supplier => (
+                                <option key={supplier.ID} value={supplier.ID}>
+                                    {supplier.name}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <div className="info-value">{stockinData.supplier?.name || 'N/A'}</div>
+                    )}
                 </div>
                 <div className="info-item">
                     <div className="info-label">Email nhà cung cấp</div>
@@ -259,7 +295,7 @@ const DetailStockIn = () => {
                                     <td className="text-right">
                                         {((detail.quantity || 0) * (detail.unitPrice || 0)).toLocaleString()} VNĐ
                                         {isEditing && (
-                                            <span 
+                                            <span
                                                 className="delete-icon"
                                                 onClick={() => handleDeleteProduct(detail.ID)}
                                             >

@@ -104,6 +104,9 @@ $white: #ffffff;
         font-weight: bold;
         color: $text-color;
       }
+      select{
+        width: 265px !important; 
+      }
 
       .info-value, .info-value-id {
         padding: 6px;

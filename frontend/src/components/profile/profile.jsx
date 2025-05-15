@@ -110,12 +110,12 @@ const Profile = () => {
                 status: formData.status
             };
 
-                if (changedFields.birthday) {
-                    dataToUpdate.birthday = formData.birthday ? 
-                        new Date(formData.birthday).toISOString() : "2025-05-05T00:00:00.000Z";
-                } else {
-                    dataToUpdate.birthday = "2025-05-05T00:00:00.000Z";
-                }
+            if (changedFields.birthday) {
+                dataToUpdate.birthday = formData.birthday ?
+                    new Date(formData.birthday).toISOString() : "2025-05-05T00:00:00.000Z";
+            } else {
+                dataToUpdate.birthday = "2025-05-05T00:00:00.000Z";
+            }
 
             const userDataStr = localStorage.getItem('user');
             if (!userDataStr) {
@@ -129,7 +129,7 @@ const Profile = () => {
             const response = await userApi.updateUser(userData.ID, dataToUpdate);
 
             setIsEditing(false);
-            setChangedFields({}); 
+            setChangedFields({});
             await loadProfile();
 
         } catch (err) {
@@ -160,11 +160,11 @@ const Profile = () => {
                 setError(null);
                 setIsLoading(true);
 
-                const imageUrl = URL.createObjectURL(file);
-                setAvatar(imageUrl);
+                const previewUrl = URL.createObjectURL(file);
+                setAvatar(previewUrl);
                 const compressedImage = await compressImage(file);
 
-                const publicId = await uploadImageToCloudinary(compressedImage);
+                const uploadedImageUrl = await uploadImageToCloudinary(compressedImage);
 
                 const updateData = {
                     email: formData.email,
@@ -176,18 +176,18 @@ const Profile = () => {
                     IdentityCard: formData.IdentityCard,
                     birthday: "2025-05-05T00:00:00.000Z",
                     status: formData.status,
-                    image: publicId
+                    image: uploadedImageUrl
                 };
                 await userApi.updateUser(formData.ID, updateData);
 
                 setFormData(prev => ({
                     ...prev,
-                    image: publicId
+                    image: uploadedImageUrl
                 }));
 
             } catch (err) {
                 setError("Không thể tải lên ảnh. Vui lòng thử lại sau.");
-                setAvatar(formData.image ? `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload/v1/${formData.image}` : avatarIcon);
+                setAvatar(formData.image || avatarIcon);
             } finally {
                 setIsLoading(false);
             }
@@ -197,12 +197,7 @@ const Profile = () => {
     const [avatar, setAvatar] = useState(avatarIcon);
 
     useEffect(() => {
-        if (formData.image) {
-            const cloudinaryUrl = `https://res.cloudinary.com/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/image/upload/v1/${formData.image}`;
-            setAvatar(cloudinaryUrl);
-        } else {
-            setAvatar(avatarIcon);
-        }
+        setAvatar(formData.image || avatarIcon);
     }, [formData.image]);
 
 
@@ -216,7 +211,7 @@ const Profile = () => {
                 {!isEditing ? (
                     <button className="edit-btn" onClick={() => {
                         setIsEditing(true);
-                        setChangedFields({}); 
+                        setChangedFields({});
                     }}>
                         <img src={editIcon} alt="Edit icon" /> Chỉnh sửa
                     </button>

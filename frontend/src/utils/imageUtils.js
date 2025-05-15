@@ -47,7 +47,7 @@ export const generateSHA1 = async (message) => {
 
 export const uploadImageToCloudinary = async (file) => {
   try {
-    const cloudName = 'dlrm4ccbs';
+    const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
     const formData = new FormData();
     console.log('File details:', {
       name: file.name,
@@ -55,8 +55,15 @@ export const uploadImageToCloudinary = async (file) => {
       size: file.size
     });
     
+    const timestamp = Math.round((new Date()).getTime() / 1000);
+    
+    const signatureString = `timestamp=${timestamp}${process.env.REACT_APP_CLOUDINARY_API_SECRET}`;
+    const signature = await generateSHA1(signatureString);
+    
     formData.append('file', file);
-    formData.append('upload_preset', 'ml_default');
+    formData.append('api_key', process.env.REACT_APP_CLOUDINARY_API_KEY);
+    formData.append('timestamp', timestamp);
+    formData.append('signature', signature);
     
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -73,7 +80,9 @@ export const uploadImageToCloudinary = async (file) => {
       console.error('Cloudinary error:', data);
       throw new Error(data.error?.message || 'Image upload failed');
     }
-    return data;
+    
+    // Return only the secure URL instead of the entire response
+    return data.secure_url;
   } catch (error) {
     console.error('Error uploading image:', error);
     throw error;

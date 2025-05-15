@@ -79,10 +79,8 @@ const Sidebar = () => {
         try {
             await authApi.logout();
             navigate("/login");
-            alert("Bạn đã đăng xuất.");
         } catch (error) {
             console.error("Lỗi đăng xuất:", error);
-            alert("Có lỗi khi đăng xuất!");
         }
     };
 

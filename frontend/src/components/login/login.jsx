@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from 'react-toastify';
 import "./login.scss";
 import emailIcon from "../../assets/img/email-icon.svg";
 import passwordIcon from "../../assets/img/password-icon.svg";
@@ -14,7 +15,6 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -62,7 +62,6 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -77,36 +76,11 @@ const LoginPage = () => {
         localStorage.removeItem('rememberedCredentials');
       }
 
+      toast.success("Đăng nhập thành công!");
       const redirectTo = location.state?.from?.pathname || "/dashboard";
       navigate(redirectTo);
     } catch (error) {
-      if (error.message === "Email hoặc mật khẩu không đúng") {
-        setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
-        return;
-      }
-      
-      switch (error.message) {
-        case 'EMAIL_PASSWORD_INVALID':
-          setError("Sai email hoặc mật khẩu. Vui lòng kiểm tra lại");
-          break;
-        case 'USER_NOT_FOUND':
-          setError("Tài khoản không tồn tại");
-          break;
-        case 'ACCOUNT_LOCKED':
-          setError("Tài khoản đã bị khóa. Vui lòng liên hệ admin");
-          break;
-        case 'ACCOUNT_NOT_VERIFIED':
-          setError("Tài khoản chưa được xác thực. Vui lòng kiểm tra email");
-          break;
-        case 'NETWORK_ERROR':
-          setError("Không có kết nối mạng. Vui lòng kiểm tra kết nối của bạn");
-          break;
-        case 'SERVER_ERROR':
-          setError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau");
-          break;
-        default:
-          setError("Đã xảy ra lỗi không xác định. Vui lòng thử lại sau");
-      }
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -164,7 +138,6 @@ const LoginPage = () => {
             <a href="/forgot-password">Quên mật khẩu?</a>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
           <button type="submit" className="login-button" disabled={loading}>
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>

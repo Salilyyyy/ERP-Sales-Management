@@ -97,7 +97,7 @@ const Employee = () => {
     const employeeTemplateRef = useRef(null);
     const [isPrinting, setIsPrinting] = useState(false);
 
-    const handleExport = async () => {
+const handleExport = async () => {
         if (selectedEmployees.length === 0) {
             toast.warning("Vui lòng chọn nhân viên để xuất PDF");
             return;
@@ -117,7 +117,12 @@ const Employee = () => {
             for (let i = 0; i < selectedUsers.length; i++) {
                 setSelectedEmployeeData(selectedUsers[i]);
                 
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Wait for template to render with new data
+                await new Promise(resolve => {
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 500);
+                    });
+                });
                 
                 if (i > 0) {
                     doc.addPage();
@@ -127,16 +132,27 @@ const Employee = () => {
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
-                    logging: false
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: (document) => {
+                        const element = document.querySelector('.employee-template');
+                        if (element) {
+                            element.style.display = 'block';
+                            element.style.width = '100%';
+                            element.style.height = 'auto';
+                        }
+                    }
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
-                const imgWidth = pageWidth;
+                // Use standard A4 width in points (595) and add margins
+                const imgWidth = 515; // 595 - 80pt margins
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
+                
+                const xOffset = (pageWidth - imgWidth) / 2;
+                
+                doc.addImage(imgData, 'JPEG', xOffset, 20, imgWidth, imgHeight, '', 'FAST');
             }
 
             doc.save('employees.pdf');
@@ -210,7 +226,7 @@ const Employee = () => {
             </div>
             
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                <div ref={employeeTemplateRef}>
+                <div ref={employeeTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
                     {isPrinting && selectedEmployeeData && (
                         <EmployeeTemplate user={selectedEmployeeData} />
                     )}

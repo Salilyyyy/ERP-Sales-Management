@@ -1,6 +1,8 @@
 import './App.css';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { LoadingProvider } from './context/LoadingContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/layout/layout';
 import Dashboard from './pages/dashboard/dashboard';
 import LoginPage from './components/login/login';
@@ -43,12 +45,12 @@ import Error403 from './components/error/error-403';
 import Error401 from './components/error/error-401';
 import Error500 from './components/error/error-500';
 
-
 function App() {
     return (
         <div className="App">
             <LoadingProvider>
                 <BrowserRouter>
+                <ToastContainer />
                 <Routes>
                     <Route path="/" element={<Navigate to="/login" replace />} />
                     <Route path="/login" element={<LoginPage />} />
@@ -92,10 +94,6 @@ function App() {
                         <Route path="/employee" element={<Employee />} />
                         <Route path="/create-employee" element={<CreateEmployee />} />
                         <Route path="/employee/:id" element={<DetailEmployee />} />
-
-
-
-
                     </Route>
                 </Routes>
                 </BrowserRouter>

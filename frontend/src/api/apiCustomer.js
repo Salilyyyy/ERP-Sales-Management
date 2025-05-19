@@ -93,6 +93,28 @@ class CustomerRepository extends BaseRepository {
         }
     }
 
+    async getNewCustomers() {
+        try {
+            const response = await this.get('/new-customers');
+            return response || [];
+        } catch (error) {
+            console.error('Error getting new customers:', error);
+            toast.error('Không thể tải danh sách khách hàng mới');
+            return [];
+        }
+    }
+
+    async getNewCustomersCount() {
+        try {
+            const response = await this.get('/new-customers-count');
+            return response.count || 0;
+        } catch (error) {
+            console.error('Error getting new customers count:', error);
+            toast.error('Không thể tải số lượng khách hàng mới');
+            return 0;
+        }
+    }
+
     async export() {
         try {
             const data = await this.get('/export', {

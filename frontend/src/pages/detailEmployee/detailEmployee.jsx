@@ -165,19 +165,31 @@ const DetailEmployee = () => {
             ];
 
             const updatedFields = {};
+
             allFields.forEach(field => {
-                updatedFields[field] = editedEmployee[field] !== undefined && editedEmployee[field] !== ''
-                    ? editedEmployee[field]
-                    : null;
+                const newValue = editedEmployee[field];
+                const oldValue = employee[field];
+
+                if (field === 'birthday') {
+                    updatedFields[field] = newValue ? new Date(newValue).toISOString() : null;
+                }
+                else {
+                    updatedFields[field] = newValue !== undefined && newValue !== ''
+                        ? newValue
+                        : oldValue || null;
+                }
             });
 
+
             await userApi.updateUser(id, updatedFields);
+
             setEmployee(editedEmployee);
             setPreviewImage(null);
 
             const newSearchParams = new URLSearchParams(searchParams);
             newSearchParams.delete("edit");
             setSearchParams(newSearchParams);
+
             toast.success("Cập nhật thành công!");
         } catch (err) {
             toast.error("Cập nhật thất bại: " + err.message);

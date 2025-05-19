@@ -5,24 +5,13 @@ class AuthRepository extends BaseRepository {
         super('/auth');
     }
 
-    async login(email, password) {
+    async login(email, password, rememberMe = false) {
         try {
-            const response = await this.post('/login', { email, password });
-            console.log('Login response:', response);
-            if (response.token) {
+            const response = await this.post('/login', { email, password, rememberMe });
                 localStorage.setItem('auth_token', `Bearer ${response.token}`);
                 localStorage.setItem('user', JSON.stringify(response.user));
-                console.log('Auth token stored:', localStorage.getItem('auth_token'));
-            } else {
-                console.error('No token in login response');
-            }
             return response;
         } catch (error) {
-            console.error('Login error:', {
-                message: error.message,
-                details: error.details,
-                status: error.status
-            });
             throw error;
         }
     }
@@ -32,11 +21,6 @@ class AuthRepository extends BaseRepository {
             const response = await this.post('/forgot-password', { email });
             return response;
         } catch (error) {
-            console.error('Password reset request error:', {
-                message: error.message,
-                details: error.details,
-                status: error.status
-            });
             
             throw error;
         }
@@ -64,11 +48,6 @@ class AuthRepository extends BaseRepository {
             });
             return response;
         } catch (error) {
-            console.error('Reset password error:', {
-                message: error.message,
-                details: error.details,
-                status: error.status
-            });
             throw error;
         }
     }
@@ -79,7 +58,6 @@ class AuthRepository extends BaseRepository {
             localStorage.removeItem('user');
             return true;
         } catch (error) {
-            console.error('Logout error:', error);
             throw error;
         }
     }

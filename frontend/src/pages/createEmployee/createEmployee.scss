@@ -92,6 +92,16 @@
                 cursor: pointer;
             }
         }
+        .error {
+    border: 1px solid red;
+}
+
+.error-text {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 4px;
+}
+
 
         .form-inputs {
             display: flex;
@@ -100,25 +110,47 @@
 
             .form-group {
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
 
-                label {
-                    width: 200px;
-                    font-weight: 500;
-                    margin-bottom: 5px;
+                .input-row {
                     display: flex;
-                    margin-left: 30%;
+                    flex-direction: row;
+                    margin-bottom: 4px;
+
+                    label {
+                        width: 200px;
+                        font-weight: 500;
+                        display: flex;
+                        margin-left: 30%;
+                    }
+
+                    input,
+                    select {
+                        width: 250px;
+                        padding: 8px 10px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                        font-size: 1rem;
+                        outline: none;
+
+                        &.error {
+                            border-color: red;
+                        }
+                    }
+
+                    select {
+                        width: 270px;
+                    }
                 }
 
-                input, select {
+                .error-text {
+                    color: red;
+                    font-size: 0.85rem;
+                    margin-top: 4px;
+                    margin-left: calc(30% + 200px);
                     width: 250px;
-                    padding: 8px 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                }
-
-                select{
-                    width: 270px;
+                    text-align: left;
+                    user-select: none;
                 }
             }
         }

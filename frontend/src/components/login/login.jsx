@@ -65,22 +65,29 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      await AuthRepository.login(email, password);
-      
-      if (rememberMe) {
-        localStorage.setItem('rememberedCredentials', JSON.stringify({
-          savedEmail: email,
-          savedPassword: password
-        }));
-      } else {
-        localStorage.removeItem('rememberedCredentials');
+      const response = await AuthRepository.login(email, password, rememberMe);
+      if (response.token) {
+        toast.success("Đăng nhập thành công!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        const redirectTo = location.state?.from?.pathname || "/dashboard";
+        navigate(redirectTo);
       }
-
-      toast.success("Đăng nhập thành công!");
-      const redirectTo = location.state?.from?.pathname || "/dashboard";
-      navigate(redirectTo);
     } catch (error) {
       console.error(error);
+      toast.error(error.message || "Đăng nhập thất bại. Vui lòng thử lại!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }

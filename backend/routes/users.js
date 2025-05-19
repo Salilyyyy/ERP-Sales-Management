@@ -22,11 +22,10 @@ const userValidation = [
   body('name').notEmpty(),
   body('department').notEmpty(),
   body('userType').notEmpty(),
-  // Make other fields optional
   body('address').optional(),
   body('phoneNumber').optional(),
   body('IdentityCard').optional(),
-  body('birthday').optional().isISO8601().toDate(),
+  body('birthday').optional({ nullable: true }).isISO8601().toDate(),
 ];
 
 // Create a new user

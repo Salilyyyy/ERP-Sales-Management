@@ -41,7 +41,6 @@ const ForgotPassword = () => {
 
     try {
       const result = await AuthRepository.requestPasswordReset(email);
-      console.log('Password reset response:', result);
       
       setSuccess(true);
       if (result.previewUrl) {
@@ -54,7 +53,6 @@ const ForgotPassword = () => {
         status: err.status
       });
       
-      // Use the API error message directly
       setError(err.message);
     } finally {
       setLoading(false);
@@ -95,7 +93,7 @@ const ForgotPassword = () => {
           </form>
         ) : (
           <div className="success-message">
-            <p>Email đặt lại mật khẩu đã được gửi.</p>
+            <p>Email đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra email để đặt lại mật khẩu.</p>
             {previewUrl && (
               <>
                 <p>Kiểm tra email trong Mailtrap:</p>

@@ -17,7 +17,6 @@ router.post('/forgot-password',
       }
 
       const { email } = req.body;
-      console.log('Processing password reset request for:', email);
 
       const result = await AuthService.requestPasswordReset(email);
       
@@ -26,9 +25,7 @@ router.post('/forgot-password',
         message: 'Email đặt lại mật khẩu đã được gửi. Mời kiểm tra hộp thư của bạn.',
         previewUrl: result.debug?.previewUrl
       });
-    } catch (error) {
-      console.error('Password reset error:', error);
-      
+    } catch (error) {      
       if (error.message === 'User not found') {
         return res.status(404).json({ 
           error: 'Email không tồn tại trong hệ thống' 
@@ -89,9 +86,7 @@ router.post('/reset-password',
       const { token, newPassword } = req.body;
       const result = await AuthService.resetPassword(token, newPassword);
       res.json(result);
-    } catch (error) {
-      console.error('Reset password error:', error);
-      
+    } catch (error) {      
       if (error.message === 'Invalid or expired reset token') {
         return res.status(400).json({ 
           error: 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn' 
@@ -116,12 +111,10 @@ router.post('/login',
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { email, password } = req.body;
-      const result = await AuthService.login(email, password);
+      const { email, password, rememberMe } = req.body;
+      const result = await AuthService.login(email, password, rememberMe);
       res.json(result);
-    } catch (error) {
-      console.error('Login error:', error);
-      
+    } catch (error) {      
       if (error.message === 'Invalid email or password') {
         return res.status(401).json({ 
           error: 'Email hoặc mật khẩu không đúng' 
@@ -155,9 +148,7 @@ router.post('/register',
 
       const result = await AuthService.register(req.body);
       res.status(201).json(result);
-    } catch (error) {
-      console.error('Registration error:', error);
-      
+    } catch (error) {      
       if (error.message === 'User with this email already exists') {
         return res.status(409).json({ 
           error: 'Email đã được sử dụng' 

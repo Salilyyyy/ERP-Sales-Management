@@ -64,18 +64,15 @@ router.get('/', async (req, res) => {
     console.log(`Found ${customers.length} customers:`, customers);
 
     if (!customers) {
-      console.error('Database returned null or undefined');
       return res.status(500).json({ error: 'Database returned no data' });
     }
 
     if (!Array.isArray(customers)) {
-      console.error('Database returned non-array:', typeof customers);
       return res.status(500).json({ error: 'Invalid data format from database' });
     }
 
     res.status(200).json(customers);
   } catch (error) {
-    console.error('Error fetching customers:', error);
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'Database constraint violation' });
     }
@@ -89,7 +86,81 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get a single customer by ID
+// Export customers  
+router.get('/export', async (req, res) => {
+  try {
+    const customers = await prisma.customers.findMany({
+      include: {
+        Invoices: {
+          select: {
+            ID: true,
+            exportTime: true,
+            paymentMethod: true,
+            tax: true,
+            total: true,
+            isPaid: true,
+            isDelivery: true
+          }
+        }
+      }
+    });
+    res.status(200).json(customers);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get new customers in last month with details
+router.get('/new-customers', async (req, res) => {
+  try {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const customers = await prisma.customers.findMany({
+      where: {
+        createdAt: {
+          gte: oneMonthAgo
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        ID: true,
+        name: true,
+        createdAt: true,
+        email: true,
+        phoneNumber: true
+      }
+    });
+
+    res.status(200).json(customers);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get new customers count in last month
+router.get('/new-customers-count', async (req, res) => {
+  try {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const count = await prisma.customers.count({
+      where: {
+        createdAt: {
+          gte: oneMonthAgo
+        }
+      }
+    });
+
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get a single customer by ID 
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -186,28 +257,5 @@ router.post('/delete-multiple', async (req, res) => {
   }
 });
 
-// Export customers
-router.get('/export', async (req, res) => {
-  try {
-    const customers = await prisma.customers.findMany({
-      include: {
-        Invoices: {
-          select: {
-            ID: true,
-            exportTime: true,
-            paymentMethod: true,
-            tax: true,
-            total: true,
-            isPaid: true,
-            isDelivery: true
-          }
-        }
-      }
-    });
-    res.status(200).json(customers);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
 
 module.exports = router;

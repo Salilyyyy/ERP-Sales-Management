@@ -10,19 +10,17 @@ const SALT_ROUNDS = 10;
 class AuthService {
   static async requestPasswordReset(email) {
     try {
-      console.log('Starting password reset request for:', email);
 
       const user = await prisma.users.findUnique({
         where: { email },
       });
 
       if (!user) {
-        console.log('User not found:', email);
         throw new Error('User not found');
       }
 
       const resetToken = crypto.randomBytes(32).toString('hex');
-      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+      const resetTokenExpiry = new Date(Date.now() + 3600000); 
 
       await prisma.users.update({
         where: { email },
@@ -75,13 +73,11 @@ class AuthService {
   </body>
 </html>`;
 
-      console.log('Sending password reset email');
       const emailResult = await sendEmail(
         email,
         'Đặt lại mật khẩu - ERP System',
         emailHtml
       );
-      console.log('Email result:', emailResult);
 
       return {
         success: true,
@@ -89,7 +85,6 @@ class AuthService {
         debug: emailResult
       };
     } catch (error) {
-      console.error('Password reset error:', error);
       throw error;
     }
   }
@@ -125,12 +120,11 @@ class AuthService {
         message: 'Mật khẩu đã được đặt lại thành công' 
       };
     } catch (error) {
-      console.error('Reset password error:', error);
       throw error;
     }
   }
 
-  static async login(email, password) {
+  static async login(email, password, rememberMe = false) {
     try {
       const user = await prisma.users.findUnique({
         where: { email },
@@ -145,7 +139,7 @@ class AuthService {
         throw new Error('Invalid email or password');
       }
 
-      const token = generateToken(user.ID);
+      const token = generateToken(user.ID, rememberMe);
       const { password: _, ...userWithoutPassword } = user;
       
       return {
@@ -153,7 +147,6 @@ class AuthService {
         token,
       };
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   }
@@ -190,7 +183,6 @@ class AuthService {
         token,
       };
     } catch (error) {
-      console.error('Registration error:', error);
       throw error;
     }
   }

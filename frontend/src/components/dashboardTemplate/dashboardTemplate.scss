@@ -499,6 +499,9 @@
         align-items: center;
         gap: 4px;
       }
+      input{
+        width: 80%;
+      }
 
       select,
       input {
@@ -521,6 +524,10 @@
           box-shadow: 0 0 0 2px rgba(67, 104, 80, 0.2);
         }
       }
+       input{
+        width: 95%;
+      }
+
 
       select {
         cursor: pointer;

@@ -12,7 +12,7 @@ const JWT_CONFIG = {
  * @param {number} userId - The user's ID
  * @returns {string} The generated JWT token
  */
-const generateToken = (userId) => {
+const generateToken = (userId, rememberMe = false) => {
   if (!userId) {
     throw new Error('User ID is required to generate token');
   }
@@ -24,7 +24,7 @@ const generateToken = (userId) => {
     }, 
     JWT_CONFIG.secret, 
     {
-      expiresIn: JWT_CONFIG.expiresIn,
+      expiresIn: rememberMe ? '15d' : JWT_CONFIG.expiresIn,
       algorithm: JWT_CONFIG.algorithm,
       issuer: JWT_CONFIG.issuer,
     }

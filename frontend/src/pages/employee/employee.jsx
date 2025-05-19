@@ -87,7 +87,7 @@ const Employee = () => {
 
     const handleDelete = () => {
         if (selectedEmployees.length === 0) {
-            toast.warning("Vui lòng chọn nhân viên để xóa");
+            toast.warning("Vui lòng chọn ít nhất một nhân viên");
             return;
         }
         setShowDeleteConfirm(true);
@@ -98,10 +98,10 @@ const Employee = () => {
     const [isPrinting, setIsPrinting] = useState(false);
 
 const handleExport = async () => {
-        if (selectedEmployees.length === 0) {
-            toast.warning("Vui lòng chọn nhân viên để xuất PDF");
-            return;
-        }
+            if (selectedEmployees.length === 0) {
+                toast.warning("Vui lòng chọn ít nhất một nhân viên");
+                return;
+            }
 
         try {
             setIsPrinting(true);
@@ -117,7 +117,6 @@ const handleExport = async () => {
             for (let i = 0; i < selectedUsers.length; i++) {
                 setSelectedEmployeeData(selectedUsers[i]);
                 
-                // Wait for template to render with new data
                 await new Promise(resolve => {
                     requestAnimationFrame(() => {
                         setTimeout(resolve, 500);
@@ -146,8 +145,7 @@ const handleExport = async () => {
 
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pageWidth = doc.internal.pageSize.getWidth();
-                // Use standard A4 width in points (595) and add margins
-                const imgWidth = 515; // 595 - 80pt margins
+                const imgWidth = 515;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 
                 const xOffset = (pageWidth - imgWidth) / 2;
@@ -202,12 +200,14 @@ const handleExport = async () => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+    
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
     };
+
 
     return (
         <div className="employee-container">
@@ -313,6 +313,33 @@ const handleExport = async () => {
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                    <button 
+                                        className={`btn-icon status-btn ${user.status?.toLowerCase() === 'active' ? 'active' : 'inactive'}`}
+                                        onClick={async () => {
+                                            try {
+                                                const newStatus = user.status?.toLowerCase() === 'active' ? 'inactive' : 'active';
+                                                await userApi.updateUser(user.ID, {
+                                                    email: user.email,
+                                                    name: user.name,
+                                                    department: user.department,
+                                                    userType: user.userType,
+                                                    status: newStatus,
+                                                    address: user.address,
+                                                    birthday: user.birthday,
+                                                    phoneNumber: user.phoneNumber,
+                                                    IdentityCard: user.IdentityCard,
+                                                    createAt: user.createAt
+                                                });
+                                                getCurrentUserAndEmployees();
+                                                toast.success(`Đã ${newStatus === 'active' ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản`);
+                                            } catch (err) {
+                                                console.error("Error updating user status:", err);
+                                                toast.error("Có lỗi xảy ra khi cập nhật trạng thái");
+                                            }
+                                        }}
+                                    >
+                                        {user.status?.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                                    </button>
                                 </td>
                             </tr>
                         ))}

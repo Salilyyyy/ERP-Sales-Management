@@ -43,7 +43,7 @@ class ProductCategoryRepository extends BaseRepository {
 
     async delete(id) {
         try {
-            await this.remove(`/${id}`);
+            await this.delete(`/${id}`);
         } catch (error) {
             throw this.handleError(error, 'Failed to delete product category');
         }
@@ -59,10 +59,10 @@ class ProductCategoryRepository extends BaseRepository {
 
     async export() {
         try {
-            const response = await this.get('/export', {
+            const response = await this.api.get(this.endpoint + '/export', {
                 responseType: 'blob'
             });
-            return response;
+            return response.data;
         } catch (error) {
             throw this.handleError(error, 'Failed to export product categories');
         }
@@ -76,6 +76,12 @@ class ProductCategoryRepository extends BaseRepository {
         } else {
             throw new Error(fallbackMessage);
         }
+    }
+
+    isAuthenticated() {
+        const token = localStorage.getItem('auth_token');
+        console.log('Checking authentication, token:', token);
+        return !!token;
     }
 }
 

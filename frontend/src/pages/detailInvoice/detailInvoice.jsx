@@ -478,9 +478,6 @@ const OrderDetails = () => {
         <div className="actions">
           {isEditing ? (
             <div className="edit-actions">
-              <button className="cancel" onClick={handleCancel}>
-                <img src={cancelIcon} alt="Hủy" /> Hủy
-              </button>
               <button className="save" onClick={handleSave}>
                 <img src={saveIcon} alt="Lưu" /> {loading ? "Đang lưu..." : "Lưu"}
               </button>
@@ -524,10 +521,10 @@ const OrderDetails = () => {
                 invoice.isPaid ? "Đã thanh toán" : "Chưa thanh toán"
               )}
             </div>
-            {(isEditing || invoice.isDelivery) && (
-              <div>
-                <strong>Trạng thái giao hàng:</strong>
-                {isEditing ? (
+            {isEditing ? (
+              editedInvoice?.isDelivery && (
+                <div>
+                  <strong>Trạng thái giao hàng:</strong>
                   <select
                     value={editedInvoice.isDelivery}
                     onChange={(e) => setEditedInvoice({ ...editedInvoice, isDelivery: e.target.value === 'true' })}
@@ -535,9 +532,12 @@ const OrderDetails = () => {
                     <option value="true">Đã giao hàng</option>
                     <option value="false">Chưa giao hàng</option>
                   </select>
-                ) : (
-                  invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"
-                )}
+                </div>
+              )
+            ) : invoice.isDelivery && (
+              <div>
+                <strong>Trạng thái giao hàng:</strong>
+                {invoice.isDelivery ? "Đã giao hàng" : "Chưa giao hàng"}
               </div>
             )}
             <div>

@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { createRoot } from 'react-dom/client';
+import html2pdf from 'html2pdf.js';
 import { toast } from "react-toastify";
 import { Cloudinary } from "@cloudinary/url-gen";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
+import ProductTemplate from "../../components/productTemplate/productTemplate";
 import "./product.scss";
 
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -87,32 +91,123 @@ const Product = () => {
         }
     }, []);
 
-    const handleDelete = async () => {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+    const handleDelete = () => {
         if (selectedProducts.length === 0) {
-            toast.warning("Vui lòng chọn sản phẩm cần xóa!");
+            toast.warning("Vui lòng chọn sản phẩm cần xoá!");
             return;
         }
-
-        if (window.confirm("Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?")) {
-            try {
-                for (const id of selectedProducts) {
-                    await productApi.delete(id);
-                }
-                await fetchProducts();
-                setSelectedProducts([]);
-                setSelectAll(false);
-                toast.success("Xóa sản phẩm thành công!");
-            } catch (error) {
-                console.error("Error deleting products:", error);
-                toast.error("Có lỗi xảy ra khi xóa sản phẩm!");
-            }
-        }
+        setShowDeleteConfirm(true);
         setIsDropdownOpen(false);
     };
 
-    const handleExport = () => {
-        toast.success("Đã xuất danh sách sản phẩm!");
-        setIsDropdownOpen(false);
+    const handleExport = async () => {
+        if (selectedProducts.length === 0) {
+            toast.warning("Vui lòng chọn sản phẩm cần xuất!");
+            return;
+        }
+
+        const container = document.createElement("div");
+        const a4Width = "210mm";
+        const a4Height = "297mm";
+
+        container.style.width = a4Width;
+        container.style.height = a4Height;
+        container.style.margin = "0";
+        container.style.padding = "0";
+        container.style.backgroundColor = "#ffffff";
+        document.body.appendChild(container);
+
+        try {
+            const imagePromises = selectedProducts.map(async (productId) => {
+                const product = products.find(p => p.ID === productId);
+                if (product && product.image) {
+                    const imageUrl = product.image.startsWith('http')
+                        ? product.image
+                        : `https://res.cloudinary.com/${cloudName}/image/upload/${product.image}`;
+
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => resolve({ productId, success: true });
+                        img.onerror = () => resolve({ productId, success: false });
+                        img.src = imageUrl;
+                    });
+                }
+                return Promise.resolve({ productId, success: false });
+            });
+
+            await Promise.all(imagePromises);
+
+            for (const productId of selectedProducts) {
+                const product = products.find(p => p.ID === productId);
+                if (!product) continue;
+
+                const pageWrapper = document.createElement("div");
+                pageWrapper.style.width = "210mm";
+                pageWrapper.style.height = "297mm";
+                pageWrapper.style.margin = "0";
+                pageWrapper.style.padding = "0";
+                pageWrapper.style.backgroundColor = "#ffffff";
+                pageWrapper.style.display = "flex";
+                pageWrapper.style.justifyContent = "center";
+                pageWrapper.style.alignItems = "center";
+                const productWrapper = document.createElement("div");
+                productWrapper.style.width = "210mm";
+                productWrapper.style.height = "297mm";
+
+                pageWrapper.appendChild(productWrapper);
+                container.appendChild(pageWrapper);
+
+                await new Promise((resolve) => {
+                    const root = createRoot(productWrapper);
+                    root.render(<ProductTemplate product={product} />);
+                    setTimeout(() => {
+                        resolve();
+                        setTimeout(() => {
+                            root.unmount();
+                        }, 0);
+                    }, 1000);
+                });
+            }
+            const options = {
+                margin: 0,
+                filename: 'danh-sach-san-pham.pdf',
+                image: { type: 'jpeg', quality: 1.0 },
+                enableLinks: false,
+                html2canvas: {
+                    useCORS: true,
+                    logging: true,
+                    allowTaint: true,
+                    foreignObjectRendering: true,
+                    width: 793,
+                    windowWidth: 793,
+                    height: 1122,
+                    windowHeight: 1122,
+                    backgroundColor: "#ffffff",
+                    removeContainer: true,
+                    imageTimeout: 5000,
+                    scale: 2
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait',
+                    compress: true,
+                    hotfixes: ["px_scaling", "image_compression"],
+                    putTotalPages: true
+                },
+                pagebreak: { mode: 'css', avoid: ['img', '.info-row', '.product-template'] }
+            };
+
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+        } finally {
+            if (container && container.parentNode) {
+                container.parentNode.removeChild(container);
+            }
+            setIsDropdownOpen(false);
+        }
     };
 
     const filteredProducts = products
@@ -178,7 +273,7 @@ const Product = () => {
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
                                 <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    <img src={deleteIcon} alt="Lưu trữ" /> Xoá
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
                                     <img src={exportIcon} alt="Xuất" /> Xuất
@@ -288,6 +383,27 @@ const Product = () => {
                     <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
                 </div>
             </div>
+
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xoá những sản phẩm đã chọn?"
+                onConfirm={async () => {
+                    try {
+                        for (const id of selectedProducts) {
+                            await productApi.delete(id);
+                        }
+                        await fetchProducts();
+                        setSelectedProducts([]);
+                        setSelectAll(false);
+                        toast.success("Đã xoá sản phẩm!");
+                    } catch (error) {
+                        console.error("Error archiving products:", error);
+                        toast.error("Có lỗi xảy ra khi xoá sản phẩm!");
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

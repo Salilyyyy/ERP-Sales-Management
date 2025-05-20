@@ -1,8 +1,11 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const { authenticateToken } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 const router = express.Router();
+
+router.use(authenticateToken);
 
 // Create a new product category
 router.post('/', async (req, res) => {
@@ -30,7 +33,7 @@ router.get('/', async (req, res) => {
   try {
     const productCategories = await prisma.productCategories.findMany({
       include: {
-        Products: true, // Bao gồm tất cả các sản phẩm liên quan đến danh mục
+        Products: true,
       },
     });
     res.status(200).json(productCategories);
@@ -46,7 +49,7 @@ router.get('/:id', async (req, res) => {
     const productCategory = await prisma.productCategories.findUnique({
       where: { ID: parseInt(id) },
       include: {
-        Products: true, // Bao gồm tất cả các sản phẩm liên quan đến danh mục
+        Products: true,
       },
     });
     if (productCategory) {
@@ -86,9 +89,76 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.productCategories.delete({
-      where: { ID: parseInt(id) },
+    const products = await prisma.product.findMany({
+      where: { produceCategoriesID: parseInt(id) },
+      select: { ID: true }
     });
+    const productIds = products.map(p => p.ID);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.detailStockins.deleteMany({
+        where: { productID: { in: productIds } }
+      });
+
+      await tx.invoiceDetails.deleteMany({
+        where: { productID: { in: productIds } }
+      });
+
+      await tx.product.deleteMany({
+        where: { produceCategoriesID: parseInt(id) }
+      });
+
+      await tx.productCategories.delete({
+        where: { ID: parseInt(id) }
+      });
+    });
+
+    res.status(204).end();
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete multiple product categories by IDs
+router.post('/delete-multiple', async (req, res) => {
+  const { ids } = req.body;
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        produceCategoriesID: {
+          in: ids.map(id => parseInt(id))
+        }
+      },
+      select: { ID: true }
+    });
+    const productIds = products.map(p => p.ID);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.detailStockins.deleteMany({
+        where: { productID: { in: productIds } }
+      });
+
+      await tx.invoiceDetails.deleteMany({
+        where: { productID: { in: productIds } }
+      });
+
+      await tx.product.deleteMany({
+        where: {
+          produceCategoriesID: {
+            in: ids.map(id => parseInt(id))
+          }
+        }
+      });
+
+      await tx.productCategories.deleteMany({
+        where: {
+          ID: {
+            in: ids.map(id => parseInt(id))
+          }
+        }
+      });
+    });
+
     res.status(204).end();
   } catch (error) {
     res.status(400).json({ error: error.message });

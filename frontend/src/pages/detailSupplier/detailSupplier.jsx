@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -24,6 +25,7 @@ const DetailSupplier = () => {
     const [isEditing, setIsEditing] = useState(isEditMode);
     const [countries, setCountries] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const selectRef = useRef(null);
 
     useEffect(() => {
@@ -130,7 +132,7 @@ const DetailSupplier = () => {
             <div className="actions">
                 {!isEditing ? (
                     <>
-                        <button className="delete">
+                        <button className="delete" onClick={() => setShowConfirmDialog(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
                         <button className="edit" onClick={handleEditClick}>
@@ -145,7 +147,6 @@ const DetailSupplier = () => {
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
                         </button>
-                        <button className="cancel" onClick={handleCancel}>Hủy</button>
                     </>
                 )}
             </div>
@@ -322,6 +323,23 @@ const DetailSupplier = () => {
                 </div>
             </div>
 
+            {showConfirmDialog && (
+                <ConfirmPopup
+                    message="Bạn có chắc chắn muốn xóa nhà cung cấp này?"
+                    onConfirm={async () => {
+                        try {
+                            await supplierApi.deleteSupplier(id);
+                            toast.success("Xóa nhà cung cấp thành công!");
+                            navigate("/supplier-list");
+                        } catch (err) {
+                            toast.error("Không thể xóa nhà cung cấp");
+                            console.error("Lỗi khi xóa:", err);
+                        }
+                        setShowConfirmDialog(false);
+                    }}
+                    onCancel={() => setShowConfirmDialog(false)}
+                />
+            )}
             <div className="supplier-products">
                 <h3>Sản phẩm của nhà cung cấp</h3>
                 <div className="table-container">

@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import CustomerRepository from "../../api/apiCustomer";
+import CustomerTemplate from "../../components/customerTemplate/customerTemplate";
+import { generateCustomerPDF } from "../../utils/pdfUtils";
+import { toast } from 'react-toastify';
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -67,7 +70,6 @@ const DetailCustomer = () => {
                     setEditedCustomer(response);
                 }
             } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu khách hàng:", err);
                 setError("Không tìm thấy khách hàng hoặc có lỗi xảy ra.");
             } finally {
                 setLoading(false);
@@ -96,7 +98,6 @@ const DetailCustomer = () => {
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
                         </button>
-                        <button className="cancel" onClick={handleCancel}>Hủy</button>
                     </>
                 ) : (
                     <>
@@ -106,7 +107,15 @@ const DetailCustomer = () => {
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
-                        <button className="print">
+                        <button className="print" onClick={async () => {
+                            try {
+                                const pdf = await generateCustomerPDF(customer);
+                                pdf.save(`customer_${customer.ID}_${new Date().toISOString().split('T')[0]}.pdf`);
+                                toast.success('Xuất PDF thành công');
+                            } catch (error) {
+                                toast.error("Xuất PDF thất bại: " + error.message);
+                            }
+                        }}>
                             <img src={printIcon} alt="In" /> In
                         </button>
                     </>

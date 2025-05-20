@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./categories.scss";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
-import exportIcon from "../../assets/img/export-icon.svg";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 
 const Categories = () => {
@@ -17,100 +18,54 @@ const Categories = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [message, setMessage] = useState({ type: null, text: null });
-
-    const showMessage = (text, type = 'error') => {
-        setMessage({ text, type });
-        setTimeout(() => setMessage({ type: null, text: null }), 3000);
-    };
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                setIsLoading(true);
-                const response = await ProductCategoryRepository.getAll();
-                
-                if (Array.isArray(response?.data)) {
-                    setCategories(response.data);
-                } else if (Array.isArray(response)) {
-                    setCategories(response);
-                } else {
-                    showMessage("Invalid data format received");
-                }
-            } catch (err) {
-                showMessage(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCategories();
-    }, []);
-
-    // Debug log for categories
-    useEffect(() => {
-        console.log("Current categories:", categories);
-    }, [categories]);
-
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const handleSingleDelete = async (id) => {
+    const fetchCategories = async () => {
         try {
-            await ProductCategoryRepository.delete(id);
-            const response = await ProductCategoryRepository.getAll();
-            if (Array.isArray(response?.data)) {
-                setCategories(response.data);
-            } else if (Array.isArray(response)) {
-                setCategories(response);
-            } else {
-                throw new Error("Invalid response format");
-            }
-            showMessage("Xóa thành công", "success");
-            setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+            setIsLoading(true);
+            console.log("Fetching categories...");
+            const data = await ProductCategoryRepository.getAll();
+            console.log("Processed categories data:", data);
+            setCategories(data);
         } catch (err) {
-            showMessage(err.message);
+            console.error("Error fetching categories:", err);
+            toast.error(err.message);
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+  
 
     const handleMultipleDelete = async () => {
-        if (selectedIds.length === 0) {
-            showMessage("Vui lòng chọn mục cần xóa");
-            return;
-        }
         try {
-            await ProductCategoryRepository.deleteMultiple(selectedIds);
-            const response = await ProductCategoryRepository.getAll();
-            if (Array.isArray(response?.data)) {
-                setCategories(response.data);
-            } else if (Array.isArray(response)) {
-                setCategories(response);
-            } else {
-                throw new Error("Invalid response format");
+            if (!selectedIds || selectedIds.length === 0) {
+                toast.warning("Vui lòng chọn mục cần xóa");
+                return;
             }
+
+            setIsLoading(true);
+
+            await ProductCategoryRepository.deleteMultiple(selectedIds);
+            await fetchCategories();
             setSelectedIds([]);
             setIsDropdownOpen(false);
-            showMessage("Xóa thành công", "success");
+            toast.success("Xóa thành công");
         } catch (err) {
-            showMessage(err.message);
+            console.error('Delete error:', err);
+            toast.error("Lỗi khi xóa: " + err.message);
+        } finally {
+            setIsLoading(false);
+            setShowDeleteConfirm(false);
         }
     };
 
-    const handleExport = async () => {
-        try {
-            const data = await ProductCategoryRepository.export();
-            const url = window.URL.createObjectURL(new Blob([data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'categories.xlsx');
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            setIsDropdownOpen(false);
-        } catch (err) {
-            showMessage(err.message);
-        }
-    };
 
     const filteredCategories = categories.filter((category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -120,7 +75,6 @@ const Categories = () => {
         (category.tax && category.tax.toString().includes(searchQuery)) ||
         (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-
 
     const totalPages = Math.ceil(filteredCategories.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -139,11 +93,6 @@ const Categories = () => {
 
     return (
         <div className="categories-container">
-            {message.text && (
-                <div className={`message-banner ${message.type}`}>
-                    {message.text}
-                </div>
-            )}
             <h2 className="title">Danh sách loại sản phẩm</h2>
 
             <div className="top-actions">
@@ -168,11 +117,14 @@ const Categories = () => {
 
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleMultipleDelete}>
+                                <li className="dropdown-item" onClick={() => {
+                                    if (selectedIds.length === 0) {
+                                        toast.warning("Vui lòng chọn mục cần xóa");
+                                        return;
+                                    }
+                                    setShowDeleteConfirm(true);
+                                }}>
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
-                                <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
                                 </li>
                             </ul>
                         )}
@@ -187,10 +139,11 @@ const Categories = () => {
                             <input
                                 type="checkbox"
                                 onChange={(e) => {
-                                    const ids = e.target.checked 
-                                        ? paginatedCategories.map(category => category.ID) 
+                                    const ids = e.target.checked
+                                        ? paginatedCategories.map(category => Number(category.ID))
                                         : [];
                                     setSelectedIds(ids);
+                                    console.log('Selected IDs after select all:', ids);
                                 }}
                                 checked={selectedIds.length === paginatedCategories.length && paginatedCategories.length > 0}
                             />
@@ -210,35 +163,35 @@ const Categories = () => {
                             <td>
                                 <input
                                     type="checkbox"
-                                    checked={selectedIds.includes(category.ID)}
+                                    checked={selectedIds.includes(Number(category.ID))}
                                     onChange={(e) => {
                                         const newSelectedIds = e.target.checked
-                                            ? [...selectedIds, category.ID]
-                                            : selectedIds.filter(id => id !== category.ID);
+                                            ? [...selectedIds, Number(category.ID)]
+                                            : selectedIds.filter(id => id !== Number(category.ID));
                                         setSelectedIds(newSelectedIds);
+                                        console.log('Selected IDs after toggle:', newSelectedIds);
                                     }}
                                 />
                             </td>
                             <td>{category.ID}</td>
                             <td>{category.name}</td>
-            <td>{category.unit || ''}</td>
-            <td>{category.promotion || ''}</td>
-            <td>{category.tax || ''}</td>
-            <td>{category.description || ''}</td>
+                            <td>{category.unit || ''}</td>
+                            <td>{category.promotion || ''}</td>
+                            <td>{category.tax || ''}</td>
+                            <td>{category.description || ''}</td>
                             <td className="action-buttons">
-                                <button 
-                                    className="btn-icon" 
+                                <button
+                                    className="btn-icon"
                                     onClick={() => navigate(`/category/${category.ID}`)}
                                 >
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
-                                <button 
+                                <button
                                     className="btn-icon"
                                     onClick={() => navigate(`/category/${category.ID}?edit=true`)}
                                 >
                                     <img src={editIcon} alt="Sửa" /> Sửa
                                 </button>
-                                
                             </td>
                         </tr>
                     ))}
@@ -261,8 +214,14 @@ const Categories = () => {
                     ))}
                     <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
                 </div>
-
             </div>
+
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xóa những loại sản phẩm đã chọn?"
+                onConfirm={handleMultipleDelete}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

@@ -73,9 +73,6 @@ $text-color: #1a3300;
             }
 
             &.action {
-                display: flex;
-                align-items: center;
-                gap: 5px;
                 background-color: #FBFADA;
                 border: 1px solid $primary-color;
                 color: $primary-color;
@@ -104,7 +101,7 @@ $text-color: #1a3300;
                 background-color: #fff;
                 color: #333;
                 cursor: pointer;
-                appearance: none; /* Tắt style mặc định của select */
+                appearance: none; 
                 transition: border-color 0.3s ease;
                 width: 180px;
             }
@@ -116,7 +113,7 @@ $text-color: #1a3300;
                 transform: translateY(-50%);
                 width: 12px;
                 height: 12px;
-                pointer-events: none; /* Để không ảnh hưởng đến việc chọn option */
+                pointer-events: none; 
             }
         }
     
@@ -164,10 +161,14 @@ $text-color: #1a3300;
                     margin-right: 8px;
                     width: 16px;
                     height: 16px;
+                    transition: transform 0.2s ease;
                 }
 
                 &:hover {
                     background-color: #EEF0E5;
+                    img {
+                        transform: scale(1.1);
+                    }
                 }
             }
         }
@@ -219,10 +220,36 @@ $text-color: #1a3300;
             }
         }
 
-        .btn-icon{
-            background-color: transparent;
-            border: none;
-            margin: 10px;
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            height: 130px;
+
+            .btn-icon {
+                background: none;
+                border: none;
+                cursor: pointer;
+                transition: 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                padding: 5px;
+                margin: 0 3px;
+                white-space: nowrap;
+
+                img {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                &:hover {
+                    border-bottom: #1a3300 1px solid;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+            }
         }
     }
 

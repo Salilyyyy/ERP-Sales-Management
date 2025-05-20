@@ -57,7 +57,7 @@ const Employee = () => {
             setCurrentUserRole(userType);
 
             const users = await userApi.getAllUsers();
-            
+
             let filteredUsers;
             const allUsers = Array.isArray(users) ? users : [users];
             const normalizedUserType = (userType || 'unknown').toLowerCase();
@@ -68,13 +68,13 @@ const Employee = () => {
                     return userTypeLC === 'staff' || userTypeLC === 'manager';
                 });
             } else if (normalizedUserType === 'manager') {
-                filteredUsers = allUsers.filter(user => 
+                filteredUsers = allUsers.filter(user =>
                     user.userType?.toLowerCase() === 'staff'
                 );
             } else {
                 filteredUsers = [];
             }
-            
+
             setEmployees(filteredUsers);
             setError(null);
         } catch (err) {
@@ -97,16 +97,16 @@ const Employee = () => {
     const employeeTemplateRef = useRef(null);
     const [isPrinting, setIsPrinting] = useState(false);
 
-const handleExport = async () => {
-            if (selectedEmployees.length === 0) {
-                toast.warning("Vui lòng chọn ít nhất một nhân viên");
-                return;
-            }
+    const handleExport = async () => {
+        if (selectedEmployees.length === 0) {
+            toast.warning("Vui lòng chọn ít nhất một nhân viên");
+            return;
+        }
 
         try {
             setIsPrinting(true);
             const selectedUsers = employees.filter(emp => selectedEmployees.includes(emp.ID));
-            
+
             if (!selectedUsers.length) {
                 toast.error("Không tìm thấy thông tin nhân viên");
                 return;
@@ -116,13 +116,13 @@ const handleExport = async () => {
 
             for (let i = 0; i < selectedUsers.length; i++) {
                 setSelectedEmployeeData(selectedUsers[i]);
-                
+
                 await new Promise(resolve => {
                     requestAnimationFrame(() => {
                         setTimeout(resolve, 500);
                     });
                 });
-                
+
                 if (i > 0) {
                     doc.addPage();
                 }
@@ -147,9 +147,9 @@ const handleExport = async () => {
                 const pageWidth = doc.internal.pageSize.getWidth();
                 const imgWidth = 515;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
+
                 const xOffset = (pageWidth - imgWidth) / 2;
-                
+
                 doc.addImage(imgData, 'JPEG', xOffset, 20, imgWidth, imgHeight, '', 'FAST');
             }
 
@@ -159,7 +159,6 @@ const handleExport = async () => {
             setSelectedEmployeeData(null);
             toast.success("Xuất PDF thành công");
         } catch (err) {
-            console.error("Error exporting employees to PDF:", err);
             toast.error("Có lỗi xảy ra khi xuất PDF");
             setIsPrinting(false);
         }
@@ -168,7 +167,7 @@ const handleExport = async () => {
     const filteredEmployees = React.useMemo(() => {
         return employees
             .filter((employee) => {
-                const searchMatch = !searchQuery || 
+                const searchMatch = !searchQuery ||
                     employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     employee.ID?.toString().includes(searchQuery) ||
                     (employee.name && employee.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -178,7 +177,7 @@ const handleExport = async () => {
 
                 return searchMatch && typeMatch && departmentMatch;
             })
-            .sort((a, b) => a.ID - b.ID); 
+            .sort((a, b) => a.ID - b.ID);
     }, [employees, searchQuery, filterType, filterDepartment]);
 
     const handleSelectAll = () => {
@@ -200,7 +199,7 @@ const handleExport = async () => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
-    
+
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
@@ -223,15 +222,15 @@ const handleExport = async () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-            </div>
-            
-            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-                <div ref={employeeTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
-                    {isPrinting && selectedEmployeeData && (
-                        <EmployeeTemplate user={selectedEmployeeData} />
-                    )}
                 </div>
-            </div>
+
+                <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                    <div ref={employeeTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
+                        {isPrinting && selectedEmployeeData && (
+                            <EmployeeTemplate user={selectedEmployeeData} />
+                        )}
+                    </div>
+                </div>
 
                 <div className="button">
                     <button className="btn add" onClick={() => navigate("/create-employee")}>Thêm mới</button>
@@ -313,7 +312,7 @@ const handleExport = async () => {
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
-                                    <button 
+                                    <button
                                         className={`btn-icon status-btn ${user.status?.toLowerCase() === 'active' ? 'active' : 'inactive'}`}
                                         onClick={async () => {
                                             try {
@@ -331,14 +330,14 @@ const handleExport = async () => {
                                                     createAt: user.createAt
                                                 });
                                                 getCurrentUserAndEmployees();
-                                                toast.success(`Đã ${newStatus === 'active' ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản`);
+                                                toast.success(`Đã ${newStatus === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'} tài khoản`);
                                             } catch (err) {
                                                 console.error("Error updating user status:", err);
                                                 toast.error("Có lỗi xảy ra khi cập nhật trạng thái");
                                             }
                                         }}
                                     >
-                                        {user.status?.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                                        {user.status?.toLowerCase() === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
                                     </button>
                                 </td>
                             </tr>
@@ -347,7 +346,7 @@ const handleExport = async () => {
                 </table>
             )}
 
-            <ConfirmPopup 
+            <ConfirmPopup
                 isOpen={showDeleteConfirm}
                 message="Bạn có chắc chắn muốn xóa những nhân viên đã chọn?"
                 onConfirm={async () => {

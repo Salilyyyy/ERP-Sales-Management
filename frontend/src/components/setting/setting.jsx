@@ -1,36 +1,21 @@
 import React, { useEffect, useState } from "react";
 import "./setting.scss";
-import darkModeIcon from "../../assets/img/dark-mode.svg";
-import lightModeIcon from "../../assets/img/mode-light.svg";
+
 import eyeIcon from "../../assets/img/white-eye.svg";
 import questionIcon from "../../assets/img/question-icon.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 
 const Settings = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [language, setLanguage] = useState("vi");
   const [fontSize, setFontSize] = useState("medium");
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", isDarkMode ? "dark" : "light");
     document.documentElement.setAttribute("data-font-size", fontSize);
-  }, [isDarkMode, fontSize]);
+  }, [ fontSize]);
 
   return (
     <div className="settings-container">
       <h2 className="settings-title">Cài đặt</h2>
-
-      <div className="setting-item">
-        <label>Thiết lập màn hình</label>
-        <button
-          className={`theme-toggle ${isDarkMode ? "dark" : "light"}`}
-          onClick={() => setIsDarkMode(!isDarkMode)}
-        >
-          <img src={darkModeIcon} alt="Dark" className="icon moon" />
-          <img src={lightModeIcon} alt="Light" className="icon sun" />
-          <div className="toggle-indicator" />
-        </button>
-      </div>
 
       <div className="setting-item">
         <label>Cỡ chữ</label>

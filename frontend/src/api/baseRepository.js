@@ -31,6 +31,8 @@ class BaseRepository {
             if (token) {
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
+                console.log("Access Token:", localStorage.getItem('auth_token'));
+
             }
             return config;
         }, (error) => {
@@ -42,7 +44,6 @@ class BaseRepository {
                 return response;
             },
             (error) => {
-                console.error('API Error:', error);
 
                 if (error.response?.status === 401) {
                     const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
@@ -131,11 +132,14 @@ class BaseRepository {
         try {
             const response = await this.api.post(this.endpoint + this.normalizePath(path), data, config);
             BaseRepository.setLoadingState(requestKey, false);
-            
+
+            if (response.status === 204) {
+                return null;
+            }
             if (!response || !response.data) {
                 throw new Error('Invalid API response received');
             }
-            
+
             return response.data;
         } catch (error) {
             BaseRepository.setLoadingState(requestKey, false);
@@ -144,16 +148,16 @@ class BaseRepository {
                 throw error;
             }
 
-            let attempts = 1; 
+            let attempts = 1;
             while (attempts < maxRetries) {
                 try {
                     await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
                     const retryResponse = await this.api.post(this.endpoint + this.normalizePath(path), data);
-                    
+
                     if (!retryResponse || !retryResponse.data) {
                         throw new Error('Invalid API response received');
                     }
-                    
+
                     BaseRepository.setLoadingState(requestKey, false);
                     return retryResponse.data;
                 } catch (retryError) {

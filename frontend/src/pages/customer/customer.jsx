@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactDOM from 'react-dom/client';
+import { generateCustomerPDF } from "../../utils/pdfUtils";
 import "./customer.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import CustomerTemplate from "../../components/customerTemplate/customerTemplate";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -13,6 +16,7 @@ import CustomerRepository from "../../api/apiCustomer";
 const Customer = () => {
     const navigate = useNavigate();
     const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -24,15 +28,13 @@ const Customer = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("all");
     const [filterName, setFilterName] = useState("");
+    const [showTemplate, setShowTemplate] = useState(false);
 
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
                 setIsLoading(true);
                 const data = await CustomerRepository.getAll();
-                console.log('API Response:', data);
-                console.log('Is Array?', Array.isArray(data));
-                console.log('Data length:', data ? data.length : 0);
                 setCustomers(data || []);
                 setError(null);
             } catch (err) {
@@ -70,11 +72,6 @@ const Customer = () => {
         return <div className="customer-container">Lỗi: Dữ liệu không hợp lệ</div>;
     }
 
-    if (customers.length === 0) {
-        return <div className="customer-container">Không có dữ liệu khách hàng để hiển thị.</div>;
-    }
-
-    
     const filteredCustomers = customers
         .filter((customer) => {
             const nameMatch = (customer.name || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -115,17 +112,27 @@ const Customer = () => {
     };
 
     const handleExport = async () => {
+        if (selectedCustomers.length === 0) {
+            toast.warning("Vui lòng chọn khách hàng cần xuất thông tin");
+            return;
+        }
+
         try {
-            const data = await CustomerRepository.export();
-            const url = window.URL.createObjectURL(new Blob([data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'customers.xlsx');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const customersData = [];
+            for (const customerId of selectedCustomers) {
+                const customerData = await CustomerRepository.getById(customerId);
+                if (customerData) {
+                    customersData.push(customerData);
+                }
+            }
+
+            const pdf = await generateCustomerPDF(customersData);
+            const fileName = `customers_${new Date().toISOString().split('T')[0]}.pdf`;
+            pdf.save(fileName);
+
+            toast.success('Xuất PDF thành công');
         } catch (error) {
-            toast.error("Xuất danh sách thất bại: " + error.message);
+            toast.error("Xuất PDF thất bại: " + error.message);
         }
         setIsDropdownOpen(false);
     };
@@ -150,7 +157,7 @@ const Customer = () => {
         }
     };
 
-    const handleViewInvoices = (customerId) => {
+    const handleViewCustomer = (customerId) => {
         navigate(`/customer/${customerId}`);
     };
 
@@ -255,8 +262,8 @@ const Customer = () => {
                                 ))}
                             </td>
                             <td className="action-buttons">
-                <button className="btn-icon" onClick={() => handleViewInvoices(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => handleViewCustomer(customer.ID)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                <button className="btn-icon" onClick={() => navigate(`/customer/${customer.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
                             </td>
                         </tr>
                     ))}

@@ -41,9 +41,10 @@ class SupplierRepository extends BaseRepository {
         }
     }
 
-    async delete(id) {
+    async deleteSupplier(id) {
         try {
-            await this.delete(`/${id}`);
+            const response = await this.delete(`/${id}`);
+            return response;
         } catch (error) {
             throw this.handleError(error, 'Failed to delete supplier');
         }

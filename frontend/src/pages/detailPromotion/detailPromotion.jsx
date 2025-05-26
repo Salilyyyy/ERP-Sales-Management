@@ -47,7 +47,7 @@ const DetailPromotion = () => {
     const formatDateForInput = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
-        return date.toISOString().slice(0, 16); // Returns YYYY-MM-DDThh:mm
+        return date.toISOString().slice(0, 16);
     };
 
     const formatDateDisplay = (dateString) => {
@@ -152,17 +152,11 @@ const DetailPromotion = () => {
                         <button className="delete" onClick={handleDelete}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
-                        <button className="print" onClick={handlePrint}>
-                            <img src={printIcon} alt="In" /> In
-                        </button>
                     </>
                 ) : (
                     <>
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
-                        </button>
-                        <button className="cancel" onClick={handleCancel}>
-                            <img src={cancelIcon} alt="Hủy" /> Hủy
                         </button>
                     </>
                 )}

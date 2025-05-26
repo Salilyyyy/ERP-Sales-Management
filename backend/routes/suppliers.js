@@ -118,6 +118,22 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
+    // Check for existing products
+    const productsCount = await prisma.product.count({
+      where: { supplierID: parseInt(id) }
+    });
+
+    // Check for existing stockins
+    const stockinsCount = await prisma.stockins.count({
+      where: { supplierID: parseInt(id) }
+    });
+
+    if (productsCount > 0 || stockinsCount > 0) {
+      return res.status(400).json({ 
+        error: "Không thể xóa nhà cung cấp này vì có sản phẩm hoặc phiếu nhập kho liên quan. Vui lòng xóa các dữ liệu liên quan trước."
+      });
+    }
+
     await prisma.suppliers.delete({
       where: { ID: parseInt(id) },
     });

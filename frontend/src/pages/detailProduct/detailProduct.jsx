@@ -3,6 +3,7 @@ import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
+import printIcon from "../../assets/img/print-icon.svg";
 import ProductImg from "../../assets/img/product-img.svg";
 import { Cloudinary } from '@cloudinary/url-gen';
 import { AdvancedImage } from '@cloudinary/react';
@@ -15,6 +16,9 @@ import apiProduct from "../../api/apiProduct";
 import apiCountry from "../../api/apiCountry";
 import apiProductCategory from "../../api/apiProductCategory";
 import apiSupplier from "../../api/apiSupplier";
+import html2pdf from 'html2pdf.js';
+import { createRoot } from 'react-dom/client';
+import ProductTemplate from "../../components/productTemplate/productTemplate";
 import "./detailProduct.scss";
 
 const DetailProduct = () => {
@@ -33,6 +37,7 @@ const DetailProduct = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef(null);
+  const productTemplateRef = useRef(null);
   const units = ["Cái", "Hộp", "Thùng", "Kg", "Gói"];
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
@@ -224,6 +229,66 @@ const DetailProduct = () => {
     return <div>Error: {error}</div>;
   }
 
+  const handlePrint = async () => {
+    if (!product) return;
+
+    const container = document.createElement("div");
+    const productWrapper = document.createElement("div");
+    
+    container.style.width = "210mm";
+    container.style.height = "297mm";
+    container.style.margin = "0";
+    container.style.padding = "0";
+    container.style.backgroundColor = "#ffffff";
+    
+    container.appendChild(productWrapper);
+    document.body.appendChild(container);
+
+    try {
+      // Render template using createRoot
+      await new Promise((resolve) => {
+        const root = createRoot(productWrapper);
+        root.render(<ProductTemplate product={product} />);
+        setTimeout(() => {
+          resolve();
+          setTimeout(() => {
+            root.unmount();
+          }, 0);
+        }, 1000);
+      });
+
+      const options = {
+        margin: 0,
+        filename: `san-pham-${product.ID}.pdf`,
+        image: { type: 'jpeg', quality: 1.0 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: true,
+          backgroundColor: "#ffffff",
+          width: 793,
+          height: 1122,
+          imageTimeout: 5000
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait'
+        }
+      };
+
+      await html2pdf().from(productWrapper).set(options).save();
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setError('Lỗi khi tạo PDF');
+    } finally {
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }
+  };
+
   return (
     <div className="detail-product-container">
       <div className="header">
@@ -244,13 +309,13 @@ const DetailProduct = () => {
                 </>
               )}
             </button>
-            <button className="cancel" onClick={handleCancel} disabled={loading}>Hủy</button>
             {error && <div className="error-message">{error}</div>}
           </div>
         ) : (
           <>
             <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
             <button className="edit" onClick={handleEditClick}><img src={editIcon} alt="Sửa" /> Sửa</button>
+            <button className="print" onClick={handlePrint}><img src={printIcon} alt="In" /> In </button>
           </>
         )}
       </div>
@@ -537,6 +602,7 @@ const DetailProduct = () => {
           </div>
         )}
       </div>
+
     </div>
   );
 };

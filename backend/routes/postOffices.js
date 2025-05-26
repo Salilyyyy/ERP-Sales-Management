@@ -25,10 +25,20 @@ router.post('/', async (req, res) => {
 // Get all post offices
 router.get('/', async (req, res) => {
   try {
+    console.log('Fetching post offices...');
     const postOffices = await prisma.postOffices.findMany();
+    console.log('Post offices found:', postOffices);
+    if (!postOffices) {
+      throw new Error('Failed to fetch post offices');
+    }
     res.status(200).json(postOffices);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error fetching post offices:', error);
+    if (error.code === 'P2021') {
+      res.status(500).json({ error: 'PostOffices table does not exist' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

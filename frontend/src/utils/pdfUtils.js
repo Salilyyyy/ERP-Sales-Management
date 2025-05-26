@@ -1,5 +1,7 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import ReactDOM from 'react-dom/client';
+import CustomerTemplate from '../components/customerTemplate/customerTemplate';
 
 export const generateInvoicePDF = async (invoice, invoiceTemplateRef) => {
   try {
@@ -34,9 +36,52 @@ export const generateInvoicePDF = async (invoice, invoiceTemplateRef) => {
   }
 };
 
+export const generateProductPDF = async (product, productTemplateRef) => {
+  try {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const canvas = await html2canvas(productTemplateRef, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: true,
+      backgroundColor: '#ffffff',
+      width: productTemplateRef.offsetWidth,
+      height: productTemplateRef.offsetHeight,
+      onclone: (document) => {
+        const template = document.querySelector('.product-template');
+        if (template) {
+          template.style.position = 'absolute';
+          template.style.top = '0';
+          template.style.left = '0';
+          template.style.width = `${pageWidth}px`;
+          template.style.minHeight = `${pageHeight}px`;
+          template.style.backgroundColor = '#ffffff';
+          template.style.transform = 'none';
+          template.style.border = 'none';
+          template.style.boxShadow = 'none';
+        }
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
+    return pdf;
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
+  }
+};
+
 export const generateEmployeePDF = async (users, employeeTemplateRef) => {
   try {
-    // Wait for render and layout to complete
     await new Promise(resolve => {
       requestAnimationFrame(() => {
         setTimeout(resolve, 500);
@@ -53,7 +98,6 @@ export const generateEmployeePDF = async (users, employeeTemplateRef) => {
       scale: 2,
       logging: false,
       onclone: (document) => {
-        // Ensure the template is visible for html2canvas
         const element = document.querySelector('.employee-template');
         if (element) {
           element.style.display = 'block';
@@ -70,6 +114,71 @@ export const generateEmployeePDF = async (users, employeeTemplateRef) => {
     return pdf;
   } catch (error) {
     console.error('Error generating PDF:', error);
+    throw error;
+  }
+};
+
+export const generateCustomerPDF = async (customers, customerTemplateRef) => {
+  try {
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    // Handle single customer case
+    if (!Array.isArray(customers)) {
+      customers = [customers];
+    }
+
+    for (let i = 0; i < customers.length; i++) {
+      // Add a new page for each customer except the first one
+      if (i > 0) {
+        pdf.addPage();
+      }
+
+      // Wait for DOM updates
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 500);
+        });
+      });
+
+      // Create a new root for each customer
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      document.body.appendChild(tempDiv);
+
+      const customerRoot = ReactDOM.createRoot(tempDiv);
+      await new Promise(resolve => {
+        customerRoot.render(
+          <CustomerTemplate
+            customer={customers[i]}
+            isPdfMode={true}
+            onAfterRender={resolve}
+          />
+        );
+      });
+
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        backgroundColor: '#ffffff',
+      });
+
+      customerRoot.unmount();
+      document.body.removeChild(tempDiv);
+
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
+    }
+
+    return pdf;
+  } catch (error) {
+    console.error('Error generating customer PDF:', error);
     throw error;
   }
 };

@@ -177,176 +177,171 @@ const Dashboard = () => {
   const [topProducts, setTopProducts] = useState([]);
   const [newCustomersCount, setNewCustomersCount] = useState(0);
   const [newCustomers, setNewCustomers] = useState([]);
+  const [lowestStock, setLowestStock] = useState([]);
+  const [highestStock, setHighestStock] = useState([]);
   const TARGET_CUSTOMERS = 500;
 
   useEffect(() => {
-    const fetchNewCustomers = async () => {
-      const customers = await apiCustomer.getNewCustomers();
-      setNewCustomers(customers);
-    };
-    fetchNewCustomers();
-  }, []);
+    const fetchDashboardData = async () => {
+      try {
+        // Wait for auth before making requests
+        await apiCustomer.waitForAuth();
 
-  useEffect(() => {
-    const fetchRevenueData = async () => {
-      const response = await apiInvoice.getAll();
-      const invoices = Array.isArray(response) ? response : response?.data || [];
-      const chartData = calculateRevenueData(invoices, timeFilter);
-      setRevenueData(chartData);
+        // Fetch all data in parallel
+        const [
+          newCustomers,
+          invoicesResponse,
+          stockInsResponse,
+          productsResponse,
+          newCustomersCount
+        ] = await Promise.all([
+          apiCustomer.getNewCustomers(),
+          apiInvoice.getAll(),
+          apiStockIn.getAll(),
+          apiProduct.getAll(),
+          apiCustomer.getNewCustomersCount()
+        ]);
+
+        // Set new customers data
+        setNewCustomers(newCustomers);
+        setNewCustomersCount(newCustomersCount?.count || 0);
+
+        // Process invoices data
+        const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : invoicesResponse?.data || [];
+        const chartData = calculateRevenueData(invoices, timeFilter);
+        setRevenueData(chartData);
+
+        // Process stock data
+        const stockIns = Array.isArray(stockInsResponse) ? stockInsResponse : stockInsResponse?.data || [];
+        const productData = new Map();
+
+        // Process products and sales data
+        const processProductData = () => {
+          invoices.forEach((invoice) => {
+            if (!invoice?.InvoiceDetails) return;
+
+            invoice.InvoiceDetails.forEach(detail => {
+              if (!detail?.Products) return;
+
+              const productId = detail.Products.ID;
+              const productName = detail.Products.name;
+              
+              if (productId && productName && !productData.has(productId)) {
+                productData.set(productId, {
+                  id: detail.Products.ID,
+                  name: productName,
+                  stockInQuantity: 0,
+                  salesQuantity: 0,
+                  price: detail.unitPrice || 0,
+                  revenue: 0
+                });
+              }
+            });
+          });
+
+          stockIns.forEach((stockIn) => {
+            if (!stockIn?.DetailStockins) return;
+
+            stockIn.DetailStockins.forEach(detail => {
+              if (!detail?.Products) return;
+
+              const productId = detail.Products.ID;
+              const productName = detail.Products.name;
+              const quantity = parseInt(detail.quantity || 0, 10);
+              const unitPrice = parseFloat(detail.unitPrice || 0);
+
+              if (productId && productName) {
+                if (!productData.has(productId)) {
+                  productData.set(productId, {
+                    id: productId,
+                    name: productName,
+                    stockInQuantity: 0,
+                    salesQuantity: 0,
+                    price: unitPrice,
+                    revenue: 0
+                  });
+                }
+
+                const product = productData.get(productId);
+                product.stockInQuantity += quantity;
+              }
+            });
+          });
+
+          invoices.forEach((invoice) => {
+            if (!invoice?.InvoiceDetails) return;
+
+            invoice.InvoiceDetails.forEach(detail => {
+              if (!detail?.Products) return;
+
+              const productId = detail.Products.ID;
+              const quantity = parseInt(detail.quantity || 0, 10);
+              const unitPrice = parseFloat(detail.unitPrice || 0);
+
+              if (productId && productData.has(productId)) {
+                const product = productData.get(productId);
+                product.salesQuantity += quantity;
+                product.revenue += quantity * unitPrice;
+                product.price = unitPrice;
+              }
+            });
+          });
+
+          return Array.from(productData.values())
+            .map(product => ({
+              ...product,
+              remainingStock: product.stockInQuantity - product.salesQuantity
+            }))
+            .sort((a, b) => b.salesQuantity - a.salesQuantity)
+            .slice(0, 3)
+            .map(product => ({
+              id: product.id,
+              name: product.name,
+              price: `${product.price.toLocaleString('vi-VN')}đ`,
+              quantity: product.salesQuantity,
+              revenue: `${product.revenue.toLocaleString('vi-VN')}đ`,
+              stockIn: product.stockInQuantity,
+              remainingStock: product.remainingStock
+            }));
+        };
+
+        const sortedProducts = processProductData();
+        setTopProducts(sortedProducts);
+
+        // Process inventory data
+        const products = Array.isArray(productsResponse) ? productsResponse : productsResponse?.data || [];
+        const sortedInventory = [...products].sort((a, b) => a.quantity - b.quantity);
+
+        const lowest = sortedInventory.slice(0, 3);
+        const highest = sortedInventory.slice(-3).reverse();
+
+        setLowestStock(lowest.map(product => ({
+          label: product.name,
+          width: `${(product.quantity / 100) * 100}%`,
+          change: `${product.quantity} sản phẩm`,
+          icon: downIcon,
+          color: "red"
+        })));
+
+        setHighestStock(highest.map(product => ({
+          label: product.name,
+          width: `${(product.quantity / 100) * 100}%`,
+          change: `${product.quantity} sản phẩm`,
+          icon: upIcon,
+          color: "green"
+        })));
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
     };
 
-    fetchRevenueData();
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [timeFilter]);
 
-  const fetchTopProducts = async () => {
-      const [invoiceResponse, stockInResponse] = await Promise.all([
-        apiInvoice.getAll(),
-        apiStockIn.getAll()
-      ]);
-      
-      const invoices = Array.isArray(invoiceResponse) ? invoiceResponse : invoiceResponse?.data || [];
-      const stockIns = Array.isArray(stockInResponse) ? stockInResponse : stockInResponse?.data || [];
-      
-      const productData = new Map();
-
-      invoices.forEach((invoice) => {
-        if (!invoice?.InvoiceDetails) return;
-
-        invoice.InvoiceDetails.forEach(detail => {
-          if (!detail?.Products) return;
-
-          const productId = detail.Products.ID;
-          const productName = detail.Products.name;
-          
-          if (productId && productName && !productData.has(productId)) {
-            productData.set(productId, {
-              id: detail.Products.ID,
-              name: productName,
-              stockInQuantity: 0,
-              salesQuantity: 0,
-              price: detail.unitPrice || 0,
-              revenue: 0
-            });
-          }
-        });
-      });
-
-      stockIns.forEach((stockIn) => {
-        if (!stockIn?.DetailStockins) return;
-
-        stockIn.DetailStockins.forEach(detail => {
-          if (!detail?.Products) return;
-
-          const productId = detail.Products.ID;
-          const productName = detail.Products.name;
-          const quantity = parseInt(detail.quantity || 0, 10);
-          const unitPrice = parseFloat(detail.unitPrice || 0);
-
-          if (productId && productName) {
-            if (!productData.has(productId)) {
-              productData.set(productId, {
-                id: productId,
-                name: productName,
-                stockInQuantity: 0,
-                salesQuantity: 0,
-                price: unitPrice,
-                revenue: 0
-              });
-            }
-
-            const product = productData.get(productId);
-            product.stockInQuantity += quantity;
-          }
-        });
-      });
-
-      invoices.forEach((invoice) => {
-        if (!invoice?.InvoiceDetails) return;
-
-        invoice.InvoiceDetails.forEach(detail => {
-          if (!detail?.Products) return;
-
-          const productId = detail.Products.ID;
-          const quantity = parseInt(detail.quantity || 0, 10);
-          const unitPrice = parseFloat(detail.unitPrice || 0);
-
-          if (productId && productData.has(productId)) {
-            const product = productData.get(productId);
-            product.salesQuantity += quantity;
-            product.revenue += quantity * unitPrice;
-            product.price = unitPrice;
-          }
-        });
-      });
-      
-      const sortedProducts = Array.from(productData.values())
-        .map(product => ({
-          ...product,
-          remainingStock: product.stockInQuantity - product.salesQuantity
-        }))
-        .sort((a, b) => b.salesQuantity - a.salesQuantity)
-        .slice(0, 3)
-        .map(product => ({
-          id: product.id,
-          name: product.name,
-          price: `${product.price.toLocaleString('vi-VN')}đ`,
-          quantity: product.salesQuantity,
-          revenue: `${product.revenue.toLocaleString('vi-VN')}đ`,
-          stockIn: product.stockInQuantity,
-          remainingStock: product.remainingStock
-        }));
-
-      setTopProducts(sortedProducts);
-    };
-
-  useEffect(() => {
-    fetchTopProducts();
-    const interval = setInterval(fetchTopProducts, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const [lowestStock, setLowestStock] = useState([]);
-  const [highestStock, setHighestStock] = useState([]);
-
-  useEffect(() => {
-    const fetchInventoryData = async () => {
-      const response = await apiProduct.getAll();
-      const products = Array.isArray(response) ? response : response?.data || [];
-
-      const sortedProducts = [...products].sort((a, b) => a.quantity - b.quantity);
-
-      const lowest = sortedProducts.slice(0, 3);
-      const highest = sortedProducts.slice(-3).reverse();
-
-      setLowestStock(lowest.map(product => ({
-        label: product.name,
-        width: `${(product.quantity / 100) * 100}%`,
-        change: `${product.quantity} sản phẩm`,
-        icon: downIcon,
-        color: "red"
-      })));
-
-      setHighestStock(highest.map(product => ({
-        label: product.name,
-        width: `${(product.quantity / 100) * 100}%`,
-        change: `${product.quantity} sản phẩm`,
-        icon: upIcon,
-        color: "green"
-      })));
-    };
-
-    fetchInventoryData();
-  }, []);
-
   const stockStats = [...lowestStock, ...highestStock];
-
-  useEffect(() => {
-    const fetchNewCustomersCount = async () => {
-      const count = await apiCustomer.getNewCustomersCount();
-      setNewCustomersCount(count);
-    };
-    fetchNewCustomersCount();
-  }, []);
 
   const donutCard = {
     title: "Khách hàng mới",

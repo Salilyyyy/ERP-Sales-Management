@@ -8,6 +8,22 @@ $text-color: #1a3300;
     padding: 20px;
     font-family: Arial, sans-serif;
     color: $text-color;
+    position: relative;
+
+    .back-button {
+        margin-bottom: 20px;
+        padding: 8px 16px;
+        color: $primary-color;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        transition: opacity 0.2s ease;
+
+        &:hover {
+            opacity: 0.8;
+        }
+    }
 
     .title {
         font-size: 30px;
@@ -208,10 +224,33 @@ $text-color: #1a3300;
             object-fit: cover;
         }
 
-        .btn-icon{
-            background-color: transparent;
-            border: none;
-            margin: 10px;
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            height: 50px;
+
+            .btn-icon {
+                background: none;
+                border: none;
+                cursor: pointer;
+                transition: 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                margin: 0;
+
+                img {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                &:hover {
+                    border-bottom: #1a3300 1px solid;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+            }
         }
     }
 

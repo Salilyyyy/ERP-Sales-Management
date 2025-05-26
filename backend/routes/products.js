@@ -57,6 +57,9 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        isArchived: false
+      },
       include: {
         productCategory: true,
         supplier: true
@@ -146,16 +149,18 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a product by ID
+// Archive a product by ID
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.product.delete({
+    await prisma.product.update({
       where: { ID: parseInt(id) },
+      data: { isArchived: true }
     });
+
     res.status(200).json({
       success: true,
-      message: 'Product deleted successfully'
+      message: 'Product archived successfully'
     });
   } catch (error) {
     res.status(400).json({ error: error.message });

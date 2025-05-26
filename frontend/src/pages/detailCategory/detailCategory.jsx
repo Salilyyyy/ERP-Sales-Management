@@ -104,16 +104,12 @@ const DetailCategory = () => {
                 {isEditing ? null : (
                     <>
                         <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
-                        <button className="print"><img src={printIcon} alt="In" /> In </button>
                     </>
                 )}
                 {isEditing ? (
                     <>
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
-                        </button>
-                        <button className="cancel" onClick={handleCancel}>
-                            Hủy
                         </button>
                     </>
                 ) : (

@@ -3,6 +3,7 @@ import BaseRepository from "./baseRepository";
 class PostOfficeRepository extends BaseRepository {
     constructor() {
         super("/post-offices");
+        this.handleError = this.handleError.bind(this);
     }
 
     handleError(error, fallbackMessage = "Operation failed") {
@@ -18,7 +19,7 @@ class PostOfficeRepository extends BaseRepository {
     async getAll(params = {}) {
         try {
             const response = await this.get("", params);
-            return response;
+            return response?.data || response;
         } catch (error) {
             this.handleError(error, "Failed to fetch post offices");
         }

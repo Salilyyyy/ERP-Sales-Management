@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import "./stockIn.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
+import StockInTemplate from "../../components/stockinTemplate/stockinTemplate";
 import BaseRepository from "../../api/baseRepository";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
-import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
 import apiStockIn from "../../api/apiStockIn";
 
@@ -27,18 +29,21 @@ const Stockin = () => {
     const [error, setError] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'updatedAt', direction: 'desc' });
 
+    const sortDataByConfig = (data) => {
+        return [...data].sort((a, b) => {
+            return sortConfig.key === 'updatedAt'
+                ? (sortConfig.direction === 'desc'
+                    ? new Date(b.updatedAt) - new Date(a.updatedAt)
+                    : new Date(a.updatedAt) - new Date(b.updatedAt))
+                : new Date(b.stockinDate) - new Date(a.stockinDate);
+        });
+    };
+
     useEffect(() => {
         const fetchStockIns = async () => {
             try {
                 const data = await apiStockIn.getAll();
-                const sortedData = [...data].sort((a, b) => {
-                    return sortConfig.key === 'updatedAt' 
-                        ? (sortConfig.direction === 'desc' 
-                            ? new Date(b.updatedAt) - new Date(a.updatedAt)
-                            : new Date(a.updatedAt) - new Date(b.updatedAt))
-                        : new Date(b.stockinDate) - new Date(a.stockinDate);
-                });
-                setStockInData(sortedData);
+                setStockInData(sortDataByConfig(data));
                 setError(null);
             } catch (err) {
                 setError(err.message);
@@ -64,33 +69,71 @@ const Stockin = () => {
         };
     }, []);
 
-    const handleDelete = async () => {
-        if (selectedStockIns.length === 0) return;
+    const [selectedStockInData, setSelectedStockInData] = useState(null);
+    const stockInTemplateRef = useRef(null);
+    const [isPrinting, setIsPrinting] = useState(false);
 
-        if (window.confirm('Bạn có chắc chắn muốn xóa các mục đã chọn không?')) {
-            try {
-                for (const id of selectedStockIns) {
-                    await apiStockIn.delete(id);
+    const handleExport = async () => {
+        if (selectedStockIns.length === 0) {
+            toast.warning("Vui lòng chọn ít nhất một mục để xuất");
+            return;
+        }
+
+        try {
+            setIsPrinting(true);
+            const selectedStockInItems = stockInData.filter(item => selectedStockIns.includes(item.ID));
+
+            const doc = new jsPDF('p', 'pt', 'a4');
+
+            for (let i = 0; i < selectedStockInItems.length; i++) {
+                setSelectedStockInData(selectedStockInItems[i]);
+
+                await new Promise(resolve => {
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 500);
+                    });
+                });
+
+                if (i > 0) {
+                    doc.addPage();
                 }
 
-                const data = await apiStockIn.getAll();
-                const sortedData = [...data].sort((a, b) => {
-                    return new Date(b.stockinDate) - new Date(a.stockinDate);
+                const canvas = await html2canvas(stockInTemplateRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: (document) => {
+                        const element = document.querySelector('.stockin-template');
+                        if (element) {
+                            element.style.display = 'block';
+                            element.style.width = '100%';
+                            element.style.height = 'auto';
+                        }
+                    }
                 });
-                setStockInData(sortedData);
-                setSelectedStockIns([]);
-                setSelectAll(false);
-                setIsDropdownOpen(false);
-            } catch (err) {
-                console.error('Failed to delete stock-ins:', err);
-                toast.error('Xóa không thành công: ' + err.message);
-            }
-        }
-    };
 
-    const handleExport = () => {
-        toast.success("Đã xuất danh sách kho hàng!");
-        setIsDropdownOpen(false);
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const imgWidth = 515;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const xOffset = (pageWidth - imgWidth) / 2;
+
+                doc.addImage(imgData, 'JPEG', xOffset, 20, imgWidth, imgHeight, '', 'FAST');
+            }
+
+            doc.save('stockins.pdf');
+            setIsPrinting(false);
+            setIsDropdownOpen(false);
+            setSelectedStockInData(null);
+            toast.success("Xuất PDF thành công");
+        } catch (err) {
+            console.error("Error exporting PDF:", err);
+            toast.error("Có lỗi xảy ra khi xuất PDF");
+            setIsPrinting(false);
+        }
     };
 
     const filteredStockIns = stockInData
@@ -152,8 +195,17 @@ const Stockin = () => {
     };
 
     return (
-        <div className="stockin-container">
+        <>
+            <div className="stockin-container">
             <h2 className="title">Lịch sử nhập hàng</h2>
+
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={stockInTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
+                    {isPrinting && selectedStockInData && (
+                        <StockInTemplate stockIn={selectedStockInData} />
+                    )}
+                </div>
+            </div>
 
             <div className="top-actions">
                 <div className="search-container">
@@ -182,9 +234,6 @@ const Stockin = () => {
                         </button>
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
                                 <li className="dropdown-item" onClick={handleExport}>
                                     <img src={exportIcon} alt="Xuất" /> Xuất
                                 </li>
@@ -282,14 +331,14 @@ const Stockin = () => {
 
                                         const total = detail.quantity * detail.unitPrice;
                                         return (
-                                            <tr key={`${stockItem.id}-${index}`}>
+                                            <tr key={`${stockItem.ID}-${index}`}>
                                                 {showStockInfo && (
                                                     <>
                                                         <td rowSpan={rowSpan}>
                                                             <input
                                                                 type="checkbox"
-                                                                checked={selectedStockIns.includes(stockItem.id)}
-                                                                onChange={() => handleSelectStockIn(stockItem.id)}
+                                                                checked={selectedStockIns.includes(stockItem.ID)}
+                                                                onChange={() => handleSelectStockIn(stockItem.ID)}
                                                             />
                                                         </td>
                                                         <td rowSpan={rowSpan}>{new Date(stockItem.stockinDate).toLocaleDateString()}</td>
@@ -338,7 +387,9 @@ const Stockin = () => {
                     )}
                 </>
             )}
-        </div>
+            </div>
+            
+        </>
     );
 };
 

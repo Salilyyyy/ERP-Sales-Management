@@ -7,7 +7,6 @@ import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import deleteIcon from "../../assets/img/green-delete-icon.svg";
-import exportIcon from "../../assets/img/export-icon.svg";
 import apiPromotion from "../../api/apiPromotion";
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
@@ -41,7 +40,7 @@ const Promotion = () => {
 
     useEffect(() => {
         let isMounted = true;
-        
+
         const loadPromotions = async () => {
             try {
                 const response = await apiPromotion.getAll();
@@ -55,14 +54,13 @@ const Promotion = () => {
                 }
             } finally {
                 if (isMounted) {
-            setLoading(false);
-            toast.success("Tải danh sách khuyến mãi thành công");
+                    setLoading(false);
                 }
             }
         };
 
         loadPromotions();
-        
+
         return () => {
             isMounted = false;
         };
@@ -114,11 +112,6 @@ const Promotion = () => {
         } catch (error) {
             toast.error("Không thể xóa khuyến mãi: " + (error.response?.data?.message || error.message));
         }
-    };
-
-    const handleExport = () => {
-        toast.info("Tính năng xuất dữ liệu sẽ được cập nhật trong thời gian tới!");
-        setIsDropdownOpen(false);
     };
 
     const handleSearch = (e) => {
@@ -207,9 +200,6 @@ const Promotion = () => {
                             <ul className="dropdown-menu">
                                 <li className="dropdown-item" onClick={handleDeleteClick}>
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
-                                <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
                                 </li>
                             </ul>
                         )}
@@ -313,7 +303,7 @@ const Promotion = () => {
             )}
             <ConfirmPopup
                 isOpen={showDeleteConfirm}
-                message={`Bạn có chắc chắn muốn xóa ${selectedPromotions.length} khuyến mãi đã chọn?`}
+                message={`Bạn có chắc chắn muốn xóa ${selectedPromotions.length > 1 ? selectedPromotions.length + ' khuyến mãi đã chọn' : 'khuyến mãi này'}?`}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setShowDeleteConfirm(false)}
             />

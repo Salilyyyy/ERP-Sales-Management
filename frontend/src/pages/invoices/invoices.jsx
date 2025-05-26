@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from 'react-dom';
 import html2pdf from 'html2pdf.js';
 import InvoiceTemplate from "../../components/invoiceTemplate/invoiceTemplate";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import { useNavigate } from "react-router-dom";
 import "./invoices.scss";
 import { toast } from 'react-toastify';
@@ -36,6 +37,7 @@ const Invoices = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedInvoices, setSelectedInvoices] = useState([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (!AuthRepository.isAuthenticated()) {
@@ -101,17 +103,12 @@ const Invoices = () => {
         setSelectAll(updated.length === invoices.length);
     };
 
-    const handleDelete = async () => {
-        try {
-            await Promise.all(selectedInvoices.map((id) => InvoiceRepository.delete(id)));
-            toast.success("Xóa đơn hàng thành công!");
-            setSelectedInvoices([]);
-            fetchInvoices();
-        } catch (error) {
-            console.error("Xóa lỗi:", error);
-            toast.error("Không thể xóa đơn hàng!");
+    const handleDelete = () => {
+        if (selectedInvoices.length === 0) {
+            toast.warning("Vui lòng chọn ít nhất một đơn hàng để xóa!");
+            return;
         }
-        setIsDropdownOpen(false);
+        setShowDeleteConfirm(true);
     };
 
     const handleExport = async () => {
@@ -126,7 +123,6 @@ const Invoices = () => {
             for (const invoiceId of selectedInvoices) {
                 const invoice = invoices.find(inv => inv.id === invoiceId);
                 if (invoice) {
-                    // Tính toán các giá trị cần thiết
                     const totalItems = invoice.InvoiceDetails?.reduce((sum, detail) => 
                         sum + (detail.unitPrice * detail.quantity), 0) || 0;
                     
@@ -137,7 +133,6 @@ const Invoices = () => {
                     const invoiceElement = document.createElement("div");
                     invoiceElement.style.pageBreakAfter = "always";
                     
-                    // Render invoice template
                     const invoiceComponent = <InvoiceTemplate 
                         invoice={invoice}
                         totalItems={totalItems}
@@ -151,7 +146,6 @@ const Invoices = () => {
                 }
             }
 
-            // Configure html2pdf options
             const options = {
                 margin: 10,
                 filename: 'hoa-don.pdf',
@@ -160,7 +154,6 @@ const Invoices = () => {
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Generate PDF
             await html2pdf().from(element).set(options).save();
             toast.success("Xuất hóa đơn thành công!");
         } catch (error) {
@@ -256,9 +249,11 @@ const Invoices = () => {
                                             <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}`)}>
                                                 <img src={viewIcon} alt="Xem" /> Xem
                                             </button>
-                            <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}?edit=true`)}>
-                                <img src={editIcon} alt="Sửa" /> Sửa
-                            </button>
+                                            {!inv.isPaid && (
+                                                <button className="btn-icon" onClick={() => navigate(`/invoice/${inv.id}?edit=true`)}>
+                                                    <img src={editIcon} alt="Sửa" /> Sửa
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -292,6 +287,25 @@ const Invoices = () => {
                     </div>
                 </>
             )}
+
+            <ConfirmPopup 
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xóa những đơn hàng đã chọn?"
+                onConfirm={async () => {
+                    try {
+                        await Promise.all(selectedInvoices.map((id) => InvoiceRepository.delete(id)));
+                        toast.success("Xóa đơn hàng thành công!");
+                        setSelectedInvoices([]);
+                        fetchInvoices();
+                        setIsDropdownOpen(false);
+                    } catch (error) {
+                        console.error("Xóa lỗi:", error);
+                        toast.error("Không thể xóa đơn hàng!");
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

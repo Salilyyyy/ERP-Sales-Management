@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import moment from "moment";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import "./shipping.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
+import ShippingTemplate from "../../components/shippingTemplate/shippingTemplate";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -11,6 +15,7 @@ import deleteIcon from "../../assets/img/green-delete-icon.svg";
 import exportIcon from "../../assets/img/export-icon.svg";
 import apiShipping from "../../api/apiShipping";
 import apiInvoice from "../../api/apiInvoice";
+import apiPostOffice from "../../api/apiPostOffice";
 
 const Shipping = () => {
     const navigate = useNavigate();
@@ -23,92 +28,122 @@ const Shipping = () => {
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("");
     const [filterName, setFilterName] = useState("");
+    const [filterPostOffice, setFilterPostOffice] = useState("");
     const [shippingData, setShippingData] = useState([]);
     const [invoiceData, setInvoiceData] = useState({});
+    const [postOffices, setPostOffices] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchData();
+        fetchPostOffices();
     }, []);
 
-    const fetchData = async () => {
+    const fetchPostOffices = async () => {
         try {
-            setIsLoading(true);
-            const timeoutPromise = (ms) => new Promise((_, reject) =>
-                setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
-            );
+            const response = await makeRequest(signal => apiPostOffice.getAll(signal));
+            const offices = processResponse(response);
+            setPostOffices(offices);
+        } catch (error) {
+            console.error("Failed to fetch post offices:", error);
+            toast.error("Không thể tải danh sách bưu cục");
+        }
+    };
 
-            const fetchShipping = Promise.race([
-                apiShipping.getAll(),
-                timeoutPromise(10000)
-            ]);
+    // Utility function for handling API requests with timeout and retry
+    const makeRequest = async (request, timeout = 30000, maxRetries = 3) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-            const fetchInvoices = Promise.race([
-                apiInvoice.getAll(),
-                timeoutPromise(10000)
-            ]);
-
-            const [shippingResponse, invoicesResponse] = await Promise.all([
-                fetchShipping,
-                fetchInvoices
-            ]);
-
-            console.log('Raw invoices response:', invoicesResponse);
-            const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : invoicesResponse?.data || [];
-            console.log('Processed invoices:', invoices);
-            const invoiceMap = {};
-            invoices.forEach(invoice => {
-                if (invoice?.id) {
-                    invoiceMap[invoice.id] = invoice;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await request(controller.signal);
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log(`Request attempt ${attempt} timed out`);
+                } else {
+                    console.error(`Request attempt ${attempt} failed:`, error);
                 }
-            });
-            console.log('Created invoice map:', invoiceMap);
-            setInvoiceData(invoiceMap);
-            console.log('Raw shipping response:', shippingResponse);
-            const shippings = Array.isArray(shippingResponse) ? shippingResponse : shippingResponse?.data || [];
-            console.log('Processed shipping data:', shippings);
+
+                if (attempt === maxRetries) {
+                    throw new Error(error.message);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            }
+        }
+    };
+
+    const processResponse = (response) => {
+        if (!response) return [];
+        return Array.isArray(response) ? response : response?.data || [];
+    };
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const [shippingResponse, invoicesResponse] = await Promise.all([
+                makeRequest(signal => apiShipping.getAll(signal)),
+                makeRequest(signal => apiInvoice.getAll(signal))
+            ]);
+
+            const shippings = processResponse(shippingResponse);
+            console.log("Raw shipping data:", shippings);
             setShippingData(shippings);
-            console.log('State updated with shipping data:', shippings.length, 'records');
-            setError(null);
-        } catch (err) {
-            const errorMessage = err.message.includes('timed out')
+
+            console.log("Raw invoice response:", invoicesResponse);
+            const invoices = processResponse(invoicesResponse);
+            const invoiceMap = invoices.reduce((acc, invoice) => {
+                if (invoice?.id) {
+                    acc[invoice.id] = invoice;
+                }
+                return acc;
+            }, {});
+            setInvoiceData(invoiceMap);
+
+        } catch (error) {
+            const errorMessage = error.name === 'AbortError'
                 ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
-                : err.message;
+                : error.message;
             setError(errorMessage);
-            console.error("Failed to fetch data:", err);
+            console.error("Failed to fetch data:", error);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
     const fetchShippingData = async () => {
-        try {
-            setIsLoading(true);
-            const timeoutPromise = (ms) => new Promise((_, reject) =>
-                setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms)
-            );
+        setIsLoading(true);
+        setError(null);
 
-            const response = await Promise.race([
-                apiShipping.getAll(),
-                timeoutPromise(10000)
-            ]);
-            console.log('Raw shipping response:', response);
-            const shippings = Array.isArray(response) ? response : response?.data || [];
-            console.log('Processed shipping data:', shippings);
+        try {
+            const response = await makeRequest(signal => apiShipping.getAll(signal));
+            const shippings = processResponse(response);
             setShippingData(shippings);
-            console.log('State updated with shipping data:', shippings.length, 'records');
-            setError(null);
-        } catch (err) {
-            const errorMessage = err.message.includes('timed out')
+        } catch (error) {
+            const errorMessage = error.name === 'AbortError'
                 ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
-                : err.message;
+                : error.message;
             setError(errorMessage);
-            console.error("Failed to fetch shipping data:", err);
+            console.error("Failed to fetch shipping data:", error);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const controller = new AbortController();
+        return () => {
+            controller.abort();
+        };
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -122,31 +157,122 @@ const Shipping = () => {
         };
     }, []);
 
-    const handleDelete = async () => {
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedShippingData, setSelectedShippingData] = useState(null);
+    const shippingTemplateRef = useRef(null);
+    const [isPrinting, setIsPrinting] = useState(false);
+
+    const handleDelete = () => {
         if (selectedShippings.length === 0) {
             toast.warning("Vui lòng chọn vận đơn để xóa");
             return;
         }
-
-        if (window.confirm("Bạn có chắc chắn muốn xóa các vận đơn đã chọn?")) {
-            try {
-                for (const id of selectedShippings) {
-                    await apiShipping.delete(id);
-                }
-                await fetchShippingData();
-                setSelectedShippings([]);
-                setSelectAll(false);
-                toast.success("Xóa vận đơn thành công");
-            } catch (err) {
-                toast.error("Xóa vận đơn thất bại: " + err.message);
-            }
-        }
-        setIsDropdownOpen(false);
+        setShowDeleteConfirm(true);
     };
 
-    const handleExport = () => {
-        toast.success("Đã xuất danh sách vận chuyển!");
-        setIsDropdownOpen(false);
+    const getDetailedShippingData = async (id) => {
+        try {
+            const detailedData = await apiShipping.getById(id);
+            console.log(`Fetched detailed data for shipping ${id}:`, detailedData);
+
+            if (!detailedData) {
+                throw new Error("No data returned from API");
+            }
+
+            // Get invoice details for this shipping
+            const invoiceDetails = await apiInvoice.getById(detailedData.invoiceID);
+            
+            const processedData = {
+                ...detailedData,
+                PostOffices: detailedData.PostOffices || {},
+                sendTime: detailedData.sendTime || null,
+                receiveTime: detailedData.receiveTime || null,
+                status: detailedData.status || 'Pending',
+                shippingCost: detailedData.shippingCost || 0,
+                receiverName: detailedData.receiverName || 'N/A',
+                receiverPhone: detailedData.receiverPhone || 'N/A',
+                receiverAddress: detailedData.receiverAddress || 'N/A',
+                receiverCity: detailedData.receiverCity || 'N/A',
+                invoice: invoiceDetails
+            };
+
+            console.log(`Processed shipping data ${id}:`, processedData);
+            return processedData;
+        } catch (error) {
+            console.error(`Error fetching detailed data for shipping ${id}:`, error);
+            toast.error(`Không thể tải thông tin vận đơn ${id}`);
+            return null;
+        }
+    };
+
+    const handleExport = async () => {
+        if (selectedShippings.length === 0) {
+            toast.warning("Vui lòng chọn vận đơn để xuất");
+            return;
+        }
+
+        try {
+            setIsPrinting(true);
+
+            const detailedDataPromises = selectedShippings.map(id => getDetailedShippingData(id));
+            const detailedResults = await Promise.all(detailedDataPromises);
+            const selectedData = detailedResults.filter(data => data !== null);
+
+            if (!selectedData.length) {
+                toast.error("Không thể tải thông tin vận đơn");
+                return;
+            }
+
+            const doc = new jsPDF('p', 'pt', 'a4');
+
+            for (let i = 0; i < selectedData.length; i++) {
+                const currentShipping = selectedData[i];
+                console.log("Processing shipping data:", currentShipping);
+                setSelectedShippingData(currentShipping);
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                if (i > 0) {
+                    doc.addPage();
+                }
+
+                const canvas = await html2canvas(shippingTemplateRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: (document) => {
+                        const element = document.querySelector('.shipping-template');
+                        if (element) {
+                            element.style.display = 'block';
+                            element.style.width = '100%';
+                            element.style.height = 'auto';
+                        }
+                    }
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const imgWidth = 515;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const xOffset = (pageWidth - imgWidth) / 2;
+
+                doc.addImage(imgData, 'JPEG', xOffset, 20, imgWidth, imgHeight, '', 'FAST');
+            }
+
+            doc.save(`shipping_export_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+            setIsPrinting(false);
+            setIsDropdownOpen(false);
+            setSelectedShippingData(null);
+            toast.success("Xuất PDF thành công");
+
+        } catch (error) {
+            console.error("Error exporting PDF:", error);
+            toast.error("Có lỗi xảy ra khi xuất PDF");
+            setIsPrinting(false);
+        }
     };
 
     if (isLoading) {
@@ -159,6 +285,10 @@ const Shipping = () => {
 
     console.log('Starting filtering with shippingData:', shippingData);
     const filteredShippings = (shippingData || [])
+        .filter(ship => {
+            console.log("Checking ship:", ship);
+            return ship?.receiverName;
+        })  // Filter out entries with no receiverName
         .filter((ship) => {
             const searchMatch = ship?.receiverName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ship?.ID?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -175,6 +305,10 @@ const Shipping = () => {
         .filter((ship) => {
             const nameMatch = filterName === "" ? true : ship?.receiverName?.toLowerCase().includes(filterName.toLowerCase());
             return nameMatch;
+        })
+        .filter((ship) => {
+            const postOfficeMatch = filterPostOffice === "" ? true : ship?.postOfficeID === parseInt(filterPostOffice);
+            return postOfficeMatch;
         });
     console.log('Final filtered shippings:', filteredShippings);
 
@@ -209,6 +343,55 @@ const Shipping = () => {
         <div className="shipping-container">
             <h2 className="title">Danh sách vận đơn</h2>
 
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={shippingTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
+                {isPrinting && selectedShippingData && (
+                    <ShippingTemplate 
+                        shipping={{
+                            ...selectedShippingData,
+                            id: selectedShippingData.ID,
+                            date: selectedShippingData.sendTime,
+                            sender: {
+                                name: 'ERP System',
+                                phone: '0123456789',
+                                address: '02 Quang Trung',
+                                city: 'Hải Châu, Đà Nẵng'
+                            },
+                            receiver: {
+                                name: selectedShippingData.receiverName || 'N/A',
+                                phone: selectedShippingData.receiverPhone || 'N/A',
+                                address: selectedShippingData.receiverAddress || 'N/A',
+                                city: selectedShippingData.receiverCity || 'N/A'
+                            },
+                            method: selectedShippingData.shippingMethod || "Standard Delivery",
+                            status: selectedShippingData.status || 'Pending',
+                            trackingNumber: selectedShippingData.trackingNumber || selectedShippingData.ID,
+                            estimatedDelivery: selectedShippingData.receiveTime,
+                            sendTime: selectedShippingData.sendTime,
+                            receiveTime: selectedShippingData.receiveTime,
+                            shippingCost: parseFloat(selectedShippingData.shippingCost) || 0,
+                            insurance: parseFloat(selectedShippingData.insurance) || 0,
+                            additionalFees: parseFloat(selectedShippingData.additionalFees) || 0,
+                            totalCost: (
+                                parseFloat(selectedShippingData.shippingCost || 0) +
+                                parseFloat(selectedShippingData.insurance || 0) +
+                                parseFloat(selectedShippingData.additionalFees || 0)
+                            ).toFixed(2)
+                        }} 
+                        items={selectedShippingData.invoice?.InvoiceDetails?.map(detail => ({
+                            description: detail.Products?.name || 'N/A',
+                            quantity: detail.quantity || 0,
+                            weight: detail.Products?.weight || 'N/A',
+                            length: detail.Products?.length || 'N/A',
+                            width: detail.Products?.width || 'N/A',
+                            height: detail.Products?.height || 'N/A',
+                            value: parseFloat(detail.price || 0)
+                        })) || []}
+                    />
+                )}
+                </div>
+            </div>
+
             <div className="top-actions">
                 <div className="search-container">
                     <img src={searchIcon} alt="Tìm kiếm" className="search-icon" />
@@ -242,6 +425,55 @@ const Shipping = () => {
                 </div>
             </div>
 
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message={`Bạn có chắc chắn muốn xóa ${selectedShippings.length > 1 ? `${selectedShippings.length} vận đơn` : 'vận đơn'} đã chọn?`}
+                onConfirm={async () => {
+                    try {
+                        setIsLoading(true);
+                        const results = await Promise.allSettled(
+                            selectedShippings.map(async id => {
+                                try {
+                                    await apiShipping.delete(id);
+                                    return { id, success: true };
+                                } catch (err) {
+                                    return { 
+                                        id, 
+                                        success: false, 
+                                        error: err.response?.data?.message || err.message 
+                                    };
+                                }
+                            })
+                        );
+
+                        const successes = results.filter(r => r.value?.success).length;
+                        const failures = results.filter(r => !r.value?.success);
+
+                        await fetchShippingData();
+                        setSelectedShippings([]);
+                        setSelectAll(false);
+                        setIsDropdownOpen(false);
+
+                        if (failures.length === 0) {
+                            toast.success(`Đã xóa ${successes} vận đơn thành công`);
+                        } else if (successes === 0) {
+                            toast.error("Không thể xóa vận đơn. Vui lòng thử lại sau");
+                            console.error("Delete errors:", failures.map(f => f.value?.error).join(", "));
+                        } else {
+                            toast.warning(`Đã xóa ${successes} vận đơn, ${failures.length} vận đơn không thể xóa`);
+                            console.error("Partial delete errors:", failures.map(f => f.value?.error).join(", "));
+                        }
+                    } catch (error) {
+                        console.error("Error in delete operation:", error);
+                        toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
+                    } finally {
+                        setIsLoading(false);
+                        setShowDeleteConfirm(false);
+                    }
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+
             <div className="filter">
                 <div className="select-wrapper">
                     <select
@@ -273,7 +505,27 @@ const Shipping = () => {
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { setFilterType(""); setFilterName(""); }}>Xóa lọc</button>
+                <div className="select-wrapper">
+                    <select
+                        className="filter-postoffice"
+                        value={filterPostOffice}
+                        onChange={(e) => setFilterPostOffice(e.target.value)}
+                    >
+                        <option value="">Đơn vị vận chuyển</option>
+                        {postOffices
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map(office => (
+                                <option key={office.ID} value={office.ID}>{office.name}</option>
+                            ))
+                        }
+                    </select>
+                    <img src={downIcon} alt="▼" className="icon-down" />
+                </div>
+                <button className="reset-filter" onClick={() => { 
+                    setFilterType(""); 
+                    setFilterName(""); 
+                    setFilterPostOffice("");
+                }}>Xóa lọc</button>
             </div>
 
             <table className="order-table">

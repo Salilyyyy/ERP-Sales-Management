@@ -25,13 +25,18 @@ class BaseRepository {
             timeout: 30000
         });
 
-        this.api.interceptors.request.use((config) => {
+        this.api.interceptors.request.use(async (config) => {
             const token = localStorage.getItem('auth_token');
+
+            if (!token && !config.url.includes('/auth')) {
+                throw new Error('Authentication required');
+            }
 
             if (token) {
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
             }
+
             return config;
         }, (error) => {
             return Promise.reject(error);
@@ -42,7 +47,6 @@ class BaseRepository {
                 return response;
             },
             (error) => {
-                console.error('API Error:', error);
 
                 if (error.response?.status === 401) {
                     const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
@@ -86,7 +90,24 @@ class BaseRepository {
         return path.startsWith('/') ? path : `/${path}`;
     }
 
+    async waitForAuth() {
+        let attempts = 0;
+        const maxAttempts = 5;
+        const delay = 100;
+
+        while (attempts < maxAttempts) {
+            const token = localStorage.getItem('auth_token');
+            if (token) return true;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            attempts++;
+        }
+        return false;
+    }
+
     async get(path = '', params = {}, maxRetries = 3) {
+        if (!path.includes('/auth')) {
+            await this.waitForAuth();
+        }
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
 
@@ -98,16 +119,8 @@ class BaseRepository {
 
                 BaseRepository.setLoadingState(requestKey, false);
 
-                if (response && response.data === null) {
-                    return [];
-                }
-
                 if (!response || !response.data) {
-                    throw new Error('Invalid API response received');
-                }
-
-                if (Array.isArray(response.data)) {
-                    return response.data;
+                    return [];
                 }
 
                 return response.data;
@@ -131,11 +144,14 @@ class BaseRepository {
         try {
             const response = await this.api.post(this.endpoint + this.normalizePath(path), data, config);
             BaseRepository.setLoadingState(requestKey, false);
-            
+
+            if (response.status === 204) {
+                return null;
+            }
             if (!response || !response.data) {
                 throw new Error('Invalid API response received');
             }
-            
+
             return response.data;
         } catch (error) {
             BaseRepository.setLoadingState(requestKey, false);
@@ -144,16 +160,16 @@ class BaseRepository {
                 throw error;
             }
 
-            let attempts = 1; 
+            let attempts = 1;
             while (attempts < maxRetries) {
                 try {
                     await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
                     const retryResponse = await this.api.post(this.endpoint + this.normalizePath(path), data);
-                    
+
                     if (!retryResponse || !retryResponse.data) {
                         throw new Error('Invalid API response received');
                     }
-                    
+
                     BaseRepository.setLoadingState(requestKey, false);
                     return retryResponse.data;
                 } catch (retryError) {

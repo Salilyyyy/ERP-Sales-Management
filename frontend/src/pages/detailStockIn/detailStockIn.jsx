@@ -1,7 +1,6 @@
 import backIcon from "../../assets/img/back-icon.svg";
-import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
-import printIcon from "../../assets/img/print-icon.svg";
+import exportIcon from "../../assets/img/print-icon.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import "./detailStockIn.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -11,6 +10,9 @@ import BaseRepository from "../../api/baseRepository";
 import apiStockIn from "../../api/apiStockIn";
 import apiSupplier from "../../api/apiSupplier";
 import { toast } from 'react-toastify';
+import StockInTemplate from '../../components/stockinTemplate/stockinTemplate';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const DetailStockIn = () => {
     const { id } = useParams();
@@ -23,27 +25,6 @@ const DetailStockIn = () => {
     const [editedData, setEditedData] = useState(null);
     const [isLoadingRequest, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState([]);
-
-    const handleDeleteProduct = async (detailId) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi đơn nhập kho?")) return;
-
-        try {
-            setLoading(true);
-            await apiStockIn.deleteDetail(id, detailId);
-            // Update the UI by removing the deleted product
-            const updatedDetails = stockinData.DetailStockins.filter(detail => detail.ID !== detailId);
-            setStockinData(prev => ({
-                ...prev,
-                DetailStockins: updatedDetails
-            }));
-            toast.success("Xóa sản phẩm thành công");
-        } catch (err) {
-            console.error("Delete product error:", err);
-            toast.error("Xóa sản phẩm thất bại");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleEditClick = async () => {
         if (!stockinData || !stockinData.stockinDate) {
@@ -151,21 +132,6 @@ const DetailStockIn = () => {
     if (!stockinData) {
         return <h2>Không tìm thấy đơn nhập kho</h2>;
     }
-    const handleDelete = async () => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa đơn nhập kho này?")) return;
-
-        try {
-            setLoading(true);
-            await apiStockIn.deleteStockIn(id);
-            toast.success("Xóa đơn nhập kho thành công");
-            navigate("/stock-history");
-        } catch (err) {
-            console.error("Delete error:", err);
-            toast.error("Xóa thất bại");
-        } finally {
-            setLoading(false);
-        }
-    };
     return (
         <div className="detail-stockin-container">
             <div className="header">
@@ -178,14 +144,52 @@ const DetailStockIn = () => {
             <div className="actions">
                 {!isEditing ? (
                     <>
-                        <button className="delete" onClick={handleDelete}>
-                            <img src={deleteIcon} alt="Xóa" /> Xóa
-                        </button>
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
-                        <button className="print">
-                            <img src={printIcon} alt="In" /> In
+                        <button className="print" onClick={async () => {
+                            const template = document.querySelector('#pdf-template .stockin-template');
+                            if (!template) {
+                                toast.error("Không thể tìm thấy mẫu xuất");
+                                return;
+                            }
+
+                            try {
+                                // Wait for template to be fully rendered
+                                await new Promise(resolve => setTimeout(resolve, 500));
+
+                                // Create canvas from template
+                                const canvas = await html2canvas(template, {
+                                    scale: 2,
+                                    backgroundColor: '#ffffff',
+                                    logging: false,
+                                    useCORS: true,
+                                    allowTaint: true
+                                });
+
+                                // Create PDF with A4 dimensions
+                                const pdf = new jsPDF('p', 'mm', 'a4');
+                                const pageWidth = pdf.internal.pageSize.getWidth();
+                                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                                // Calculate dimensions while maintaining aspect ratio
+                                const imgWidth = pageWidth - 20; // 10mm margin on each side
+                                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                                // Add image to PDF centered
+                                const x = 10; // left margin
+                                const y = 10; // top margin
+                                pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', x, y, imgWidth, imgHeight);
+
+                                // Save PDF
+                                pdf.save(`phieu-nhap-kho-${stockinData.ID}.pdf`);
+                                toast.success("Xuất PDF thành công");
+                            } catch (error) {
+                                console.error("Error generating PDF:", error);
+                                toast.error("Lỗi khi xuất PDF");
+                            }
+                        }}>
+                            <img src={exportIcon} alt="Xuất" /> Xuất
                         </button>
                     </>
                 ) : (
@@ -219,13 +223,13 @@ const DetailStockIn = () => {
                 <div className="info-item">
                     <div className="info-label">Nhà cung cấp</div>
                     {isEditing ? (
-                        <select 
+                        <select
                             className="info-value supplier-select"
                             value={editedData?.supplierID || stockinData.supplierID}
                             onChange={(e) => {
                                 const selectedSupplier = suppliers.find(s => s.ID === parseInt(e.target.value));
-                                setEditedData(prev => ({ 
-                                    ...prev, 
+                                setEditedData(prev => ({
+                                    ...prev,
                                     supplierID: parseInt(e.target.value)
                                 }));
                                 setStockinData(prev => ({
@@ -272,6 +276,10 @@ const DetailStockIn = () => {
 
 
             </div>
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }} id="pdf-template">
+                <StockInTemplate stockIn={stockinData} />
+            </div>
+
             <div className="info-table">
                 <div className="list-product">Danh sách sản phẩm</div>
                 <div className="info-value">
@@ -294,14 +302,6 @@ const DetailStockIn = () => {
                                     <td className="text-right">{detail.unitPrice?.toLocaleString() || 0} VNĐ</td>
                                     <td className="text-right">
                                         {((detail.quantity || 0) * (detail.unitPrice || 0)).toLocaleString()} VNĐ
-                                        {isEditing && (
-                                            <span
-                                                className="delete-icon"
-                                                onClick={() => handleDeleteProduct(detail.ID)}
-                                            >
-                                                ×
-                                            </span>
-                                        )}
                                     </td>
                                 </tr>
                             ))}

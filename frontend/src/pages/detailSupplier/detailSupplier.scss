@@ -348,4 +348,52 @@ $text-color: #1a3300;
       }
     }
   }
+
+  @media print {
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+    background: white;
+
+    .header {
+      .back {
+        display: none;
+      }
+      h2 {
+        margin-left: 0;
+        text-align: center;
+        width: 100%;
+      }
+    }
+
+    .actions {
+      display: none;
+    }
+
+    .detail-supplier-content {
+      padding: 0;
+      background: none;
+      box-shadow: none;
+    }
+
+    .supplier-products {
+      padding: 0;
+      background: none;
+      box-shadow: none;
+      
+      table {
+        th {
+          background-color: white;
+          border: 1px solid #ddd;
+        }
+        td {
+          border: 1px solid #ddd;
+        }
+      }
+    }
+
+    .info-row {
+      page-break-inside: avoid;
+    }
+  }
 }

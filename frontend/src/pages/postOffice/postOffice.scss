@@ -213,6 +213,11 @@ $text-color: #1a3300;
             border: none;
             margin: 10px;
         }
+        .btn-icon:hover {
+            border-bottom: #1a3300 1px solid;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     }
 
     .pagination-container {

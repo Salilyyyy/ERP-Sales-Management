@@ -17,6 +17,9 @@ router.post('/', async (req, res) => {
     shippingCost,
     payer,
     address,
+    recipientAddress,
+    recipientName,
+    recipientPhone,
   } = req.body;
   try {
     const shipment = await prisma.shipments.create({
@@ -31,6 +34,9 @@ router.post('/', async (req, res) => {
         shippingCost,
         payer,
         address,
+        recipientAddress,
+        recipientName,
+        recipientPhone,
       },
       include: {
         Invoices: true,
@@ -105,6 +111,9 @@ router.put('/:id', async (req, res) => {
     shippingCost,
     payer,
     address,
+    recipientAddress,
+    recipientName,
+    recipientPhone,
   } = req.body;
   try {
     const shipment = await prisma.shipments.update({
@@ -120,6 +129,9 @@ router.put('/:id', async (req, res) => {
         shippingCost,
         payer,
         address,
+        recipientAddress,
+        recipientName,
+        recipientPhone,
       },
       include: {
         Invoices: true,

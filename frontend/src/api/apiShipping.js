@@ -53,7 +53,7 @@ class ShippingRepository extends BaseRepository {
 
     async delete(id) {
         try {
-            const response = await this.delete(`/${id}`);
+            const response = await super.delete(`/${id}`);
             return response;
         } catch (error) {
             this.handleError(error, "Failed to delete shipment");

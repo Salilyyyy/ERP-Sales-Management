@@ -2,8 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import "./supplier.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
+import SupplierTemplate from "../../components/supplierTemplate/supplierTemplate";
 import BaseRepository from "../../api/baseRepository";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
@@ -23,11 +26,27 @@ const Suppliers = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedSuppliers, setSelectedSuppliers] = useState([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [selectedSupplierData, setSelectedSupplierData] = useState(null);
+    const supplierTemplateRef = useRef(null);
+    const [isPrinting, setIsPrinting] = useState(false);
     const dropdownRef = useRef(null);
 
     useEffect(() => {
         fetchSuppliers();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     const fetchSuppliers = async () => {
@@ -58,38 +77,78 @@ const Suppliers = () => {
         setSelectAll(updated.length === suppliers.length);
     };
 
-    const handleDeleteSelected = () => {
+    const handleDelete = () => {
         if (selectedSuppliers.length === 0) {
-            toast.info("Vui lòng chọn ít nhất một nhà cung cấp để xóa.");
+            toast.warning("Vui lòng chọn ít nhất một nhà cung cấp");
             return;
         }
-        setShowConfirmDialog(true);
-    };
-
-    const confirmDelete = async () => {
-        try {
-            for (const id of selectedSuppliers) {
-                await supplierApi.deleteSupplier(id);
-            }
-            toast.success("Xóa thành công!");
-            setSelectedSuppliers([]);
-            setSelectAll(false);
-            fetchSuppliers();
-            setIsDropdownOpen(false);
-            setShowConfirmDialog(false);
-        } catch (err) {
-            console.error("Lỗi khi xóa:", err);
-            toast.error("Không thể xóa một hoặc nhiều nhà cung cấp");
-        }
+        setShowDeleteConfirm(true);
     };
 
     const handleExport = async () => {
+        if (selectedSuppliers.length === 0) {
+            toast.warning("Vui lòng chọn ít nhất một nhà cung cấp");
+            return;
+        }
+
         try {
-            toast.success("Đã xuất danh sách nhà cung cấp!");
+            setIsPrinting(true);
+            const selectedItems = suppliers.filter(sup => selectedSuppliers.includes(sup.ID));
+
+            if (!selectedItems.length) {
+                toast.error("Không tìm thấy thông tin nhà cung cấp");
+                return;
+            }
+
+            const doc = new jsPDF('p', 'pt', 'a4');
+
+            for (let i = 0; i < selectedItems.length; i++) {
+                setSelectedSupplierData(selectedItems[i]);
+
+                await new Promise(resolve => {
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 500);
+                    });
+                });
+
+                if (i > 0) {
+                    doc.addPage();
+                }
+
+                const canvas = await html2canvas(supplierTemplateRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: (document) => {
+                        const element = document.querySelector('.supplier-template');
+                        if (element) {
+                            element.style.display = 'block';
+                            element.style.width = '100%';
+                            element.style.height = 'auto';
+                        }
+                    }
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const imgWidth = 400;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                const xOffset = (pageWidth - imgWidth) / 2;
+
+                doc.addImage(imgData, 'JPEG', xOffset, 20, imgWidth, imgHeight, '', 'FAST');
+            }
+
+            doc.save('suppliers.pdf');
+            setIsPrinting(false);
             setIsDropdownOpen(false);
+            setSelectedSupplierData(null);
+            toast.success("Xuất PDF thành công");
         } catch (err) {
-            console.error('Export error:', err);
-            toast.error('Không thể xuất danh sách');
+            toast.error("Có lỗi xảy ra khi xuất PDF");
+            setIsPrinting(false);
         }
     };
 
@@ -114,13 +173,6 @@ const Suppliers = () => {
     if (isLoading) {
         return (
             <div className="suppliers-container">
-                {showConfirmDialog && (
-                    <ConfirmPopup
-                        message="Bạn có chắc chắn muốn xóa các nhà cung cấp đã chọn?"
-                        onConfirm={confirmDelete}
-                        onCancel={() => setShowConfirmDialog(false)}
-                    />
-                )}
                 <LoadingSpinner />
             </div>
         );
@@ -132,6 +184,31 @@ const Suppliers = () => {
 
     return (
         <div className="suppliers-container">
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xóa các nhà cung cấp đã chọn?"
+                onConfirm={async () => {
+                    try {
+                        await Promise.all(
+                            selectedSuppliers.map(id =>
+                                supplierApi.deleteSupplier(id)
+                            )
+                        );
+                        fetchSuppliers();
+                        setSelectedSuppliers([]);
+                        setSelectAll(false);
+                        setIsDropdownOpen(false);
+                        setShowDeleteConfirm(false);
+                        toast.success("Xóa nhà cung cấp thành công");
+                    } catch (err) {
+                        console.error("Error deleting suppliers:", err);
+                        const errorMessage = err.response?.data?.error || "Có lỗi xảy ra khi xóa nhà cung cấp";
+                        toast.error(errorMessage);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
             <h2 className="title">Danh sách nhà cung cấp</h2>
 
             <div className="top-actions">
@@ -154,7 +231,10 @@ const Suppliers = () => {
                         </button>
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDeleteSelected}>
+                                <li className="dropdown-item" onClick={(e) => {
+                                    e.stopPropagation(); 
+                                    handleDelete();
+                                }}>
                                     <img src={deleteIcon} alt="Xóa" /> Xóa
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
@@ -163,6 +243,14 @@ const Suppliers = () => {
                             </ul>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                <div ref={supplierTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
+                    {isPrinting && selectedSupplierData && (
+                        <SupplierTemplate supplier={selectedSupplierData} />
+                    )}
                 </div>
             </div>
 

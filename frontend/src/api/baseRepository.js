@@ -25,15 +25,18 @@ class BaseRepository {
             timeout: 30000
         });
 
-        this.api.interceptors.request.use((config) => {
+        this.api.interceptors.request.use(async (config) => {
             const token = localStorage.getItem('auth_token');
+
+            if (!token && !config.url.includes('/auth')) {
+                throw new Error('Authentication required');
+            }
 
             if (token) {
                 const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                 config.headers.Authorization = formattedToken;
-                console.log("Access Token:", localStorage.getItem('auth_token'));
-
             }
+
             return config;
         }, (error) => {
             return Promise.reject(error);
@@ -87,7 +90,24 @@ class BaseRepository {
         return path.startsWith('/') ? path : `/${path}`;
     }
 
+    async waitForAuth() {
+        let attempts = 0;
+        const maxAttempts = 5;
+        const delay = 100;
+
+        while (attempts < maxAttempts) {
+            const token = localStorage.getItem('auth_token');
+            if (token) return true;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            attempts++;
+        }
+        return false;
+    }
+
     async get(path = '', params = {}, maxRetries = 3) {
+        if (!path.includes('/auth')) {
+            await this.waitForAuth();
+        }
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
 
@@ -99,16 +119,8 @@ class BaseRepository {
 
                 BaseRepository.setLoadingState(requestKey, false);
 
-                if (response && response.data === null) {
-                    return [];
-                }
-
                 if (!response || !response.data) {
-                    throw new Error('Invalid API response received');
-                }
-
-                if (Array.isArray(response.data)) {
-                    return response.data;
+                    return [];
                 }
 
                 return response.data;

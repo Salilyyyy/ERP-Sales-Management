@@ -23,16 +23,16 @@ model Invoices {
   ID             Int              @id @default(autoincrement())
   promotionID    Int?
   customerID     Int
-  creatorID      Int
   exportTime     DateTime
   paymentMethod  String
   tax            Float
-  total          Float   @default(0)
-  isPaid         Boolean          @default(false)
   isDelivery     Boolean          @default(false)
+  isPaid         Boolean          @default(false)
+  creatorID      Int
+  total          Float            @default(0)
   InvoiceDetails InvoiceDetails[]
+  Creator        Users            @relation(fields: [creatorID], references: [ID])
   Customers      Customers        @relation(fields: [customerID], references: [ID])
-  Creator        Users           @relation(fields: [creatorID], references: [ID])
   Promotions     Promotions?      @relation(fields: [promotionID], references: [ID])
   Shipments      Shipments[]
 }
@@ -65,7 +65,7 @@ model Product {
   quantity            Int
   title               String
   description         String?
-  isArchived         Boolean           @default(false)
+  isArchived          Boolean           @default(false)
   DetailStockins      DetailStockins[]
   InvoiceDetails      InvoiceDetails[]
   productCategory     ProductCategories @relation(fields: [produceCategoriesID], references: [ID])
@@ -94,8 +94,8 @@ model Suppliers {
   representative String
   phoneNumberRep String
   country        String?
-  taxId          String?
   notes          String?
+  taxId          String?
   Products       Product[]
   Stockins       Stockins[]
 }
@@ -148,12 +148,10 @@ model PostOffices {
 }
 
 model Users {
-  ID               Int       @id @default(autoincrement())
-  name             String
+  ID               Int        @id @default(autoincrement())
   address          String?
-  Invoices         Invoices[]
   image            String?
-  email            String    @unique
+  email            String     @unique
   password         String?
   birthday         DateTime?
   phoneNumber      String?
@@ -164,6 +162,8 @@ model Users {
   status           String
   resetToken       String?
   resetTokenExpiry DateTime?
+  name             String
+  Invoices         Invoices[]
 }
 
 model Stockins {

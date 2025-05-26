@@ -167,6 +167,14 @@ router.get('/', async (req, res) => {
       if (startDate) where.exportTime.gte = new Date(startDate);
       if (endDate) where.exportTime.lte = new Date(endDate);
     }
+    
+    // If request is for shipping creation (checking unshipped invoices)
+    if (req.query.unshippedOnly === 'true') {
+      where.isDelivery = true;
+      where.Shipments = {
+        none: {}  // Only include invoices that have no shipments
+      };
+    }
 
     const [total, invoices] = await Promise.all([
       prisma.invoices.count({ where }),

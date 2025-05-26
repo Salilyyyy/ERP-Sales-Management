@@ -231,6 +231,12 @@ $text-color: #1a3300;
             background-color: transparent;
             border: none;
             margin: 10px;
+
+            &:hover {
+                border-bottom: #1a3300 1px solid;
+                border-radius: 5px;
+                cursor: pointer;
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
+import SupplierTemplate from "../../components/supplierTemplate/supplierTemplate";
+import html2pdf from "html2pdf.js";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -43,12 +45,8 @@ const DetailSupplier = () => {
 
     useEffect(() => {
         const fetchCountries = async () => {
-            try {
                 const countriesData = await apiCountry.getAll();
                 setCountries(countriesData);
-            } catch (error) {
-                console.error("Error fetching countries:", error);
-            }
         };
         fetchCountries();
     }, []);
@@ -86,14 +84,6 @@ const DetailSupplier = () => {
         }
     };
 
-    const handleCancel = () => {
-        setIsEditing(false);
-        setEditedSupplier(null);
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete("edit");
-        setSearchParams(newSearchParams);
-    };
-
     useEffect(() => {
         const fetchSupplier = async () => {
             try {
@@ -103,7 +93,6 @@ const DetailSupplier = () => {
                     setEditedSupplier(data);
                 }
             } catch (error) {
-                console.error(error);
                 setError(error.message);
             } finally {
                 setLoading(false);
@@ -138,9 +127,34 @@ const DetailSupplier = () => {
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
-                        <button className="print">
-                            <img src={printIcon} alt="In" /> In
-                        </button>
+<button className="print" onClick={() => {
+    const element = document.createElement('div');
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    document.body.appendChild(element);
+
+    const root = document.createElement('div');
+    element.appendChild(root);
+    import('react-dom/client').then((ReactDOM) => {
+        ReactDOM.createRoot(root).render(<SupplierTemplate supplier={supplier} />);
+        
+        setTimeout(() => {
+            const opt = {
+                margin: 10,
+                filename: `supplier-${supplier.ID}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(root).set(opt).save().then(() => {
+                document.body.removeChild(element);
+            });
+        }, 1000);
+    });
+}}>
+    <img src={printIcon} alt="Xuất" /> Xuất PDF
+</button>
                     </>
                 ) : (
                     <>

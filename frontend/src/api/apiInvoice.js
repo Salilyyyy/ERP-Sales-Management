@@ -23,7 +23,8 @@ class InvoiceRepository extends BaseRepository {
                 endDate: params.endDate,
                 paymentMethod: params.paymentMethod,
                 sortBy: params.sortBy || 'exportTime',
-                sortOrder: params.sortOrder || 'desc'
+                sortOrder: params.sortOrder || 'desc',
+                unshippedOnly: params.unshippedOnly
             };
 
             if (params.page) {

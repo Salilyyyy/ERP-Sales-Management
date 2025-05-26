@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import "./postOffice.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import { exportPostOfficesToPDF } from "../../components/postOfficeTemplate/postOfficeTemplate";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
 import searchIcon from "../../assets/img/search-icon.svg";
@@ -16,13 +18,14 @@ const PostOffice = () => {
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectAll, setSelectAll] = useState(false);
-    const [selectedPostOffices, setSelectedPostOffices] = useState([]);  
+    const [selectedPostOffices, setSelectedPostOffices] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [filterType, setFilterType] = useState("all");
     const [filterName, setFilterName] = useState("");
     const [postOffices, setPostOffices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showConfirmPopup, setShowConfirmPopup] = useState(false);
 
     useEffect(() => {
         fetchPostOffices();
@@ -51,46 +54,66 @@ const PostOffice = () => {
         };
     }, []);
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (selectedPostOffices.length === 0) {
             toast.warning("Vui lòng chọn bưu cục cần xóa!");
             return;
         }
+        setShowConfirmPopup(true);
+        setIsDropdownOpen(false);
+    };
 
-        if (window.confirm("Bạn có chắc chắn muốn xóa các bưu cục đã chọn?")) {
-            try {
-                await Promise.all(selectedPostOffices.map(id => postOfficeRepository.delete(id)));
-                await fetchPostOffices();
-                setSelectedPostOffices([]);
-                toast.success("Xóa bưu cục thành công!");
-            } catch (error) {
-                console.error("Failed to delete post offices:", error);
-                toast.error("Xóa bưu cục thất bại!");
-            }
+    const handleConfirmDelete = async () => {
+        try {
+            await Promise.all(
+                selectedPostOffices.map(id => 
+                    postOfficeRepository.api.delete(`/post-offices/${id}`)
+                )
+            );
+            await fetchPostOffices();
+            setSelectedPostOffices([]);
+            toast.success("Xóa bưu cục thành công!");
+        } catch (error) {
+            console.error("Failed to delete post offices:", error);
+            toast.error("Xóa bưu cục thất bại!");
+        } finally {
+            setShowConfirmPopup(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setShowConfirmPopup(false);
+    };
+
+    const handleExport = () => {
+        if (selectedPostOffices.length === 0) {
+            toast.warning("Vui lòng chọn bưu cục cần xuất!");
+            return;
+        }
+
+        const selectedOffices = postOffices.filter(office => selectedPostOffices.includes(office.ID));
+        const result = exportPostOfficesToPDF(selectedOffices);
+        if (result) {
+            toast.success("Xuất danh sách bưu cục thành công!");
         }
         setIsDropdownOpen(false);
     };
 
-    const handleExport = () => {
-        toast.success("Đã xuất danh sách bưu cục!");
-        setIsDropdownOpen(false);
-    };
-
-const filteredPostOffices = postOffices
-    .filter((office) =>
-        office.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        office.ID.toString().includes(searchQuery)
-    )
-    .filter((office) => 
-        filterType === "all" ? true : office.ID === parseInt(filterType)
-    )
-    .filter((office) => office.name.toLowerCase().includes(filterName.toLowerCase()))
-    .sort((a, b) => a.ID - b.ID);
+    const filteredPostOffices = postOffices
+        .filter((office) =>
+            office.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            office.ID.toString().includes(searchQuery)
+        )
+        .filter((office) =>
+            filterType === "all" ? true : office.ID === parseInt(filterType)
+        )
+        .filter((office) => office.name.toLowerCase().includes(filterName.toLowerCase()))
+        .sort((a, b) => a.ID - b.ID);
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
         setSelectAll(newSelectAll);
-        setSelectedPostOffices(newSelectAll ? filteredPostOffices.map(c => c.ID) : []);  
+        setSelectedPostOffices(newSelectAll ? filteredPostOffices.map(c => c.ID) : []);
     };
 
     const handleSelectPostOffice = (ID) => {
@@ -99,13 +122,13 @@ const filteredPostOffices = postOffices
             : [...selectedPostOffices, ID];
 
         setSelectedPostOffices(updatedSelection);
-        setSelectAll(updatedSelection.length === filteredPostOffices.length);  
+        setSelectAll(updatedSelection.length === filteredPostOffices.length);
     };
 
     const totalPages = Math.ceil(filteredPostOffices.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const paginatedPostOffices = filteredPostOffices.slice(startIndex, endIndex); 
+    const paginatedPostOffices = filteredPostOffices.slice(startIndex, endIndex);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= totalPages) {
@@ -114,8 +137,8 @@ const filteredPostOffices = postOffices
     };
 
     return (
-        <div className="postOffice-container">  
-            <h2 className="title">Danh sách bưu cục</h2>  
+        <div className="postOffice-container">
+            <h2 className="title">Danh sách bưu cục</h2>
 
             <div className="top-actions">
                 <div className="search-container">
@@ -130,7 +153,7 @@ const filteredPostOffices = postOffices
                 </div>
 
                 <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-postOffice")}>Thêm mới</button>  
+                    <button className="btn add" onClick={() => navigate("/create-postOffice")}>Thêm mới</button>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                             Hành động
@@ -169,8 +192,8 @@ const filteredPostOffices = postOffices
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
                     >
-                        <option value="">Tên bưu cục</option>  
-                        {[...new Set(postOffices.map(c => c.name))].map(name => (  
+                        <option value="">Tên bưu cục</option>
+                        {[...new Set(postOffices.map(c => c.name))].map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
@@ -183,31 +206,31 @@ const filteredPostOffices = postOffices
                 <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải dữ liệu...</div>
             ) : (
                 <table className="order-table">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                        <th>Mã</th>
-                        <th>Tên bưu cục</th>  
-                        <th>Điện thoại</th>
-                        <th>Địa chỉ</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {paginatedPostOffices.map((office) => (  
-                        <tr key={office.ID}>
-                            <td><input type="checkbox" checked={selectedPostOffices.includes(office.ID)} onChange={() => handleSelectPostOffice(office.ID)} /></td>
-                            <td>{office.ID}</td>
-                            <td>{office.name}</td>  
-                            <td>{office.phoneNumber}</td>  
-                            <td>{office.address}</td>
-                            <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
-                            </td>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                            <th>Mã</th>
+                            <th>Tên bưu cục</th>
+                            <th>Điện thoại</th>
+                            <th>Địa chỉ</th>
+                            <th>Hành động</th>
                         </tr>
-                    ))}
-                </tbody>
+                    </thead>
+                    <tbody>
+                        {paginatedPostOffices.map((office) => (
+                            <tr key={office.ID}>
+                                <td><input type="checkbox" checked={selectedPostOffices.includes(office.ID)} onChange={() => handleSelectPostOffice(office.ID)} /></td>
+                                <td>{office.ID}</td>
+                                <td>{office.name}</td>
+                                <td>{office.phoneNumber}</td>
+                                <td>{office.address}</td>
+                                <td className="action-buttons">
+                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
+                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             )}
 
@@ -218,7 +241,7 @@ const filteredPostOffices = postOffices
                         <option value={10}>10 hàng</option>
                         <option value={15}>15 hàng</option>
                     </select>
-                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredPostOffices.length)} trong tổng số {filteredPostOffices.length} bưu cục</span>  
+                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredPostOffices.length)} trong tổng số {filteredPostOffices.length} bưu cục</span>
                 </div>
                 <div className="pagination">
                     <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
@@ -228,6 +251,13 @@ const filteredPostOffices = postOffices
                     <button className="btn-page" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>{">"}</button>
                 </div>
             </div>
+
+            <ConfirmPopup
+                isOpen={showConfirmPopup}
+                message="Bạn có chắc chắn muốn xóa các bưu cục đã chọn?"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            />
         </div>
     );
 };

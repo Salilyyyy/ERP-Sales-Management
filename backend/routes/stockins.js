@@ -6,39 +6,39 @@ const router = express.Router();
 
 // Create a new stockin
 router.post('/', async (req, res) => {
-const { stockinDate, notes, supplierID, DetailStockins, updatedBy } = req.body;
+  const { stockinDate, notes, supplierID, DetailStockins, updatedBy } = req.body;
   try {
     const stockin = await prisma.$transaction(async (tx) => {
       const createdStockin = await tx.stockins.create({
-      data: {
-        stockinDate: new Date(stockinDate),
-        notes,
-        updatedBy,
-        supplier: {
-          connect: {
-            ID: parseInt(supplierID)
-          }
+        data: {
+          stockinDate: new Date(stockinDate),
+          notes,
+          updatedBy,
+          supplier: {
+            connect: {
+              ID: parseInt(supplierID)
+            }
+          },
+          DetailStockins: {
+            create: DetailStockins.map(detail => ({
+              productID: detail.productID,
+              quantity: detail.quantity,
+              unitPrice: detail.unitPrice
+            }))
+          },
         },
-        DetailStockins: {
-          create: DetailStockins.map(detail => ({
-            productID: detail.productID,
-            quantity: detail.quantity,
-            unitPrice: detail.unitPrice
-          }))
-        }
-      },
-      include: {
-        supplier: true,
-        DetailStockins: {
-          include: {
-            Products: true
+        include: {
+          supplier: true,
+          DetailStockins: {
+            include: {
+              Products: true
+            }
           }
         }
-      }
       });
 
       // Update product quantities within the same transaction
-      await Promise.all(DetailStockins.map(detail => 
+      await Promise.all(DetailStockins.map(detail =>
         tx.product.update({
           where: { ID: detail.productID },
           data: { quantity: { increment: detail.quantity } }
@@ -112,8 +112,8 @@ router.put('/:id', async (req, res) => {
   const { stockinDate, notes, supplierID, updatedBy } = req.body;
   try {
     const stockin = await prisma.stockins.update({
-      where: { 
-        ID: parseInt(id) 
+      where: {
+        ID: parseInt(id)
       },
       data: {
         stockinDate: new Date(stockinDate),

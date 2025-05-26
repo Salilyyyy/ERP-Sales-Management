@@ -8,7 +8,14 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const { authenticateToken } = require('./middleware/auth');
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  },
+  log: ['query', 'info', 'warn', 'error']
+});
 const app = express();
 
 app.use((req, res, next) => {
@@ -20,8 +27,22 @@ app.use((req, res, next) => {
 });
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+// Configure CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+app.use(bodyParser.json({
+  limit: '10mb'
+}));
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON' });
+  }
+  next();
+});
 
 
 // ROUTES
@@ -58,8 +79,27 @@ app.use('/users', authenticateToken, usersRouter);
 app.use('/stockins', authenticateToken, stockinsRouter);
 app.use('/detail-stockins', authenticateToken, detailStockinsRouter);
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('💥 Server Error:', err);
+  
+  // Handle Prisma errors
+  if (err.code && err.code.startsWith('P')) {
+    return res.status(400).json({
+      error: 'Database operation failed',
+      details: err.message
+    });
+  }
+
+  // Handle validation errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: err.message
+    });
+  }
+
+  // Handle other errors
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error'
   });
@@ -72,14 +112,33 @@ async function startServer() {
     await prisma.$connect();
     console.log('✅ Connected to database');
 
+    // Verify database connection by making a test query
+    try {
+      const count = await prisma.postOffices.count();
+      console.log(`Found ${count} post offices in database`);
+    } catch (queryError) {
+      console.error('❌ Failed to query post offices:', queryError);
+      throw queryError;
+    }
+
     app.listen(port, () => {
       console.log(`🚀 Server is running on port ${port}`);
     });
   } catch (error) {
-    console.error('❌ Failed to connect to database:', error);
+    console.error('❌ Failed to initialize server:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      meta: error.meta
+    });
     process.exit(1);
   }
 }
+
+process.on('unhandledRejection', (error) => {
+  console.error('❌ Unhandled rejection:', error);
+  process.exit(1);
+});
 // Swagger docs
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 startServer();

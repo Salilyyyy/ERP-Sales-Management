@@ -168,11 +168,10 @@ router.get('/', async (req, res) => {
       if (endDate) where.exportTime.lte = new Date(endDate);
     }
     
-    // If request is for shipping creation (checking unshipped invoices)
     if (req.query.unshippedOnly === 'true') {
       where.isDelivery = true;
       where.Shipments = {
-        none: {}  // Only include invoices that have no shipments
+        none: {} 
       };
     }
 

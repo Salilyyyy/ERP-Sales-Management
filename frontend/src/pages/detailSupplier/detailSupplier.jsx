@@ -153,7 +153,7 @@ const DetailSupplier = () => {
         }, 1000);
     });
 }}>
-    <img src={printIcon} alt="Xuất" /> Xuất PDF
+    <img src={printIcon} alt="Xuất" /> Xuất
 </button>
                     </>
                 ) : (

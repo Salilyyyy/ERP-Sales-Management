@@ -116,7 +116,7 @@ const DetailCustomer = () => {
                                 toast.error("Xuất PDF thất bại: " + error.message);
                             }
                         }}>
-                            <img src={printIcon} alt="In" /> In
+                            <img src={printIcon} alt="Xuất" /> Xuất
                         </button>
                     </>
                 )}

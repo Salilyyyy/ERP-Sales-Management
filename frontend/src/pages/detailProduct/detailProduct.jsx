@@ -315,7 +315,7 @@ const DetailProduct = () => {
           <>
             <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
             <button className="edit" onClick={handleEditClick}><img src={editIcon} alt="Sửa" /> Sửa</button>
-            <button className="print" onClick={handlePrint}><img src={printIcon} alt="In" /> In </button>
+            <button className="print" onClick={handlePrint}><img src={printIcon} alt="Xuất" /> Xuất </button>
           </>
         )}
       </div>

@@ -35,7 +35,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
@@ -126,7 +125,6 @@ async function startServer() {
     await prisma.$connect();
     console.log('✅ Connected to database');
 
-    // Verify database connection by making a test query
     try {
       const count = await prisma.postOffices.count();
       console.log(`Found ${count} post offices in database`);
@@ -153,6 +151,7 @@ process.on('unhandledRejection', (error) => {
   console.error('❌ Unhandled rejection:', error);
   process.exit(1);
 });
+
 // Swagger docs
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 startServer();

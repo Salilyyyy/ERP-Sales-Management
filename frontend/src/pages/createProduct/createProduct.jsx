@@ -42,26 +42,19 @@ const CreateProduct = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [categoriesData, suppliersData, countriesData] = await Promise.all([
-          apiProductCategory.getAll(),
-          apiSupplier.getAll(),
-          apiCountry.getAll()
-        ]);
-        console.log('Countries API response:', countriesData);
-        if (!Array.isArray(countriesData)) {
-          console.error('Expected array of countries but got:', typeof countriesData);
-          return;
-        }
-        if (countriesData.length > 0) {
-          console.log('Sample country data:', countriesData[0]);
-        }
-        setCategories(categoriesData);
-        setSuppliers(suppliersData);
-        setCountries(countriesData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      const [categoriesData, suppliersData, countriesData] = await Promise.all([
+        apiProductCategory.getAll(),
+        apiSupplier.getAll(),
+        apiCountry.getAll()
+      ]);
+      if (!Array.isArray(countriesData)) {
+        console.error('Expected array of countries but got:', typeof countriesData);
+        return;
       }
+      setCategories(categoriesData);
+      setSuppliers(suppliersData);
+      setCountries(countriesData);
+
     };
     fetchData();
   }, []);
@@ -118,7 +111,6 @@ const CreateProduct = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('Upload error:', errorData);
           throw new Error(errorData.error?.message || 'Upload failed');
         }
 
@@ -126,7 +118,6 @@ const CreateProduct = () => {
         setProductImage(data.secure_url);
         setPreviewImage(data.secure_url);
       } catch (error) {
-        console.error('Error uploading image:', error);
         toast.error('Không thể tải lên hình ảnh. Vui lòng thử lại.');
       }
     }
@@ -222,9 +213,13 @@ const CreateProduct = () => {
                 toast.success('Tạo sản phẩm thành công');
                 navigate("/product");
               } catch (error) {
-                console.error("Error creating product:", error);
-                toast.error('Có lỗi xảy ra khi tạo sản phẩm');
+                if (error?.response?.data?.error?.includes('Argument') && error?.response?.data?.error?.includes('is missing')) {
+                  toast.error('Vui lòng điền đầy đủ thông tin');
+                } else {
+                  toast.error('Có lỗi xảy ra khi tạo sản phẩm');
+                }
               }
+
             }}>
               <img src={createIcon} alt="Tạo" /> Tạo sản phẩm
             </button>
@@ -232,8 +227,8 @@ const CreateProduct = () => {
           <div className="product-form">
             <div className="image-upload-section">
               <div className="image-container">
-            {previewImage ? (
-              <img src={previewImage} alt="Product preview" />
+                {previewImage ? (
+                  <img src={previewImage} alt="Product preview" />
                 ) : (
                   <div className="placeholder">
                     <span>Hình ảnh</span>

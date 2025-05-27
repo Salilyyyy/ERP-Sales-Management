@@ -5,7 +5,6 @@ const { authenticateToken } = require('../middleware/auth');
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// Apply authentication middleware to all routes
 router.use(authenticateToken);
 
 // Create a new supplier
@@ -118,12 +117,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    // Check for existing products
     const productsCount = await prisma.product.count({
       where: { supplierID: parseInt(id) }
     });
 
-    // Check for existing stockins
     const stockinsCount = await prisma.stockins.count({
       where: { supplierID: parseInt(id) }
     });

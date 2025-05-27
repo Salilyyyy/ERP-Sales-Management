@@ -245,200 +245,201 @@ const CreateSupplier = () => {
       ) : (
         <>
           <div className="header">
-        <div className="back" onClick={() => navigate("/supplier-list")}>
-          <img src={backIcon} alt="Quay lại" />
-        </div>
-        <h2>Thêm nhà cung cấp</h2>
-      </div>
-      <form className="customer-form" onSubmit={handleSubmit}>
-        <div className="actions">
-          <button type="button" className="delete" onClick={resetForm}>
-            <img src={deleteIcon} alt="Xóa" /> Xóa
-          </button>
-          <button type="submit" className="create" disabled={isSubmitting}>
-            <img src={createIcon} alt="Tạo" /> {isSubmitting ? 'Đang tạo...' : 'Tạo'}
-          </button>
-        </div>
-        
-        <div className="info-row">
-          <div className="form-group">
-            <label>Tên nhà cung cấp</label>
-            <div className="input-container">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <div className="back" onClick={() => navigate("/supplier-list")}>
+              <img src={backIcon} alt="Quay lại" />
             </div>
+            <h2>Thêm nhà cung cấp</h2>
           </div>
-        </div>
-        <div className="info-row">
-          <div className="form-group">
-            <label>Số điện thoại</label>
-            <div className="input-container">
-              <input type="text" value={phone} onChange={handlePhoneChange} />
-              {phoneError && <div className="error-message">{phoneError}</div>}
+          <div className="actions">
+            <button type="button" className="delete" onClick={resetForm}>
+              <img src={deleteIcon} alt="Xóa" /> Xóa
+            </button>
+            <button type="submit" className="create" disabled={isSubmitting}>
+              <img src={createIcon} alt="Tạo" /> {isSubmitting ? 'Đang tạo...' : 'Tạo'}
+            </button>
+          </div>
+
+          <form className="customer-form" onSubmit={handleSubmit}>
+
+            <div className="info-row">
+              <div className="form-group">
+                <label>Tên nhà cung cấp</label>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="info-row-1">
-          <div className="form-group">
-            <label>Mã số thuế</label>
-            <div className="input-container">
-              <input
-                type="text"
-                value={taxId}
-                onChange={(e) => setTaxId(e.target.value)}
-              />
+            <div className="info-row">
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <div className="input-container">
+                  <input type="text" value={phone} onChange={handlePhoneChange} />
+                  {phoneError && <div className="error-message">{phoneError}</div>}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="form-group">
-            <label>Quốc gia</label>
-            <div className="custom-select" ref={selectRef}>
-              <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
-                <div className="selected-content">
-                  {country ? (
-                    <>
-                      <img
-                        src={countries.find(c => c.name === country)?.flag}
-                        alt={country}
-                        className="country-flag"
-                      />
-                      <span>{country}</span>
-                    </>
-                  ) : (
-                    <span className="placeholder">Chọn quốc gia</span>
+            <div className="info-row-1">
+              <div className="form-group">
+                <label>Mã số thuế</label>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={taxId}
+                    onChange={(e) => setTaxId(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Quốc gia</label>
+                <div className="custom-select" ref={selectRef}>
+                  <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                    <div className="selected-content">
+                      {country ? (
+                        <>
+                          <img
+                            src={countries.find(c => c.name === country)?.flag}
+                            alt={country}
+                            className="country-flag"
+                          />
+                          <span>{country}</span>
+                        </>
+                      ) : (
+                        <span className="placeholder">Chọn quốc gia</span>
+                      )}
+                    </div>
+                    <img
+                      src={downIcon}
+                      alt="down"
+                      className={`down-icon ${isOpen ? 'rotate' : ''}`}
+                    />
+                  </div>
+                  {isOpen && (
+                    <div className="options-list">
+                      {countries.map((country) => (
+                        <div
+                          key={country.code}
+                          className="option"
+                          onClick={() => {
+                            setCountry(country.name);
+                            setIsOpen(false);
+                          }}
+                        >
+                          <img
+                            src={country.flag}
+                            alt={country.name}
+                            className="country-flag"
+                          />
+                          <span>{country.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <img
-                  src={downIcon}
-                  alt="down"
-                  className={`down-icon ${isOpen ? 'rotate' : ''}`}
-                />
               </div>
-              {isOpen && (
-                <div className="options-list">
-                  {countries.map((country) => (
-                    <div
-                      key={country.code}
-                      className="option"
-                      onClick={() => {
-                        setCountry(country.name);
-                        setIsOpen(false);
-                      }}
-                    >
-                      <img
-                        src={country.flag}
-                        alt={country.name}
-                        className="country-flag"
-                      />
-                      <span>{country.name}</span>
-                    </div>
-                  ))}
+            </div>
+            <div className="info-row-1">
+              <div className="form-group">
+                <label>Email</label>
+                <div className="input-container">
+                  <input type="text" value={email} onChange={handleEmailChange} />
+                  {emailError && <div className="error-message">{emailError}</div>}
                 </div>
-              )}
+              </div>
+              <div className="form-group">
+                <label>Mã bưu chính</label>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="info-row-1">
-          <div className="form-group">
-            <label>Email</label>
-            <div className="input-container">
-              <input type="text" value={email} onChange={handleEmailChange} />
-              {emailError && <div className="error-message">{emailError}</div>}
+            <div className="info-row-1">
+              <div className="form-group">
+                <label>Đại diện</label>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={repName}
+                    onChange={(e) => setRepName(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <div className="input-container">
+                  <input type="text" value={repPhone} onChange={handleRepPhoneChange} />
+                  {repPhoneError && <div className="error-message">{repPhoneError}</div>}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="form-group">
-            <label>Mã bưu chính</label>
-            <div className="input-container">
-              <input
-                type="text"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="info-row-1">
-          <div className="form-group">
-            <label>Đại diện</label>
-            <div className="input-container">
-              <input
-                type="text"
-                value={repName}
-                onChange={(e) => setRepName(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Số điện thoại</label>
-            <div className="input-container">
-              <input type="text" value={repPhone} onChange={handleRepPhoneChange} />
-              {repPhoneError && <div className="error-message">{repPhoneError}</div>}
-            </div>
-          </div>
-        </div>
-        
-        <div className="info-row-1">
-          <div className="form-group">
-            <label>Địa chỉ</label>
-            <div className="input-container">
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-group select-group">
-            <label>Tỉnh/ thành phố</label>
-            <select onChange={(e) => setSelectedProvince(e.target.value)}>
-              <option value="">Chọn thành phố/tỉnh</option>
-              {provinces.map((province) => (
-                <option key={province.code} value={province.code}>
-                  {province.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="info-row-1">
-          <div className="form-group select-group">
-            <label>Quận/ Huyện</label>
-            <select onChange={(e) => setSelectedDistrict(e.target.value)} disabled={!selectedProvince}>
-              <option value="">Chọn quận/huyện</option>
-              {districts.map((district) => (
-                <option key={district.code} value={district.code}>
-                  {district.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group select-group">
-            <label>Xã/ Phường</label>
-            <select
-              value={selectedWard}
-              onChange={(e) => setSelectedWard(e.target.value)}
-              disabled={!selectedDistrict}
 
-            >
-              <option value="">Chọn xã/phường</option>
-              {wards.map((ward) => (
-                <option key={ward.code} value={ward.code}>
-                  {ward.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="form-group">
-          <label>Ghi chú</label>
-          <textarea
-            className="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          ></textarea>
-        </div>
+            <div className="info-row-1">
+              <div className="form-group">
+                <label>Địa chỉ</label>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="form-group select-group">
+                <label>Tỉnh/ thành phố</label>
+                <select onChange={(e) => setSelectedProvince(e.target.value)}>
+                  <option value="">Chọn thành phố/tỉnh</option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="info-row-1">
+              <div className="form-group select-group">
+                <label>Quận/ Huyện</label>
+                <select onChange={(e) => setSelectedDistrict(e.target.value)} disabled={!selectedProvince}>
+                  <option value="">Chọn quận/huyện</option>
+                  {districts.map((district) => (
+                    <option key={district.code} value={district.code}>
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group select-group">
+                <label>Xã/ Phường</label>
+                <select
+                  value={selectedWard}
+                  onChange={(e) => setSelectedWard(e.target.value)}
+                  disabled={!selectedDistrict}
+
+                >
+                  <option value="">Chọn xã/phường</option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Ghi chú</label>
+              <textarea
+                className="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              ></textarea>
+            </div>
           </form>
         </>
       )}

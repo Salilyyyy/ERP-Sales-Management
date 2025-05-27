@@ -149,7 +149,7 @@ const DetailShipping = () => {
       const errorMessage = err.message?.includes("not found") || err.message?.includes("does not exist")
         ? "Vận đơn không tồn tại hoặc đã bị xóa"
         : "Lỗi khi xóa vận đơn: " + (err.message || "Đã xảy ra lỗi");
-      
+
       toast.error(errorMessage);
       if (errorMessage.includes("không tồn tại")) {
         navigate("/shipping-list");
@@ -179,11 +179,12 @@ const DetailShipping = () => {
       <div className="actions">
         {!isEditMode ? (
           <>
-            <button className="edit" onClick={handleEditClick}>
-              <img src={editIcon} alt="Sửa" /> Sửa
-            </button>
+
             <button className="delete" onClick={handleDelete}>
               <img src={deleteIcon} alt="Xóa" /> Xóa
+            </button>
+            <button className="edit" onClick={handleEditClick}>
+              <img src={editIcon} alt="Sửa" /> Sửa
             </button>
             <button className="print" onClick={async () => {
               try {
@@ -240,7 +241,7 @@ const DetailShipping = () => {
                 setIsPrinting(false);
                 setSelectedShippingData(null);
               }
-            }}><img src={printIcon} alt="In" /> In</button>
+            }}><img src={printIcon} alt="In" /> Xuất</button>
           </>
         ) : (
           <>
@@ -254,7 +255,7 @@ const DetailShipping = () => {
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <div ref={shippingTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
           {isPrinting && selectedShippingData && (
-            <ShippingTemplate 
+            <ShippingTemplate
               shipping={selectedShippingData}
               items={order.Invoices?.InvoiceDetails?.map(detail => ({
                 description: detail.Products?.name || 'N/A',

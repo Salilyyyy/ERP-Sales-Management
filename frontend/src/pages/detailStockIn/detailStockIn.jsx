@@ -39,7 +39,6 @@ const DetailStockIn = () => {
                 supplierID: stockinData.supplierID
             });
 
-            // Fetch suppliers list
             const fetchedSuppliers = await apiSupplier.getAll();
             setSuppliers(fetchedSuppliers);
             const newSearchParams = new URLSearchParams(searchParams);
@@ -100,7 +99,6 @@ const DetailStockIn = () => {
                         notes: data.notes || '',
                         supplierID: data.supplierID
                     });
-                    // Fetch suppliers list when in edit mode
                     const fetchedSuppliers = await apiSupplier.getAll();
                     setSuppliers(fetchedSuppliers);
                 }
@@ -155,10 +153,8 @@ const DetailStockIn = () => {
                             }
 
                             try {
-                                // Wait for template to be fully rendered
                                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                                // Create canvas from template
                                 const canvas = await html2canvas(template, {
                                     scale: 2,
                                     backgroundColor: '#ffffff',
@@ -167,25 +163,20 @@ const DetailStockIn = () => {
                                     allowTaint: true
                                 });
 
-                                // Create PDF with A4 dimensions
                                 const pdf = new jsPDF('p', 'mm', 'a4');
                                 const pageWidth = pdf.internal.pageSize.getWidth();
                                 const pageHeight = pdf.internal.pageSize.getHeight();
 
-                                // Calculate dimensions while maintaining aspect ratio
-                                const imgWidth = pageWidth - 20; // 10mm margin on each side
+                                const imgWidth = pageWidth - 20; 
                                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-                                // Add image to PDF centered
-                                const x = 10; // left margin
-                                const y = 10; // top margin
+                                const x = 10; 
+                                const y = 10; 
                                 pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', x, y, imgWidth, imgHeight);
 
-                                // Save PDF
                                 pdf.save(`phieu-nhap-kho-${stockinData.ID}.pdf`);
                                 toast.success("Xuất PDF thành công");
                             } catch (error) {
-                                console.error("Error generating PDF:", error);
                                 toast.error("Lỗi khi xuất PDF");
                             }
                         }}>
@@ -197,7 +188,6 @@ const DetailStockIn = () => {
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> Lưu
                         </button>
-                        <button className="cancel" onClick={handleCancel}>Hủy</button>
                     </>
                 )}
             </div>

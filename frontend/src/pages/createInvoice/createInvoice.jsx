@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiProduct from "../../api/apiProduct";
+import { postalCodes } from "../../mock/mock";
 import { toast } from 'react-toastify';
 import apiInvoice from "../../api/apiInvoice";
 import apiCustomer from "../../api/apiCustomer";
@@ -19,6 +20,7 @@ const CreateInvoice = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [showCustomerPopup, setShowCustomerPopup] = useState(false);
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [customerType, setCustomerType] = useState("individual");
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     phoneNumber: "",
@@ -30,8 +32,58 @@ const CreateInvoice = () => {
     email: "",
     bonusPoints: 0,
   });
+  const [phoneError, setPhoneError] = useState("");
+  const [postalCodeError, setPostalCodeError] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const validatePostalCode = (postalCode) => {
+    if (!postalCode || !/^\d{5}$/.test(postalCode)) {
+      setPostalCodeError("Mã bưu điện phải là 5 số");
+      return;
+    }
+
+    const foundProvince = postalCodes.find(p => {
+      const codes = p.code.split('-');
+      if (codes.length === 1) {
+        return postalCode === codes[0];
+      } else {
+        const [start, end] = codes;
+        const currentCode = parseInt(postalCode);
+        return currentCode >= parseInt(start) && currentCode <= parseInt(end);
+      }
+    });
+
+    if (foundProvince) {
+      setPostalCodeError("");
+      const province = provinces.find(p =>
+        p.name.toLowerCase().includes(foundProvince.province.toLowerCase()) ||
+        foundProvince.province.toLowerCase().includes(p.name.toLowerCase())
+      );
+
+      if (province) {
+        setCustomerAddress(prev => ({
+          ...prev,
+          province: province.code
+        }));
+      }
+    } else {
+      setPostalCodeError("Mã bưu điện không tồn tại");
+    }
+  };
+
+  const [customerAddress, setCustomerAddress] = useState({
+    streetAddress: "",
+    province: "",
+    district: "",
+    ward: "",
+  });
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+  const [isLoadingWards, setIsLoadingWards] = useState(false);
+  const [districtError, setDistrictError] = useState("");
+  const [wardError, setWardError] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientPhoneError, setRecipientPhoneError] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [note, setNote] = useState("");
   const [isPaid, setIsPaid] = useState(false);
@@ -174,6 +226,12 @@ const CreateInvoice = () => {
       email: "",
       bonusPoints: 0,
     });
+    setCustomerAddress({
+      streetAddress: "",
+      province: "",
+      district: "",
+      ward: "",
+    });
   };
 
   useEffect(() => {
@@ -240,12 +298,13 @@ const CreateInvoice = () => {
         })),
         recipientName,
         recipientPhone,
-        recipientAddress: shippingOption === "ship" ? 
-          [
-            recipientAddress,
-            "quận " + (districts.find((d) => d.code === selectedDistrict)?.name || "").replace(/^(quận|huyện)\s*/i, ""),
-            "thành phố " + (provinces.find((p) => p.code === selectedProvince)?.name || "").replace(/^(thành phố|tỉnh)\s*/i, "")
-          ].filter(Boolean).map(part => part.trim()).join(", ")
+        recipientAddress: shippingOption === "ship" ?
+          (() => {
+            const wardName = wards.find(w => w.code === selectedWard)?.name.replace(/^(Phường|Xã|Thị trấn)\s+/i, '');
+            const districtName = districts.find(d => d.code === selectedDistrict)?.name.replace(/^(Quận|Huyện|Thị xã)\s+/i, '');
+            const provinceName = provinces.find(p => p.code === selectedProvince)?.name.replace(/^(Thành phố|Tỉnh)\s+/i, '');
+            return `${recipientAddress}, Phường ${wardName}, Quận ${districtName}, Thành phố ${provinceName}`;
+          })()
           : recipientAddress,
         note,
         isPaid,
@@ -317,12 +376,10 @@ const CreateInvoice = () => {
         if (Array.isArray(response)) {
           setCustomers(response);
         } else {
-          console.error("Invalid response format for customers:", response);
           toast.error("Không thể tải danh sách khách hàng");
           setCustomers([]);
         }
       } catch (error) {
-        console.error("Error fetching customers:", error);
         toast.error("Không thể tải danh sách khách hàng");
         setCustomers([]);
       } finally {
@@ -338,7 +395,6 @@ const CreateInvoice = () => {
         const response = await axios.get("https://provinces.open-api.vn/api/p/");
         setProvinces(response.data);
       } catch (error) {
-        console.error("Error fetching provinces:", error);
         toast.error("Không thể tải danh sách tỉnh thành");
       }
     };
@@ -347,31 +403,158 @@ const CreateInvoice = () => {
 
   useEffect(() => {
     const fetchDistricts = async () => {
-      if (!selectedProvince) return;
-      try {
-        const response = await axios.get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
-        setDistricts(response.data.districts);
-        setWards([]);
+      if (!selectedProvince) {
+        setDistricts([]);
         setSelectedDistrict("");
         setSelectedWard("");
+        return;
+      }
+
+      setIsLoadingDistricts(true);
+      try {
+        console.log("Fetching districts for province:", selectedProvince);
+        const response = await axios.get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
+        console.log("Districts API response:", response.data);
+
+        if (response.data && Array.isArray(response.data.districts)) {
+          setDistricts(response.data.districts);
+        } else {
+          console.error("Invalid districts data:", response.data);
+          toast.error("Dữ liệu quận huyện không hợp lệ. Vui lòng thử lại");
+          setDistricts([]);
+        }
+        // Reset selections when province changes
+        setSelectedDistrict("");
+        setSelectedWard("");
+        setWards([]);
       } catch (error) {
-        console.error("Error fetching districts:", error);
-        toast.error("Không thể tải danh sách quận huyện");
+        console.error("Error loading districts:", error);
+        toast.error("Không thể tải danh sách quận huyện. Vui lòng thử lại");
+        setDistricts([]);
+      } finally {
+        setIsLoadingDistricts(false);
       }
     };
     fetchDistricts();
   }, [selectedProvince]);
 
   useEffect(() => {
-    const fetchWards = async () => {
-      if (!selectedDistrict) return;
+    const fetchCustomerDistricts = async () => {
+      if (!customerAddress.province) {
+        setDistricts([]);
+        setCustomerAddress(prev => ({ ...prev, district: "", ward: "" }));
+        setDistrictError("");
+        return;
+      }
+
+      setIsLoadingDistricts(true);
+      setDistrictError("");
+
       try {
-        const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
-        setWards(response.data.wards);
+        console.log("Fetching districts for customer address, province:", customerAddress.province);
+        const response = await axios.get(`https://provinces.open-api.vn/api/p/${customerAddress.province}?depth=2`);
+        console.log("Customer districts API response:", response.data);
+
+        if (response.data && Array.isArray(response.data.districts)) {
+          setDistricts(response.data.districts);
+          if (response.data.districts.length === 0) {
+            setDistrictError("Không tìm thấy quận huyện nào thuộc tỉnh/thành phố này");
+          }
+        } else {
+          console.error("Invalid districts data for customer:", response.data);
+          setDistrictError("Dữ liệu quận huyện không hợp lệ. Vui lòng thử lại");
+          setCustomerAddress(prev => ({ ...prev, district: "", ward: "" }));
+        }
+      } catch (error) {
+        console.error("Error loading districts:", error);
+        setDistrictError("Không thể tải danh sách quận huyện. Vui lòng thử lại");
+        setDistricts([]);
+        setCustomerAddress(prev => ({ ...prev, district: "", ward: "" }));
+      } finally {
+        setIsLoadingDistricts(false);
+      }
+    };
+
+    fetchCustomerDistricts();
+  }, [customerAddress.province]);
+
+  useEffect(() => {
+    const fetchCustomerWards = async () => {
+      if (!customerAddress.district) {
+        setWards([]);
+        setCustomerAddress(prev => ({ ...prev, ward: "" }));
+        setWardError("");
+        return;
+      }
+
+      setIsLoadingWards(true);
+      setWardError("");
+
+      try {
+        console.log("Fetching wards for district:", customerAddress.district);
+        const response = await axios.get(`https://provinces.open-api.vn/api/d/${customerAddress.district}?depth=2`);
+        console.log("Customer wards API response:", response.data);
+
+        if (response.data && response.data.wards) {
+          setWards(response.data.wards);
+          if (response.data.wards.length === 0) {
+            setWardError("Không tìm thấy phường/xã nào thuộc quận/huyện này");
+          }
+        } else {
+          console.error("Invalid wards data:", response.data);
+          setWardError("Dữ liệu phường/xã không hợp lệ. Vui lòng thử lại");
+          setWards([]);
+          setCustomerAddress(prev => ({ ...prev, ward: "" }));
+        }
+      } catch (error) {
+        console.error("Error loading wards:", error);
+        setWardError("Không thể tải danh sách phường xã. Vui lòng thử lại");
+        setWards([]);
+        setCustomerAddress(prev => ({ ...prev, ward: "" }));
+      } finally {
+        setIsLoadingWards(false);
+      }
+    };
+
+    fetchCustomerWards();
+  }, [customerAddress.district]);
+
+  useEffect(() => {
+    const fetchWards = async () => {
+      if (!selectedDistrict) {
+        setWards([]);
         setSelectedWard("");
+        setWardError("");
+        return;
+      }
+
+      setIsLoadingWards(true);
+      setWardError("");
+
+      try {
+        console.log("Fetching wards for district:", selectedDistrict);
+        const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+        console.log("Wards API response:", response.data);
+
+        if (response.data && response.data.wards) {
+          setWards(response.data.wards);
+          if (response.data.wards.length === 0) {
+            setWardError("Không tìm thấy phường/xã nào thuộc quận/huyện này");
+          }
+          setSelectedWard("");
+        } else {
+          console.error("Invalid wards data:", response.data);
+          setWardError("Dữ liệu phường/xã không hợp lệ. Vui lòng thử lại");
+          setWards([]);
+          setSelectedWard("");
+        }
       } catch (error) {
         console.error("Error fetching wards:", error);
-        toast.error("Không thể tải danh sách phường xã");
+        setWardError("Không thể tải danh sách phường xã. Vui lòng thử lại");
+        setWards([]);
+        setSelectedWard("");
+      } finally {
+        setIsLoadingWards(false);
       }
     };
     fetchWards();
@@ -448,9 +631,15 @@ const CreateInvoice = () => {
 
     const address = selectedCustomer.address ?? "";
     const parts = address.split(",").map(part => part.trim());
-    if (parts.length >= 3) {
-      setShippingOption("ship"); 
-      setRecipientAddress(parts[0]); 
+    if (parts.length >= 4) {
+      setShippingOption("ship");
+      setRecipientAddress(parts[0]);
+
+      const wardPart = parts[parts.length - 3].replace(/^(Phường|Xã|Thị trấn)\s+/i, '');
+      const districtPart = parts[parts.length - 2].replace(/^(Quận|Huyện|Thị xã)\s+/i, '');
+      const provincePart = parts[parts.length - 1].replace(/^(Thành phố|Tỉnh)\s+/i, '');
+
+      setRecipientAddress(`${parts[0]}, Phường ${wardPart}, Quận ${districtPart}, Thành phố ${provincePart}`);
 
       const provinceName = parts[parts.length - 1];
       const foundProvince = provinces.find(p => {
@@ -464,7 +653,7 @@ const CreateInvoice = () => {
           .trim();
         return normalizedProvinceName === normalizedSearchName;
       });
-      
+
       if (!foundProvince) return;
 
       setSelectedProvince(foundProvince.code);
@@ -482,8 +671,8 @@ const CreateInvoice = () => {
         const normalizedSearchName = districtName.toLowerCase()
           .replace(/^(quận|huyện|thị xã)\s+/i, '')
           .trim();
-        return normalizedDistrictName.includes(normalizedSearchName) || 
-               normalizedSearchName.includes(normalizedDistrictName);
+        return normalizedDistrictName.includes(normalizedSearchName) ||
+          normalizedSearchName.includes(normalizedDistrictName);
       });
 
       if (!foundDistrict) return;
@@ -504,8 +693,8 @@ const CreateInvoice = () => {
           const normalizedSearchName = wardName.toLowerCase()
             .replace(/^(phường|xã|thị trấn)\s+/i, '')
             .trim();
-          return normalizedWardName.includes(normalizedSearchName) || 
-                 normalizedSearchName.includes(normalizedWardName);
+          return normalizedWardName.includes(normalizedSearchName) ||
+            normalizedSearchName.includes(normalizedWardName);
         });
 
         if (foundWard) {
@@ -523,17 +712,99 @@ const CreateInvoice = () => {
         toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
         return;
       }
+
+      if (newCustomer.email && !newCustomer.email.includes('@')) {
+        toast.warning("Email phải chứa kí tự @");
+        return;
+      }
+
+      if (!customerAddress.streetAddress) {
+        toast.warning("Vui lòng nhập địa chỉ");
+        return;
+      }
+
+      if (!customerAddress.ward || !customerAddress.district || !customerAddress.province) {
+        toast.warning("Vui lòng chọn đầy đủ Phường/Xã, Quận/Huyện và Tỉnh/Thành phố");
+        return;
+      }
+
+      // Get province data
+      const provinceData = provinces.find(p => p.code === customerAddress.province);
+      if (!provinceData) {
+        toast.error("Không tìm thấy thông tin tỉnh/thành phố. Vui lòng chọn lại");
+        return;
+      }
+
+      // Fetch district data
+      let districtData;
+      try {
+        const districtResponse = await axios.get(
+          `https://provinces.open-api.vn/api/p/${customerAddress.province}?depth=2`
+        );
+        districtData = districtResponse.data.districts.find(
+          d => d.code === customerAddress.district
+        );
+        if (!districtData) {
+          toast.error("Không tìm thấy thông tin quận/huyện. Vui lòng chọn lại");
+          return;
+        }
+      } catch (error) {
+        console.error("Error loading district data:", error);
+        toast.error("Không thể tải thông tin quận/huyện. Vui lòng thử lại");
+        return;
+      }
+
+      // Fetch ward data
+      let wardData;
+      try {
+        console.log("Fetching ward data for district:", customerAddress.district);
+        console.log("Selected ward code:", customerAddress.ward);
+
+        const wardResponse = await axios.get(
+          `https://provinces.open-api.vn/api/d/${customerAddress.district}?depth=2`
+        );
+        console.log("Ward response:", wardResponse.data);
+
+        if (wardResponse.data && wardResponse.data.wards) {
+          wardData = wardResponse.data.wards.find(
+            w => String(w.code) === String(customerAddress.ward)
+          );
+          console.log("Found ward data:", wardData);
+
+          if (!wardData) {
+            toast.error("Không tìm thấy thông tin phường/xã. Vui lòng chọn lại");
+            return;
+          }
+        } else {
+          toast.error("Dữ liệu phường/xã không hợp lệ");
+          return;
+        }
+      } catch (error) {
+        console.error("Error loading ward data:", error);
+        toast.error("Không thể tải thông tin phường/xã. Vui lòng thử lại");
+        return;
+      }
+
+      const wardPrefix = wardData.name.startsWith('Phường') ? '' : 'Phường ';
+      const districtPrefix = districtData.name.startsWith('Quận') ? '' : 'Quận ';
+      const provincePrefix = provinceData.name.startsWith('Thành phố') ? '' : 'Thành phố ';
+
+      const fullAddress = `${customerAddress.streetAddress}, ${wardPrefix}${wardData.name}, ${districtPrefix}${districtData.name}, ${provincePrefix}${provinceData.name}`;
+      console.log("Selected Ward Code:", selectedWard);
+      console.log("Ward Data:", wardData);
+
       const customerData = {
         name: newCustomer.name,
         phoneNumber: newCustomer.phoneNumber,
         organization: newCustomer.organizationName,
         tax: newCustomer.taxCode,
         email: newCustomer.email,
-        address: newCustomer.address,
+        address: fullAddress,
         postalCode: newCustomer.postalCode,
         notes: newCustomer.note,
         bonusPoints: 0,
       };
+
       const createdCustomer = await apiCustomer.create(customerData);
       setCustomers([...customers, createdCustomer]);
       setSelectedCustomerId(createdCustomer.ID);
@@ -541,16 +812,9 @@ const CreateInvoice = () => {
 
       setRecipientName(createdCustomer.name);
       setRecipientPhone(createdCustomer.phoneNumber);
+      setRecipientAddress(fullAddress);
+      setShippingOption("ship");
 
-      const address = createdCustomer.address ?? "";
-      const parts = address.split(",").map(part => part.trim());
-      if (parts.length >= 4) {
-        setShippingOption("ship");
-        setRecipientAddress(parts[0]);
-      } else {
-        setRecipientAddress(address);
-        setShippingOption("noShip");
-      }
       setNewCustomer({
         name: "",
         phoneNumber: "",
@@ -562,8 +826,17 @@ const CreateInvoice = () => {
         email: "",
         bonusPoints: 0,
       });
+
+      setCustomerAddress({
+        streetAddress: "",
+        province: "",
+        district: "",
+        ward: "",
+      });
+
       toast.success("Tạo khách hàng mới thành công");
     } catch (error) {
+      console.error("Error creating customer:", error);
       toast.error("Có lỗi xảy ra khi tạo khách hàng mới");
     }
   };
@@ -575,9 +848,37 @@ const CreateInvoice = () => {
           <div className="popup-content">
             <div className="popup-header">
               <h3>Thêm khách hàng mới</h3>
-              <span onClick={() => setShowCustomerPopup(false)} style={{ cursor: "pointer", fontSize: "20px", fontWeight: "bold" }}>×</span>
+              <span onClick={() => setShowCustomerPopup(false)}>×</span>
             </div>
             <div className="popup-body">
+              <div className="form-group">
+                <label className="customer-type-label">Loại khách hàng</label>
+                <div className="customer-type-options">
+                  <label>
+                    <input
+                      type="radio"
+                      name="customerType"
+                      value="individual"
+                      checked={customerType === "individual"}
+                      onChange={(e) => {
+                        setCustomerType(e.target.value);
+                        if (e.target.value === "individual") {
+                          setNewCustomer({ ...newCustomer, organizationName: "", taxCode: "" });
+                        }
+                      }}
+                    /> Cá nhân
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="customerType"
+                      value="organization"
+                      checked={customerType === "organization"}
+                      onChange={(e) => setCustomerType(e.target.value)}
+                    /> Tổ chức
+                  </label>
+                </div>
+              </div>
               <div className="form-group">
                 <label>Tên khách hàng</label>
                 <input
@@ -589,57 +890,189 @@ const CreateInvoice = () => {
               </div>
               <div className="form-group">
                 <label>Số điện thoại</label>
-                <input
-                  type="text"
-                  value={newCustomer.phoneNumber}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, phoneNumber: e.target.value })}
-                  placeholder="Nhập số điện thoại"
-                />
+                <div className="input-phone">
+                  <input
+                    type="text"
+                    value={newCustomer.phoneNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length > 10) return;
+                      setNewCustomer({ ...newCustomer, phoneNumber: value });
+                      if (value.length > 0 && value.length !== 10) {
+                        setPhoneError("Số điện thoại phải có 10 số");
+                      } else {
+                        setPhoneError("");
+                      }
+                    }}
+                    placeholder="Nhập số điện thoại"
+                  />
+                  {phoneError && <span className="error-message">{phoneError}</span>}
+                </div>
               </div>
+              {customerType === "organization" && (
+                <>
+                  <div className="form-group">
+                    <label>Tên tổ chức</label>
+                    <input
+                      type="text"
+                      value={newCustomer.organizationName}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, organizationName: e.target.value })}
+                      placeholder="Nhập tên tổ chức"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Mã số thuế</label>
+                    <input
+                      type="text"
+                      value={newCustomer.taxCode}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, taxCode: e.target.value })}
+                      placeholder="Nhập mã số thuế"
+                    />
+                  </div>
+                </>
+              )}
               <div className="form-group">
-                <label>Tên tổ chức</label>
-                <input
-                  type="text"
-                  value={newCustomer.organizationName}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, organizationName: e.target.value })}
-                  placeholder="Nhập tên tổ chức"
-                />
-              </div>
-              <div className="form-group">
-                <label>Mã số thuế</label>
-                <input
-                  type="text"
-                  value={newCustomer.taxCode}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, taxCode: e.target.value })}
-                  placeholder="Nhập mã số thuế"
-                />
+                <label>Mã bưu điện</label>
+                <div className="input-postcode">
+                  <input
+                    type="text"
+                    value={newCustomer.postalCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length > 5) return;
+                      setNewCustomer({ ...newCustomer, postalCode: value });
+                      if (value.length === 5) {
+                        validatePostalCode(value);
+                      } else if (value.length > 0) {
+                        setPostalCodeError("Mã bưu điện phải là 5 số");
+                      } else {
+                        setPostalCodeError("");
+                      }
+                    }}
+                    placeholder="Nhập mã bưu điện"
+                  />
+                  {postalCodeError && <span className="error-message">{postalCodeError}</span>}
+                </div>
               </div>
               <div className="form-group">
                 <label>Địa chỉ</label>
                 <input
                   type="text"
-                  value={newCustomer.address}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                  value={customerAddress.streetAddress}
+                  onChange={(e) => setCustomerAddress({
+                    ...customerAddress,
+                    streetAddress: e.target.value
+                  })}
                   placeholder="Nhập địa chỉ"
                 />
               </div>
               <div className="form-group">
-                <label>Mã bưu điện</label>
-                <input
-                  type="text"
-                  value={newCustomer.postalCode}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, postalCode: e.target.value })}
-                  placeholder="Nhập mã bưu điện"
-                />
+                <label>Tỉnh/Thành phố</label>
+                <select
+                  value={customerAddress.province}
+                  onChange={(e) => {
+                    setCustomerAddress({
+                      ...customerAddress,
+                      province: e.target.value,
+                      district: "",
+                      ward: ""
+                    });
+                  }}
+                  disabled={newCustomer.postalCode && newCustomer.postalCode.length === 5 && !postalCodeError}
+                >
+                  <option value="">Chọn Tỉnh/Thành phố</option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={newCustomer.email}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                  placeholder="Nhập email"
-                />
+                <label>Quận/Huyện</label>
+                <select
+                  value={customerAddress.district}
+                  onChange={(e) => {
+                    setCustomerAddress({
+                      ...customerAddress,
+                      district: e.target.value,
+                      ward: ""
+                    });
+                    setDistrictError("");
+                  }}
+                  disabled={!customerAddress.province || isLoadingDistricts}
+                >
+                  <option value="">
+                    {isLoadingDistricts
+                      ? "Đang tải danh sách quận/huyện..."
+                      : "Chọn Quận/Huyện"}
+                  </option>
+                  {districts.map((district) => (
+                    <option key={district.code} value={district.code}>
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+                {districtError && <div className="error-message">{districtError}</div>}
+              </div>
+              <div className="form-group">
+                <label>Phường/Xã</label>
+                <select
+                  value={customerAddress.ward || ""}
+                  onChange={(e) => {
+                    const selectedWardCode = e.target.value;
+                    console.log("Selected ward code:", selectedWardCode);
+                    const selectedWard = wards.find(w => String(w.code) === String(selectedWardCode));
+                    console.log("Found ward:", selectedWard);
+                    if (selectedWard) {
+                      setCustomerAddress(prev => ({
+                        ...prev,
+                        ward: selectedWardCode
+                      }));
+                      setWardError("");
+                    } else {
+                      setCustomerAddress(prev => ({
+                        ...prev,
+                        ward: ""
+                      }));
+                      setWardError("Vui lòng chọn phường/xã hợp lệ");
+                    }
+                  }}
+                  disabled={!customerAddress.district || isLoadingWards}
+                >
+                  <option value="">
+                    {isLoadingWards
+                      ? "Đang tải danh sách phường/xã..."
+                      : "Chọn Phường/Xã"}
+                  </option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+                {wardError && <div className="error-message">{wardError}</div>}
+              </div>
+
+              <div className="form-group">
+                <label style={{ width: '120px' }}>Email</label>
+                <div className="input-email">
+                  <input
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewCustomer({ ...newCustomer, email: value });
+                      if (value && !value.includes('@')) {
+                        setEmailError("Email phải chứa kí tự @");
+                      } else {
+                        setEmailError("");
+                      }
+                    }}
+                    placeholder="Nhập email"
+                  />
+                  {emailError && <span className="error-message">{emailError}</span>}
+                </div>
               </div>
               <div className="form-group">
                 <label>Ghi chú</label>
@@ -678,18 +1111,17 @@ const CreateInvoice = () => {
               type="text"
               value={selectedEmployee}
               disabled
-              style={{ backgroundColor: "#f5f5f5" }}
             />
           </div>
           <div className="form-group"></div>
           <div className="form-group customer-select">
-            <label>Khách hàng <span style={{ color: 'red' }}>*</span></label>
+            <label>Khách hàng <span className="required">*</span></label>
             <select
               name="customer"
               value={selectedCustomerId || ""}
               onChange={handleCustomerChange}
               disabled={isLoadingCustomers}
-              style={{ width: '60%' }}
+              className="customer-select"
             >
               <option value="">
                 {isLoadingCustomers ? "Đang tải danh sách khách hàng..." : "Chọn khách hàng"}
@@ -704,7 +1136,7 @@ const CreateInvoice = () => {
           </div>
 
           <div className="checkbox-group">
-            <label style={{ fontWeight: 700, color: "#163020", marginRight: "100px" }}>Vận chuyển</label>
+            <label className="shipping-label">Vận chuyển</label>
 
             <label>
               <input
@@ -749,8 +1181,19 @@ const CreateInvoice = () => {
                 <input
                   type="text"
                   value={recipientPhone}
-                  onChange={(e) => setRecipientPhone(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 10) return;
+                    setRecipientPhone(value);
+                    if (value.length > 0 && value.length !== 10) {
+                      setRecipientPhoneError("Số điện thoại phải có 10 số");
+                    } else {
+                      setRecipientPhoneError("");
+                    }
+                  }}
+                  placeholder="Nhập số điện thoại người nhận"
                 />
+                {recipientPhoneError && <span className="error-message">{recipientPhoneError}</span>}
               </div>
               <div className="form-group">
                 <label>Địa chỉ người nhận</label>
@@ -778,38 +1221,54 @@ const CreateInvoice = () => {
                 <label>Quận/Huyện</label>
                 <select
                   value={selectedDistrict}
-                  onChange={(e) => setSelectedDistrict(e.target.value)}
-                  disabled={!selectedProvince}
+                  onChange={(e) => {
+                    setSelectedDistrict(e.target.value);
+                    setDistrictError("");
+                  }}
+                  disabled={!selectedProvince || isLoadingDistricts}
                 >
-                  <option value="">Chọn Quận/Huyện</option>
+                  <option value="">
+                    {isLoadingDistricts
+                      ? "Đang tải danh sách quận/huyện..."
+                      : "Chọn Quận/Huyện"}
+                  </option>
                   {districts.map((district) => (
                     <option key={district.code} value={district.code}>
                       {district.name}
                     </option>
                   ))}
                 </select>
+                {districtError && <div className="error-message">{districtError}</div>}
               </div>
               <div className="form-group">
                 <label>Phường/Xã</label>
                 <select
                   value={selectedWard}
-                  onChange={(e) => setSelectedWard(e.target.value)}
-                  disabled={!selectedDistrict}
+                  onChange={(e) => {
+                    setSelectedWard(e.target.value);
+                    setWardError("");
+                  }}
+                  disabled={!selectedDistrict || isLoadingWards}
                 >
-                  <option value="">Chọn Phường/Xã</option>
+                  <option value="">
+                    {isLoadingWards
+                      ? "Đang tải danh sách phường/xã..."
+                      : "Chọn Phường/Xã"}
+                  </option>
                   {wards.map((ward) => (
                     <option key={ward.code} value={ward.code}>
                       {ward.name}
                     </option>
                   ))}
                 </select>
+                {wardError && <div className="error-message">{wardError}</div>}
               </div>
             </>
           )}
         </div>
         <div className="form-group-col">
           <div className="checkbox-group">
-            <label style={{ fontWeight: 700, color: "#163020", margin: "10px 30px 0 0" }}>Hình thức thanh toán</label>
+            <label className="payment-label">Hình thức thanh toán</label>
 
             <label>
               <input
@@ -850,21 +1309,20 @@ const CreateInvoice = () => {
           </div>
           <div className="form-group"></div>
           <div className="form-group">
-            <label style={{ margin: "20px 0", width: "20%" }}>Trạng thái</label>
-            <label style={{ fontWeight: "normal", }}>
+            <label className="status-label">Trạng thái</label>
+            <label className="normal-weight">
               <input
                 type="checkbox"
-                style={{ width: "10%" }}
                 checked={isPaid}
                 onChange={(e) => setIsPaid(e.target.checked)}
               /> Đã thanh toán
             </label>
           </div>
           <div className="form-group">
-            <label style={{ width: "20%" }}>Ghi chú</label>
+            <label className="note-label">Ghi chú</label>
             <input
               type="text"
-              style={{ width: "80%" }}
+              className="note-input"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -939,7 +1397,7 @@ const CreateInvoice = () => {
                   <img
                     src={cancelIcon}
                     alt="Xóa"
-                    style={{ cursor: "pointer" }}
+                    className="delete-icon"
                     onClick={() => removeItem(index)}
                   />
                 </td>

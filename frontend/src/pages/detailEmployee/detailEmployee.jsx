@@ -71,7 +71,6 @@ const DetailEmployee = () => {
                 throw new Error("Template not ready");
             }
 
-            // Wait for images to load
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             const pdf = await generateEmployeePDF([employee], employeeTemplateRef.current);
@@ -79,7 +78,6 @@ const DetailEmployee = () => {
             toast.success("Xuất thông tin nhân viên thành công!");
         } catch (error) {
             toast.error("Có lỗi khi xuất thông tin nhân viên");
-            console.error(error);
         } finally {
             setGenerating(false);
         }
@@ -225,11 +223,12 @@ const DetailEmployee = () => {
                         <button className="delete" onClick={() => setShowDeleteConfirm(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
-                        <button className="export" onClick={handleExport} disabled={generating}>
-                            <img src={exportIcon} alt="Xuất" /> {generating ? "Đang xuất..." : "Xuất"}
-                        </button>
+
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
+                        </button>
+                        <button className="print" onClick={handleExport} disabled={generating}>
+                            <img src={exportIcon} alt="Xuất" /> {generating ? "Đang xuất..." : "Xuất"}
                         </button>
                     </>
                 ) : (

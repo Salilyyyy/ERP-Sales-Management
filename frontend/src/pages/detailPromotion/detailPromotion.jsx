@@ -146,11 +146,12 @@ const DetailPromotion = () => {
             <div className="actions">
                 {!isEditMode ? (
                     <>
-                        <button className="edit" onClick={handleEditClick}>
-                            <img src={editIcon} alt="Sửa" /> Sửa
-                        </button>
+
                         <button className="delete" onClick={handleDelete}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
+                        <button className="edit" onClick={handleEditClick}>
+                            <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
                     </>
                 ) : (

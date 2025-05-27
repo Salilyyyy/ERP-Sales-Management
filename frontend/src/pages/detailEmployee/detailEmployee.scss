@@ -55,12 +55,7 @@ $text-color: #1a3300;
     }
 
     .edit {
-      background: #163020;
-      color: #fff;
-    }
-
-    .export {
-      background: #28a745;
+      background: $primary-color;
       color: #fff;
     }
 
@@ -73,11 +68,6 @@ $text-color: #1a3300;
       background: #FBFADA;
       border: 1px solid #163020;
       color: #163020;
-    }
-
-    .cancel {
-      background: #ccc;
-      border: 1px solid #000;
     }
   }
     .avatar-section {

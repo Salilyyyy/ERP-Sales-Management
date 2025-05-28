@@ -75,7 +75,7 @@ const CreateInvoice = () => {
     streetAddress: "",
     province: "",
     district: "",
-    ward: "",
+    ward: ""
   });
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
@@ -270,17 +270,47 @@ const CreateInvoice = () => {
         return;
       }
 
-      if (
-        shippingOption === "ship" &&
-        (!recipientName ||
-          !recipientPhone ||
-          !recipientAddress ||
-          !selectedProvince ||
-          !selectedDistrict ||
-          !selectedWard)
-      ) {
-        toast.warning("Vui lòng điền đầy đủ thông tin giao hàng");
-        return;
+      if (shippingOption === "ship") {
+        if (!recipientName || !recipientPhone || !recipientAddress) {
+          toast.warning("Vui lòng điền đầy đủ thông tin người nhận hàng");
+          return;
+        }
+
+        if (!selectedProvince || !selectedDistrict || !selectedWard) {
+          toast.warning("Vui lòng chọn đầy đủ thông tin Tỉnh/Thành phố, Quận/Huyện và Phường/Xã");
+          return;
+        }
+
+        // Refetch districts and wards to ensure we have fresh data
+        try {
+          const districtResponse = await axios.get(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`);
+          const districts = districtResponse.data.districts;
+          const districtData = districts.find(d => String(d.code) === String(selectedDistrict));
+
+          if (!districtData) {
+            toast.error("Không tìm thấy thông tin quận/huyện. Vui lòng thử lại.");
+            return;
+          }
+
+          const wardResponse = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+          const wards = wardResponse.data.wards;
+          const wardData = wards.find(w => String(w.code) === String(selectedWard));
+
+          if (!wardData) {
+            toast.error("Không tìm thấy thông tin phường/xã. Vui lòng thử lại.");
+            return;
+          }
+
+          // Verify ward belongs to district
+          if (String(wardData.district_code) !== String(selectedDistrict)) {
+            toast.error("Phường/xã không thuộc quận/huyện đã chọn. Vui lòng kiểm tra lại.");
+            return;
+          }
+        } catch (error) {
+          console.error("Error validating location data:", error);
+          toast.error("Có lỗi xảy ra khi xác thực thông tin địa chỉ. Vui lòng thử lại.");
+          return;
+        }
       }
 
       const bonusPoints = Math.floor(grandTotal / 100);
@@ -300,19 +330,39 @@ const CreateInvoice = () => {
         recipientPhone,
         recipientAddress: shippingOption === "ship" ?
           (() => {
-            const wardName = wards.find(w => w.code === selectedWard)?.name.replace(/^(Phường|Xã|Thị trấn)\s+/i, '');
-            const districtName = districts.find(d => d.code === selectedDistrict)?.name.replace(/^(Quận|Huyện|Thị xã)\s+/i, '');
-            const provinceName = provinces.find(p => p.code === selectedProvince)?.name.replace(/^(Thành phố|Tỉnh)\s+/i, '');
-            return `${recipientAddress}, Phường ${wardName}, Quận ${districtName}, Thành phố ${provinceName}`;
+            const wardData = wards.find(w => w.code === selectedWard);
+            const districtData = districts.find(d => d.code === selectedDistrict);
+            const provinceData = provinces.find(p => p.code === selectedProvince);
+
+            if (!wardData || !districtData || !provinceData) {
+              return recipientAddress;
+            }
+
+            const wardPrefix = wardData.name.match(/^(Phường|Xã|Thị trấn)\s+/)?.[0] ||
+              (wardData.division_type === 'xã' ? 'Xã ' :
+                wardData.division_type === 'thị trấn' ? 'Thị trấn ' : 'Phường ');
+
+            const districtPrefix = districtData.name.match(/^(Quận|Huyện|Thị xã)\s+/)?.[0] ||
+              (districtData.division_type === 'huyện' ? 'Huyện ' :
+                districtData.division_type === 'thị xã' ? 'Thị xã ' : 'Quận ');
+
+            const provincePrefix = provinceData.name.match(/^(Thành phố|Tỉnh)\s+/)?.[0] ||
+              (provinceData.division_type === 'tỉnh' ? 'Tỉnh ' : 'Thành phố ');
+
+            const wardName = wardData.name.replace(/^(Phường|Xã|Thị trấn)\s+/, '');
+            const districtName = districtData.name.replace(/^(Quận|Huyện|Thị xã)\s+/, '');
+            const provinceName = provinceData.name.replace(/^(Thành phố|Tỉnh)\s+/, '');
+
+            return `${recipientAddress}, ${wardPrefix}${wardName}, ${districtPrefix}${districtName}, ${provincePrefix}${provinceName}`;
           })()
           : recipientAddress,
         note,
         isPaid,
         isDelivery: shippingOption === "ship",
         employeeName: selectedEmployee,
-        province: "",
-        district: "",
-        ward: "",
+        province: provinces.find(p => p.code === selectedProvince)?.name || "",
+        district: districts.find(d => d.code === selectedDistrict)?.name || "",
+        ward: wards.find(w => w.code === selectedWard)?.name || "",
         discount: discount,
         total: grandTotal,
         bonusPoints: bonusPoints,
@@ -495,9 +545,12 @@ const CreateInvoice = () => {
         const response = await axios.get(`https://provinces.open-api.vn/api/d/${customerAddress.district}?depth=2`);
         console.log("Customer wards API response:", response.data);
 
-        if (response.data && response.data.wards) {
-          setWards(response.data.wards);
-          if (response.data.wards.length === 0) {
+        // Check if response.data exists and contains wards array, whether directly or nested
+        const wardsData = response.data?.wards || (Array.isArray(response.data) ? response.data : []);
+
+        if (wardsData && Array.isArray(wardsData)) {
+          setWards(wardsData);
+          if (wardsData.length === 0) {
             setWardError("Không tìm thấy phường/xã nào thuộc quận/huyện này");
           }
         } else {
@@ -536,9 +589,12 @@ const CreateInvoice = () => {
         const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
         console.log("Wards API response:", response.data);
 
-        if (response.data && response.data.wards) {
-          setWards(response.data.wards);
-          if (response.data.wards.length === 0) {
+        // Check if response.data exists and contains wards array, whether directly or nested
+        const wardsData = response.data?.wards || (Array.isArray(response.data) ? response.data : []);
+
+        if (wardsData && Array.isArray(wardsData)) {
+          setWards(wardsData);
+          if (wardsData.length === 0) {
             setWardError("Không tìm thấy phường/xã nào thuộc quận/huyện này");
           }
           setSelectedWard("");
@@ -620,101 +676,72 @@ const CreateInvoice = () => {
       return;
     }
 
-    const customerId = parseInt(value);
-    setSelectedCustomerId(customerId);
+    try {
+      const customerId = parseInt(value);
+      setSelectedCustomerId(customerId);
 
-    const selectedCustomer = customers.find((c) => c.ID === customerId);
-    if (!selectedCustomer) return;
+      const selectedCustomer = customers.find((c) => c.ID === customerId);
+      if (!selectedCustomer) return;
 
-    setRecipientName(selectedCustomer.name ?? "");
-    setRecipientPhone(selectedCustomer.phoneNumber ?? "");
+      setRecipientName(selectedCustomer.name ?? "");
+      setRecipientPhone(selectedCustomer.phoneNumber ?? "");
 
-    const address = selectedCustomer.address ?? "";
-    const parts = address.split(",").map(part => part.trim());
-    if (parts.length >= 4) {
-      setShippingOption("ship");
-      setRecipientAddress(parts[0]);
+      if (selectedCustomer.address) {
+        const address = selectedCustomer.address;
+        setShippingOption("ship");
+        setRecipientAddress(address);
 
-      const wardPart = parts[parts.length - 3].replace(/^(Phường|Xã|Thị trấn)\s+/i, '');
-      const districtPart = parts[parts.length - 2].replace(/^(Quận|Huyện|Thị xã)\s+/i, '');
-      const provincePart = parts[parts.length - 1].replace(/^(Thành phố|Tỉnh)\s+/i, '');
+        const addressParts = address.split(",").map(part => part.trim());
+        if (addressParts.length >= 4) {
+          const lastParts = addressParts.slice(-3);
 
-      setRecipientAddress(`${parts[0]}, Phường ${wardPart}, Quận ${districtPart}, Thành phố ${provincePart}`);
+          const foundProvince = provinces.find(p =>
+            lastParts[2].toLowerCase().includes(p.name.toLowerCase())
+          );
 
-      const provinceName = parts[parts.length - 1];
-      const foundProvince = provinces.find(p => {
-        const normalizedProvinceName = p.name.toLowerCase()
-          .replace(/^tỉnh\s+/i, "")
-          .replace(/^thành phố\s+/i, "")
-          .trim();
-        const normalizedSearchName = provinceName.toLowerCase()
-          .replace(/^tỉnh\s+/i, "")
-          .replace(/^thành phố\s+/i, "")
-          .trim();
-        return normalizedProvinceName === normalizedSearchName;
-      });
+          if (foundProvince) {
+            setSelectedProvince(foundProvince.code);
 
-      if (!foundProvince) return;
+            try {
+              const districtRes = await axios.get(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`);
+              const districts = districtRes.data.districts;
 
-      setSelectedProvince(foundProvince.code);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+              const foundDistrict = districts.find(d =>
+                lastParts[1].toLowerCase().includes(d.name.toLowerCase())
+              );
 
-      const response = await axios.get(`https://provinces.open-api.vn/api/p/${foundProvince.code}?depth=2`);
-      const districtList = response.data.districts;
-      setDistricts(districtList);
+              if (foundDistrict) {
+                setSelectedDistrict(foundDistrict.code);
 
-      const districtName = parts[parts.length - 2];
-      const foundDistrict = districtList.find(d => {
-        const normalizedDistrictName = d.name.toLowerCase()
-          .replace(/^(quận|huyện|thị xã)\s+/i, '')
-          .trim();
-        const normalizedSearchName = districtName.toLowerCase()
-          .replace(/^(quận|huyện|thị xã)\s+/i, '')
-          .trim();
-        return normalizedDistrictName.includes(normalizedSearchName) ||
-          normalizedSearchName.includes(normalizedDistrictName);
-      });
+                const wardRes = await axios.get(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`);
+                const wards = wardRes.data.wards;
 
-      if (!foundDistrict) return;
+                const foundWard = wards.find(w =>
+                  lastParts[0].toLowerCase().includes(w.name.toLowerCase())
+                );
 
-      try {
-        setSelectedDistrict(foundDistrict.code);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const wardResponse = await axios.get(`https://provinces.open-api.vn/api/d/${foundDistrict.code}?depth=2`);
-        const wardList = wardResponse.data.wards;
-        setWards(wardList);
-
-        const wardName = parts[parts.length - 3];
-        const foundWard = wardList.find(w => {
-          const normalizedWardName = w.name.toLowerCase()
-            .replace(/^(phường|xã|thị trấn)\s+/i, '')
-            .trim();
-          const normalizedSearchName = wardName.toLowerCase()
-            .replace(/^(phường|xã|thị trấn)\s+/i, '')
-            .trim();
-          return normalizedWardName.includes(normalizedSearchName) ||
-            normalizedSearchName.includes(normalizedWardName);
-        });
-
-        if (foundWard) {
-          setSelectedWard(foundWard.code);
+                if (foundWard) {
+                  setSelectedWard(foundWard.code);
+                }
+              }
+            } catch (error) {
+              console.error("Error loading address details:", error);
+            }
+          }
         }
-      } catch (error) {
-        console.error("Error setting district/ward:", error);
       }
+
+    } catch (error) {
+      console.error("Error in handleCustomerChange:", error);
+      toast.error("Có lỗi xảy ra khi cập nhật thông tin khách hàng");
     }
   };
 
   const handleCreateNewCustomer = async () => {
     try {
+      // Basic validations
       if (!newCustomer.name || !newCustomer.phoneNumber) {
         toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
-        return;
-      }
-
-      if (newCustomer.email && !newCustomer.email.includes('@')) {
-        toast.warning("Email phải chứa kí tự @");
         return;
       }
 
@@ -728,85 +755,69 @@ const CreateInvoice = () => {
         return;
       }
 
-      // Get province data
+      if (newCustomer.email) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(newCustomer.email)) {
+          toast.warning("Email không hợp lệ");
+          return;
+        }
+      }
+
       const provinceData = provinces.find(p => p.code === customerAddress.province);
       if (!provinceData) {
         toast.error("Không tìm thấy thông tin tỉnh/thành phố. Vui lòng chọn lại");
         return;
       }
 
-      // Fetch district data
-      let districtData;
-      try {
-        const districtResponse = await axios.get(
-          `https://provinces.open-api.vn/api/p/${customerAddress.province}?depth=2`
-        );
-        districtData = districtResponse.data.districts.find(
-          d => d.code === customerAddress.district
-        );
-        if (!districtData) {
-          toast.error("Không tìm thấy thông tin quận/huyện. Vui lòng chọn lại");
-          return;
-        }
-      } catch (error) {
-        console.error("Error loading district data:", error);
-        toast.error("Không thể tải thông tin quận/huyện. Vui lòng thử lại");
+      const districtResponse = await axios.get(
+        `https://provinces.open-api.vn/api/p/${customerAddress.province}?depth=2`
+      );
+      const districtData = districtResponse.data.districts.find(
+        d => d.code === customerAddress.district
+      );
+      if (!districtData) {
+        toast.error("Không tìm thấy thông tin quận/huyện. Vui lòng chọn lại");
         return;
       }
 
-      // Fetch ward data
-      let wardData;
-      try {
-        console.log("Fetching ward data for district:", customerAddress.district);
-        console.log("Selected ward code:", customerAddress.ward);
-
-        const wardResponse = await axios.get(
-          `https://provinces.open-api.vn/api/d/${customerAddress.district}?depth=2`
-        );
-        console.log("Ward response:", wardResponse.data);
-
-        if (wardResponse.data && wardResponse.data.wards) {
-          wardData = wardResponse.data.wards.find(
-            w => String(w.code) === String(customerAddress.ward)
-          );
-          console.log("Found ward data:", wardData);
-
-          if (!wardData) {
-            toast.error("Không tìm thấy thông tin phường/xã. Vui lòng chọn lại");
-            return;
-          }
-        } else {
-          toast.error("Dữ liệu phường/xã không hợp lệ");
-          return;
-        }
-      } catch (error) {
-        console.error("Error loading ward data:", error);
-        toast.error("Không thể tải thông tin phường/xã. Vui lòng thử lại");
+      const wardResponse = await axios.get(
+        `https://provinces.open-api.vn/api/d/${customerAddress.district}?depth=2`
+      );
+      const wardData = wardResponse.data.wards.find(
+        w => String(w.code) === String(customerAddress.ward)
+      );
+      if (!wardData) {
+        toast.error("Không tìm thấy thông tin phường/xã. Vui lòng chọn lại");
         return;
       }
 
-      const wardPrefix = wardData.name.startsWith('Phường') ? '' : 'Phường ';
-      const districtPrefix = districtData.name.startsWith('Quận') ? '' : 'Quận ';
-      const provincePrefix = provinceData.name.startsWith('Thành phố') ? '' : 'Thành phố ';
+      const wardPrefix = wardData.division_type === 'xã' ? 'Xã ' :
+        wardData.division_type === 'thị trấn' ? 'Thị trấn ' : 'Phường ';
+      const districtPrefix = districtData.division_type === 'huyện' ? 'Huyện ' :
+        districtData.division_type === 'thị xã' ? 'Thị xã ' : 'Quận ';
+      const provincePrefix = provinceData.division_type === 'tỉnh' ? 'Tỉnh ' : 'Thành phố ';
 
-      const fullAddress = `${customerAddress.streetAddress}, ${wardPrefix}${wardData.name}, ${districtPrefix}${districtData.name}, ${provincePrefix}${provinceData.name}`;
-      console.log("Selected Ward Code:", selectedWard);
-      console.log("Ward Data:", wardData);
+      const wardName = wardData.name.replace(/^(Phường|Xã|Thị trấn)\s+/, '');
+      const districtName = districtData.name.replace(/^(Quận|Huyện|Thị xã)\s+/, '');
+      const provinceName = provinceData.name.replace(/^(Thành phố|Tỉnh)\s+/, '');
+
+      const fullAddress = `${customerAddress.streetAddress}, ${wardPrefix}${wardName}, ${districtPrefix}${districtName}, ${provincePrefix}${provinceName}`;
 
       const customerData = {
-        name: newCustomer.name,
-        phoneNumber: newCustomer.phoneNumber,
-        organization: newCustomer.organizationName,
-        tax: newCustomer.taxCode,
-        email: newCustomer.email,
-        address: fullAddress,
-        postalCode: newCustomer.postalCode,
-        notes: newCustomer.note,
+        name: newCustomer.name.trim(),
+        phoneNumber: newCustomer.phoneNumber.trim(),
+        organization: newCustomer.organizationName.trim(),
+        tax: newCustomer.taxCode.trim(),
+        email: newCustomer.email.trim(),
+        address: fullAddress.trim(),
+        postalCode: newCustomer.postalCode.trim(),
+        notes: newCustomer.note.trim(),
         bonusPoints: 0,
       };
 
       const createdCustomer = await apiCustomer.create(customerData);
-      setCustomers([...customers, createdCustomer]);
+
+      setCustomers(prevCustomers => [...prevCustomers, createdCustomer]);
       setSelectedCustomerId(createdCustomer.ID);
       setShowCustomerPopup(false);
 
@@ -814,6 +825,9 @@ const CreateInvoice = () => {
       setRecipientPhone(createdCustomer.phoneNumber);
       setRecipientAddress(fullAddress);
       setShippingOption("ship");
+      setSelectedProvince(customerAddress.province);
+      setSelectedDistrict(customerAddress.district);
+      setSelectedWard(customerAddress.ward);
 
       setNewCustomer({
         name: "",

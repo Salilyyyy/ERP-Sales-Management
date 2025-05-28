@@ -233,9 +233,6 @@ const DetailEmployee = () => {
                     </>
                 ) : (
                     <>
-                        <button className="cancel" onClick={handleCancel}>
-                            <img src={cancelIcon} alt="Hủy" /> Hủy
-                        </button>
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> {saving ? "Đang lưu..." : "Lưu"}
                         </button>

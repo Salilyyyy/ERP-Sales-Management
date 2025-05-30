@@ -67,6 +67,12 @@
         display: flex;
         margin-bottom: 16px;
         align-items: center;
+
+        .input-text, .select-box{
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
         
         label {
           width: 120px;
@@ -94,9 +100,17 @@
             height: 36px;
             width: 80%;
           }
+
+          &.error {
+            border-color: #d32f2f;
+          }
+        }
+
+        .error-message {
+          color: #d32f2f;
+          font-size: 12px;
+          margin-top: 4px;
         }
       }
     }
   }
-  
-  

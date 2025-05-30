@@ -11,9 +11,10 @@ import backIcon from "../../assets/img/back-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import apiCountry from "../../api/apiCountry";
 import apiSupplier from "../../api/apiSupplier";
+import { postalCodes } from "../../mock/mock";
 
 const validatePhone = (phone) => {
-  return /^\d*$/.test(phone);
+  return /^\d{10}$/.test(phone);
 };
 
 const validateEmail = (email) => {
@@ -36,6 +37,13 @@ const CreateSupplier = () => {
   const [selectedWard, setSelectedWard] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [taxIdError, setTaxIdError] = useState("");
+  const [addressError, setAddressError] = useState("");
+  const [repNameError, setRepNameError] = useState("");
+  const [provinceError, setProvinceError] = useState("");
+  const [districtError, setDistrictError] = useState("");
+  const [wardError, setWardError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [repPhone, setRepPhone] = useState("");
@@ -43,7 +51,9 @@ const CreateSupplier = () => {
   const [countries, setCountries] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [country, setCountry] = useState("");
+  const [countryError, setCountryError] = useState("");
   const [postalCode, setPostalCode] = useState("");
+  const [postalCodeError, setPostalCodeError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selectRef = useRef(null);
 
@@ -77,21 +87,32 @@ const CreateSupplier = () => {
   const provincesLoading = BaseRepository.getLoadingState('/provinces');
   const isLoading = countriesLoading || provincesLoading;
 
+  const isValidPostalCode = (code) => {
+    const postalCode = Number(code);
+    return postalCodes.some(item => {
+      if (item.code.includes('-')) {
+        const [start, end] = item.code.split('-').map(Number);
+        return postalCode >= start && postalCode <= end;
+      }
+      return item.code === code;
+    });
+  };
+
   const handlePhoneChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.replace(/\D/g, ''); // Chỉ giữ lại số
     setPhone(value);
-    if (!validatePhone(value)) {
-      setPhoneError("Vui lòng chỉ nhập số");
+    if (value && !validatePhone(value)) {
+      setPhoneError("Số điện thoại phải có 10 chữ số");
     } else {
       setPhoneError("");
     }
   };
 
   const handleRepPhoneChange = (e) => {
-    const value = e.target.value;
+    const value = e.target.value.replace(/\D/g, ''); // Chỉ giữ lại số
     setRepPhone(value);
-    if (!validatePhone(value)) {
-      setRepPhoneError("Vui lòng chỉ nhập số");
+    if (value && !validatePhone(value)) {
+      setRepPhoneError("Số điện thoại phải có 10 chữ số");
     } else {
       setRepPhoneError("");
     }
@@ -140,25 +161,73 @@ const CreateSupplier = () => {
   const validateForm = () => {
     let isValid = true;
 
-    if (!name) {
-      setName("");
+    if (!country) {
+      setCountryError("Vui lòng chọn quốc gia");
       isValid = false;
+    } else {
+      setCountryError("");
+    }
+
+    if (!name) {
+      setNameError("Vui lòng nhập tên nhà cung cấp");
+      isValid = false;
+    } else {
+      setNameError("");
     }
     if (!phone) {
-      setPhone("");
+      setPhoneError("Vui lòng nhập số điện thoại");
       isValid = false;
+    }
+    if (!taxId) {
+      setTaxIdError("Vui lòng nhập mã số thuế");
+      isValid = false;
+    } else {
+      setTaxIdError("");
     }
     if (!email) {
-      setEmail("");
+      setEmailError("Vui lòng nhập email");
       isValid = false;
     }
-    if (!country) {
-      setCountry("");
+    if (!repName) {
+      setRepNameError("Vui lòng nhập tên người đại diện");
+      isValid = false;
+    } else {
+      setRepNameError("");
+    }
+    if (!repPhone) {
+      setRepPhoneError("Vui lòng nhập số điện thoại đại diện");
       isValid = false;
     }
-    if (!postalCode) {
-      setPostalCode("");
+    if (!address) {
+      setAddressError("Vui lòng nhập địa chỉ");
       isValid = false;
+    } else {
+      setAddressError("");
+    }
+    if (!selectedProvince) {
+      setProvinceError("Vui lòng chọn tỉnh/thành phố");
+      isValid = false;
+    } else {
+      setProvinceError("");
+    }
+    if (!selectedDistrict) {
+      setDistrictError("Vui lòng chọn quận/huyện");
+      isValid = false;
+    } else {
+      setDistrictError("");
+    }
+    if (!selectedWard) {
+      setWardError("Vui lòng chọn phường/xã");
+      isValid = false;
+    } else {
+      setWardError("");
+    }
+
+    if (!postalCode || !isValidPostalCode(postalCode)) {
+      setPostalCodeError("Vui lòng nhập mã bưu chính hợp lệ");
+      isValid = false;
+    } else {
+      setPostalCodeError("");
     }
 
     return isValid;
@@ -168,13 +237,10 @@ const CreateSupplier = () => {
     e.preventDefault();
     if (isSubmitting) return;
 
-    if (!validateForm()) {
-      toast.warning("Vui lòng điền đầy đủ thông tin bắt buộc: Tên nhà cung cấp, Số điện thoại, Email, Quốc gia và Mã bưu chính");
-      return;
-    }
+    const isValid = validateForm();
 
-    if (phoneError || emailError || repPhoneError) {
-      toast.error("Vui lòng kiểm tra lại các trường thông tin còn lỗi");
+    if (!isValid || phoneError || emailError || repPhoneError || postalCodeError) {
+      toast.error("Vui lòng kiểm tra và điền đầy đủ thông tin các trường bắt buộc");
       return;
     }
 
@@ -234,6 +300,9 @@ const CreateSupplier = () => {
     setPhoneError("");
     setEmailError("");
     setRepPhoneError("");
+    setPostalCode("");
+    setPostalCodeError("");
+    setCountryError("");
     setDistricts([]);
     setWards([]);
   };
@@ -254,12 +323,17 @@ const CreateSupplier = () => {
             <button type="button" className="delete" onClick={resetForm}>
               <img src={deleteIcon} alt="Xóa" /> Xóa
             </button>
-            <button type="submit" className="create" disabled={isSubmitting}>
+            <button
+              type="button"
+              className="create"
+              disabled={isSubmitting}
+              onClick={handleSubmit}
+            >
               <img src={createIcon} alt="Tạo" /> {isSubmitting ? 'Đang tạo...' : 'Tạo'}
             </button>
           </div>
-
           <form className="customer-form" onSubmit={handleSubmit}>
+
 
             <div className="info-row">
               <div className="form-group">
@@ -268,8 +342,12 @@ const CreateSupplier = () => {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (e.target.value) setNameError("");
+                    }}
                   />
+                  {nameError && <div className="error-message">{nameError}</div>}
                 </div>
               </div>
             </div>
@@ -277,7 +355,13 @@ const CreateSupplier = () => {
               <div className="form-group">
                 <label>Số điện thoại</label>
                 <div className="input-container">
-                  <input type="text" value={phone} onChange={handlePhoneChange} />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    maxLength={10}
+                    inputMode="numeric"
+                  />
                   {phoneError && <div className="error-message">{phoneError}</div>}
                 </div>
               </div>
@@ -289,55 +373,65 @@ const CreateSupplier = () => {
                   <input
                     type="text"
                     value={taxId}
-                    onChange={(e) => setTaxId(e.target.value)}
+                    onChange={(e) => {
+                      setTaxId(e.target.value);
+                      if (e.target.value) setTaxIdError("");
+                    }}
                   />
+                  {taxIdError && <div className="error-message">{taxIdError}</div>}
                 </div>
               </div>
               <div className="form-group">
                 <label>Quốc gia</label>
-                <div className="custom-select" ref={selectRef}>
-                  <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
-                    <div className="selected-content">
-                      {country ? (
-                        <>
-                          <img
-                            src={countries.find(c => c.name === country)?.flag}
-                            alt={country}
-                            className="country-flag"
-                          />
-                          <span>{country}</span>
-                        </>
-                      ) : (
-                        <span className="placeholder">Chọn quốc gia</span>
-                      )}
+                <div className="input-container">
+                  <div className="custom-select" ref={selectRef}>
+
+                    <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                      <div className="selected-content">
+                        {country ? (
+                          <>
+                            <img
+                              src={countries.find(c => c.name === country)?.flag}
+                              alt={country}
+                              className="country-flag"
+                            />
+                            <span>{country}</span>
+                          </>
+                        ) : (
+                          <span className="placeholder">Chọn quốc gia</span>
+                        )}
+                      </div>
+
+                      <img
+                        src={downIcon}
+                        alt="down"
+                        className={`down-icon ${isOpen ? 'rotate' : ''}`}
+                      />
                     </div>
-                    <img
-                      src={downIcon}
-                      alt="down"
-                      className={`down-icon ${isOpen ? 'rotate' : ''}`}
-                    />
+                    {isOpen && (
+                      <div className="options-list">
+                        {countries.map((country) => (
+                          <div
+                            key={country.code}
+                            className="option"
+                            onClick={() => {
+                              setCountry(country.name);
+                              setCountryError("");
+                              setIsOpen(false);
+                            }}
+                          >
+                            <img
+                              src={country.flag}
+                              alt={country.name}
+                              className="country-flag"
+                            />
+                            <span>{country.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {countryError && <div className="error-message">{countryError}</div>}
                   </div>
-                  {isOpen && (
-                    <div className="options-list">
-                      {countries.map((country) => (
-                        <div
-                          key={country.code}
-                          className="option"
-                          onClick={() => {
-                            setCountry(country.name);
-                            setIsOpen(false);
-                          }}
-                        >
-                          <img
-                            src={country.flag}
-                            alt={country.name}
-                            className="country-flag"
-                          />
-                          <span>{country.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -349,15 +443,32 @@ const CreateSupplier = () => {
                   {emailError && <div className="error-message">{emailError}</div>}
                 </div>
               </div>
-              <div className="form-group">
-                <label>Mã bưu chính</label>
-                <div className="input-container">
-                  <input
-                    type="text"
-                    value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
-                  />
-                </div>
+            </div>
+            <div className="form-group">
+              <label>Mã bưu chính</label>
+              <div className="input-container">
+                <input
+                  type="text"
+                  value={postalCode}
+                  maxLength={5}
+                  inputMode="numeric"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    setPostalCode(value);
+                    if (value && value.length === 5) {
+                      if (!isValidPostalCode(value)) {
+                        setPostalCodeError("Mã bưu chính không hợp lệ");
+                      } else {
+                        setPostalCodeError("");
+                      }
+                    } else if (value) {
+                      setPostalCodeError("Mã bưu chính phải có 5 chữ số");
+                    } else {
+                      setPostalCodeError("");
+                    }
+                  }}
+                />
+                {postalCodeError && <div className="error-message">{postalCodeError}</div>}
               </div>
             </div>
             <div className="info-row-1">
@@ -367,14 +478,24 @@ const CreateSupplier = () => {
                   <input
                     type="text"
                     value={repName}
-                    onChange={(e) => setRepName(e.target.value)}
+                    onChange={(e) => {
+                      setRepName(e.target.value);
+                      if (e.target.value) setRepNameError("");
+                    }}
                   />
+                  {repNameError && <div className="error-message">{repNameError}</div>}
                 </div>
               </div>
               <div className="form-group">
                 <label>Số điện thoại</label>
                 <div className="input-container">
-                  <input type="text" value={repPhone} onChange={handleRepPhoneChange} />
+                  <input
+                    type="text"
+                    value={repPhone}
+                    onChange={handleRepPhoneChange}
+                    maxLength={10}
+                    inputMode="numeric"
+                  />
                   {repPhoneError && <div className="error-message">{repPhoneError}</div>}
                 </div>
               </div>
@@ -387,49 +508,79 @@ const CreateSupplier = () => {
                   <input
                     type="text"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (e.target.value) setAddressError("");
+                    }}
                   />
+                  {addressError && <div className="error-message">{addressError}</div>}
                 </div>
               </div>
               <div className="form-group select-group">
                 <label>Tỉnh/ thành phố</label>
-                <select onChange={(e) => setSelectedProvince(e.target.value)}>
-                  <option value="">Chọn thành phố/tỉnh</option>
-                  {provinces.map((province) => (
-                    <option key={province.code} value={province.code}>
-                      {province.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="input-container">
+                  <select
+                    value={selectedProvince}
+                    onChange={(e) => {
+                      setSelectedProvince(e.target.value);
+                      if (e.target.value) setProvinceError("");
+                    }}
+                  >
+                    <option value="">Chọn thành phố/tỉnh</option>
+                    {provinces.map((province) => (
+                      <option key={province.code} value={province.code}>
+                        {province.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {provinceError && <div className="error-message">{provinceError}</div>}
+                </div>
               </div>
             </div>
             <div className="info-row-1">
               <div className="form-group select-group">
                 <label>Quận/ Huyện</label>
-                <select onChange={(e) => setSelectedDistrict(e.target.value)} disabled={!selectedProvince}>
-                  <option value="">Chọn quận/huyện</option>
-                  {districts.map((district) => (
-                    <option key={district.code} value={district.code}>
-                      {district.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="input-container">
+                  <select
+                    onChange={(e) => {
+                      setSelectedDistrict(e.target.value);
+                      if (e.target.value) setDistrictError("");
+                    }}
+                    disabled={!selectedProvince}
+                  >
+                    <option value="">Chọn quận/huyện</option>
+                    {districts.map((district) => (
+                      <option key={district.code} value={district.code}>
+                        {district.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {districtError && <div className="error-message">{districtError}</div>}
+                </div>
               </div>
               <div className="form-group select-group">
                 <label>Xã/ Phường</label>
-                <select
-                  value={selectedWard}
-                  onChange={(e) => setSelectedWard(e.target.value)}
-                  disabled={!selectedDistrict}
+                <div className="input-container">
+                  <select
+                    value={selectedWard}
+                    onChange={(e) => {
+                      setSelectedWard(e.target.value);
+                      if (e.target.value) setWardError("");
+                    }}
+                    disabled={!selectedDistrict}
+                  >
+                    <option value="">Chọn xã/phường</option>
+                    {wards.map((ward) => (
+                      <option key={ward.code} value={ward.code}>
+                        {ward.name}
+                      </option>
+                    ))}
+                  </select>
 
-                >
-                  <option value="">Chọn xã/phường</option>
-                  {wards.map((ward) => (
-                    <option key={ward.code} value={ward.code}>
-                      {ward.name}
-                    </option>
-                  ))}
-                </select>
+                  {wardError && <div className="error-message">{wardError}</div>}
+                </div>
               </div>
             </div>
             <div className="form-group">

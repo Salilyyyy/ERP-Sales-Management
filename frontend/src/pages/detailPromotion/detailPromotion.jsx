@@ -9,6 +9,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 import apiPromotion from "../../api/apiPromotion";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 
 const DetailPromotion = () => {
     const { id } = useParams();
@@ -19,6 +20,7 @@ const DetailPromotion = () => {
     const [editedPromotion, setEditedPromotion] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         const fetchPromotion = async () => {
@@ -95,16 +97,8 @@ const DetailPromotion = () => {
         setSearchParams(newSearchParams);
         setEditedPromotion(null);
     };
-    const handleDelete = async () => {
-        if (window.confirm("Bạn có chắc chắn muốn xóa khuyến mãi này không?")) {
-            try {
-                await apiPromotion.delete(id);
-                toast.success("Xóa khuyến mãi thành công!");
-                navigate("/promotion");
-            } catch (err) {
-                toast.error("Xóa khuyến mãi thất bại: " + err.message);
-            }
-        }
+    const handleDelete = () => {
+        setShowDeleteConfirm(true);
     };
     const handlePrint = () => {
         const printWindow = window.open("", "_blank");
@@ -135,149 +129,166 @@ const DetailPromotion = () => {
     if (!promotion) return <div>Không tìm thấy khuyến mãi</div>;
 
     return (
-        <div className="promotion-detail-container">
-            <div className="header">
-                <div className="back" onClick={() => navigate("/promotion")}>
-                    <img src={backIcon} alt="Quay lại" />
+        <>
+            <div className="promotion-detail-container">
+                <div className="header">
+                    <div className="back" onClick={() => navigate("/promotion")}>
+                        <img src={backIcon} alt="Quay lại" />
+                    </div>
+                    <h2>Chi tiết khuyến mãi</h2>
                 </div>
-                <h2>Chi tiết khuyến mãi</h2>
-            </div>
 
-            <div className="actions">
-                {!isEditMode ? (
-                    <>
+                <div className="actions">
+                    {!isEditMode ? (
+                        <>
+                            <button className="delete" onClick={handleDelete}>
+                                <img src={deleteIcon} alt="Xóa" /> Xóa
+                            </button>
+                            <button className="edit" onClick={handleEditClick}>
+                                <img src={editIcon} alt="Sửa" /> Sửa
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="save" onClick={handleSave}>
+                                <img src={saveIcon} alt="Lưu" /> Lưu
+                            </button>
+                        </>
+                    )}
+                </div>
 
-                        <button className="delete" onClick={handleDelete}>
-                            <img src={deleteIcon} alt="Xóa" /> Xóa
-                        </button>
-                        <button className="edit" onClick={handleEditClick}>
-                            <img src={editIcon} alt="Sửa" /> Sửa
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button className="save" onClick={handleSave}>
-                            <img src={saveIcon} alt="Lưu" /> Lưu
-                        </button>
-                    </>
-                )}
-            </div>
-
-            <div className="promotion-detail-content">
-                <div className="product-info">
-
-                    <div className="info-item">
-                        <div className="info-label">Tên khuyến mãi</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="text"
-                                    value={editedPromotion.name || ""}
-                                    onChange={(e) => handleChange("name", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                promotion.name
-                            )}
+                <div className="promotion-detail-content">
+                    <div className="product-info">
+                        <div className="info-item">
+                            <div className="info-label">Tên khuyến mãi</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="text"
+                                        value={editedPromotion.name || ""}
+                                        onChange={(e) => handleChange("name", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    promotion.name
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Ngày bắt đầu</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="datetime-local"
-                                    value={formatDateForInput(editedPromotion.dateCreate)}
-                                    onChange={(e) => handleChange("dateCreate", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                formatDateDisplay(promotion.dateCreate)
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Ngày bắt đầu</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="datetime-local"
+                                        value={formatDateForInput(editedPromotion.dateCreate)}
+                                        onChange={(e) => handleChange("dateCreate", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    formatDateDisplay(promotion.dateCreate)
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Ngày kết thúc</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="datetime-local"
-                                    value={formatDateForInput(editedPromotion.dateEnd)}
-                                    onChange={(e) => handleChange("dateEnd", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                formatDateDisplay(promotion.dateEnd)
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Ngày kết thúc</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="datetime-local"
+                                        value={formatDateForInput(editedPromotion.dateEnd)}
+                                        onChange={(e) => handleChange("dateEnd", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    formatDateDisplay(promotion.dateEnd)
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Loại khuyến mãi</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <select
-                                    value={editedPromotion.type || ""}
-                                    onChange={(e) => handleChange("type", e.target.value)}
-                                    className="info-input"
-                                >
-                                    <option value="">Chọn loại</option>
-                                    <option value="percentage">Theo phần trăm</option>
-                                    <option value="fixed">Theo số tiền</option>
-                                </select>
-                            ) : (
-                                <>{promotion.type === 'percentage' ? 'Theo phần trăm' :
-                                    promotion.type === 'fixed' ? 'Theo số tiền' : ''}</>
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Loại khuyến mãi</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <select
+                                        value={editedPromotion.type || ""}
+                                        onChange={(e) => handleChange("type", e.target.value)}
+                                        className="info-input"
+                                    >
+                                        <option value="">Chọn loại</option>
+                                        <option value="percentage">Theo phần trăm</option>
+                                        <option value="fixed">Theo số tiền</option>
+                                    </select>
+                                ) : (
+                                    <>{promotion.type === 'percentage' ? 'Theo phần trăm' :
+                                        promotion.type === 'fixed' ? 'Theo số tiền' : ''}</>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Giá trị</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="number"
-                                    value={editedPromotion.value || ""}
-                                    onChange={(e) => handleChange("value", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                <>{promotion.value} VNĐ</>
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Giá trị</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="number"
+                                        value={editedPromotion.value || ""}
+                                        onChange={(e) => handleChange("value", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    <>{promotion.value} VNĐ</>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Giá trị tối thiểu</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="number"
-                                    value={editedPromotion.minValue || ""}
-                                    onChange={(e) => handleChange("minValue", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                <>{promotion.minValue} VNĐ</>
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Giá trị tối thiểu</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="number"
+                                        value={editedPromotion.minValue || ""}
+                                        onChange={(e) => handleChange("minValue", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    <>{promotion.minValue} VNĐ</>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                    <div className="info-item">
-                        <div className="info-label">Số lượng</div>
-                        <div className="info-value">
-                            {isEditMode ? (
-                                <input
-                                    type="number"
-                                    value={editedPromotion.quantity || ""}
-                                    onChange={(e) => handleChange("quantity", e.target.value)}
-                                    className="info-input"
-                                />
-                            ) : (
-                                promotion.quantity
-                            )}
+                        <div className="info-item">
+                            <div className="info-label">Số lượng</div>
+                            <div className="info-value">
+                                {isEditMode ? (
+                                    <input
+                                        type="number"
+                                        value={editedPromotion.quantity || ""}
+                                        onChange={(e) => handleChange("quantity", e.target.value)}
+                                        className="info-input"
+                                    />
+                                ) : (
+                                    promotion.quantity
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc muốn xóa khuyến mãi này không?"
+                onConfirm={async () => {
+                    try {
+                        await apiPromotion.deletePromotion(id);
+                        toast.success("Xóa khuyến mãi thành công!");
+                        navigate("/promotion");
+                    } catch (err) {
+                        toast.error("Xóa khuyến mãi thất bại: " + err.message);
+                        console.error(err);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+        </>
     );
 };
 

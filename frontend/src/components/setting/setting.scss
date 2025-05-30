@@ -10,19 +10,206 @@
   }
   
   [data-font-size="small"] {
-    --base-font-size: 12px;
+    --base-font-size: 13px;
   }
   [data-font-size="medium"] {
     --base-font-size: 16px;
   }
   [data-font-size="large"] {
-    --base-font-size: 20px;
+    --base-font-size: 24px;
   }
   
   body {
     font-size: var(--base-font-size);
     background-color: var(--background-color);
     color: var(--text-color);
+  }
+  
+  #root {
+    position: relative;
+  }
+
+  .email-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+
+    &.show {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .email-modal-content {
+      background-color: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      transform: translateY(-30px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      opacity: 0;
+
+      &.show {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+
+      .modal-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h3 {
+          margin: 0;
+          color: #163020;
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 24px;
+          color: #666;
+          cursor: pointer;
+          padding: 0 4px;
+
+          &:hover {
+            color: #000;
+          }
+        }
+      }
+
+      .modal-body {
+        padding: 24px;
+
+        .form-group {
+          margin-bottom: 20px;
+
+          label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+          }
+
+          input, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+
+            &:focus {
+              outline: none;
+              border-color: #163020;
+            }
+          }
+
+          textarea {
+            resize: vertical;
+            min-height: 120px;
+          }
+        }
+
+        .email-preview {
+          .email-subject {
+            margin-bottom: 16px;
+            color: #333;
+
+            strong {
+              color: #163020;
+            }
+          }
+
+          .email-body {
+            white-space: pre-wrap;
+            color: #444;
+            line-height: 1.5;
+
+            p {
+              margin-bottom: 12px;
+            }
+          }
+        }
+      }
+
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+
+        button {
+          padding: 8px 16px;
+          border-radius: 4px;
+          font-size: 14px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          img {
+            width: 16px;
+            height: 16px;
+            filter: brightness(0) invert(1); // Makes icons white
+          }
+        }
+
+          .edit-btn {
+            background-color: #163020;
+            color: white;
+            border: none;
+            
+            img {
+              filter: brightness(0) invert(1);
+            }
+
+            &:hover {
+              background-color: darken(#163020, 5%);
+            }
+          }
+
+          .save-btn {
+            background-color: #163020;
+            color: white;
+            border: none;
+
+            img {
+              filter: brightness(0) invert(1);
+            }
+
+            &:hover {
+              background-color: darken(#163020, 5%);
+            }
+          }
+
+        .cancel-btn {
+          background-color: #e0e0e0;
+          color: #333;
+          border: none;
+
+          &:hover {
+            background-color: darken(#e0e0e0, 5%);
+          }
+        }
+      }
+    }
   }
   
   .settings-container {
@@ -107,57 +294,85 @@
         }
       }
   
-      .preview-btn {
-        background-color: #163020;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        cursor: pointer;
+        .preview-btn {
+          background-color: #163020;
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          font-size: 14px;
+          cursor: pointer;
   
-        img {
-          margin-left: 8px;
-          width: 16px;
-          height: 16px;
+          img {
+            margin-left: 8px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+
+  
+      .help-container {
+        position: relative;
+
+        .help-icon {
+          width: 24px;
+          height: 24px;
+          font-size: 20px;
+          color: #163020;
+          background-color: #dfe4d7;
+          border-radius: 50%;
+          padding: 4px;
+          cursor: pointer;
+        }
+
+        .help-tooltip {
+          position: absolute;
+          top: calc(100% + 10px);
+          right: 0;
+          width: 400px;
+          padding: 16px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          opacity: 0;
+          visibility: hidden;
+          transform: translateY(-10px);
+          transition: all 0.3s ease;
+          z-index: 1000;
+          white-space: pre-line;
+
+          h3 {
+            margin: 0 0 12px;
+            color: #163020;
+          }
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
+          }
+
+          &.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+          }
+        }
+
+        &:hover .help-tooltip {
+          opacity: 1;
+          visibility: visible;
+          transform: translateY(0);
         }
       }
-  
-      .help-icon {
-        width: 24px;
-        height: 24px;
-        font-size: 20px;
-        color: #163020;
-        background-color: #dfe4d7;
-        border-radius: 50%;
-        padding: 4px;
-        cursor: pointer;
-      }
     }
   
-    .save-btn {
-      position: absolute;
-      top: 40px;
-      right: 40px;
-      background-color: #f4f4d4;
-      color: #163020;
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      cursor: pointer;
-  
-      &:hover {
-        background-color: #e8e8c7;
-      }
-  
-      img {
-        margin-right: 6px;
-        width: 16px;
-        height: 16px;
-      }
-    }
   }
-  

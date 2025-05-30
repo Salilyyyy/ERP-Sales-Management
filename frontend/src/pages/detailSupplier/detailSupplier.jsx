@@ -9,6 +9,7 @@ import saveIcon from "../../assets/img/save-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import downIcon from "../../assets/img/down-icon.svg";
 import apiCountry from "../../api/apiCountry";
+import { postalCodes } from "../../mock/mock";
 import "./detailSupplier.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import supplierApi from "../../api/apiSupplier";
@@ -21,6 +22,11 @@ const DetailSupplier = () => {
     const [editedSupplier, setEditedSupplier] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({
+        email: '',
+        phoneNumber: '',
+        postalCode: ''
+    });
 
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
@@ -29,6 +35,7 @@ const DetailSupplier = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const selectRef = useRef(null);
+    const lastValidEmailRef = useRef('');
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -52,9 +59,60 @@ const DetailSupplier = () => {
     }, []);
 
     const handleInputChange = (field, value) => {
+        // Always update the value first
         setEditedSupplier(prev => ({
             ...prev,
-            [field]: value === '' ? null : value
+            [field]: value
+        }));
+
+        // Clear validation error if field is empty
+        if (!value || value.trim() === '') {
+            setValidationErrors(prev => ({
+                ...prev,
+                [field]: ''
+            }));
+            return;
+        }
+
+        // Only validate non-empty values
+        let errorMessage = '';
+        switch (field) {
+            case 'email':
+                // Only show error if there's content but it's not in valid format
+                if (value.trim() !== '' && (!value.includes('@') || !value.includes('.'))) {
+                    errorMessage = 'Email phải chứa @ và .';
+                }
+                break;
+
+            case 'phoneNumber':
+                if (!/^\d*$/.test(value)) { // Allow partial number input
+                    errorMessage = 'Số điện thoại chỉ được chứa số';
+                } else if (value.length > 0 && value.length !== 10) {
+                    errorMessage = 'Số điện thoại phải có 10 chữ số';
+                }
+                break;
+
+            case 'postalCode':
+                if (value.trim() !== '') {
+                    const validCode = postalCodes.some(pc => {
+                        const codes = pc.code.split('-');
+                        if (codes.length === 1) return value === codes[0];
+                        const [start, end] = codes;
+                        const valueNum = parseInt(value);
+                        const startNum = parseInt(start);
+                        const endNum = parseInt(end);
+                        return valueNum >= startNum && valueNum <= endNum;
+                    });
+                    if (!validCode) {
+                        errorMessage = 'Mã bưu chính không hợp lệ';
+                    }
+                }
+                break;
+        }
+
+        setValidationErrors(prev => ({
+            ...prev,
+            [field]: errorMessage
         }));
     };
 
@@ -65,7 +123,50 @@ const DetailSupplier = () => {
         setSearchParams(newSearchParams);
     };
 
+    const validateFields = () => {
+        const errors = {};
+        
+        // Validate email if not empty
+        if (editedSupplier.email) {
+            if (!editedSupplier.email.includes('@') || !editedSupplier.email.includes('.')) {
+                errors.email = 'Email phải chứa @ và .';
+            }
+        }
+
+        // Validate phone number if not empty
+        if (editedSupplier.phoneNumber) {
+            if (!/^\d{10}$/.test(editedSupplier.phoneNumber)) {
+                errors.phoneNumber = 'Số điện thoại phải có 10 chữ số';
+            }
+        }
+
+        // Validate postal code if not empty
+        if (editedSupplier.postalCode) {
+            const validCode = postalCodes.some(pc => {
+                const codes = pc.code.split('-');
+                if (codes.length === 1) return editedSupplier.postalCode === codes[0];
+                const [start, end] = codes;
+                const valueNum = parseInt(editedSupplier.postalCode);
+                const startNum = parseInt(start);
+                const endNum = parseInt(end);
+                return valueNum >= startNum && valueNum <= endNum;
+            });
+            if (!validCode) {
+                errors.postalCode = 'Mã bưu chính không hợp lệ';
+            }
+        }
+
+        return errors;
+    };
+
     const handleSave = async () => {
+        const errors = validateFields();
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            toast.error("Vui lòng kiểm tra lại thông tin");
+            return;
+        }
+
         try {
             setLoading(true);
             await supplierApi.update(id, editedSupplier);
@@ -75,10 +176,9 @@ const DetailSupplier = () => {
             setSearchParams(newSearchParams);
             setIsEditing(false);
             toast.success("Cập nhật thành công");
-        } catch (error) {
-            console.error("Error updating supplier: ", error);
-            setError(error.message);
-            toast.error("Cập nhật thất bại");
+            } catch (error) {
+                setError(error.response?.data?.error || error.message);
+            toast.error(error.response?.data?.error || "Cập nhật thất bại");
         } finally {
             setLoading(false);
         }
@@ -91,9 +191,15 @@ const DetailSupplier = () => {
                 setSupplier(data);
                 if (isEditMode) {
                     setEditedSupplier(data);
+                    // Store initial valid email
+                    if (data.email?.includes('@') && data.email?.includes('.')) {
+                        lastValidEmailRef.current = data.email;
+                    }
                 }
             } catch (error) {
-                setError(error.message);
+                const errorMessage = error.response?.data?.error || "Không thể tải thông tin nhà cung cấp";
+                setError(errorMessage);
+                toast.error(errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -124,6 +230,7 @@ const DetailSupplier = () => {
                         <button className="delete" onClick={() => setShowConfirmDialog(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
+
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
@@ -190,12 +297,15 @@ const DetailSupplier = () => {
                         <div className="info-item">
                             <div className="info-label">Email</div>
                             {isEditing ? (
-                                <input
-                                    type="email"
-                                    className="info-input"
-                                    value={editedSupplier.email}
-                                    onChange={(e) => handleInputChange('email', e.target.value)}
-                                />
+                                <div className="input-container">
+                                    <input
+                                        type="email"
+                                        className="info-input"
+                                        value={editedSupplier.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                    />
+                                    {validationErrors.email && <div className="error-message">{validationErrors.email}</div>}
+                                </div>
                             ) : (
                                 <div className="info-value">{supplier.email}</div>
                             )}
@@ -203,12 +313,15 @@ const DetailSupplier = () => {
                         <div className="info-item">
                             <div className="info-label">Số điện thoại</div>
                             {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="info-input"
-                                    value={editedSupplier.phoneNumber}
-                                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                                />
+                                <div className="input-container">
+                                    <input
+                                        type="text"
+                                        className="info-input"
+                                        value={editedSupplier.phoneNumber}
+                                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                                    />
+                                    {validationErrors.phoneNumber && <div className="error-message">{validationErrors.phoneNumber}</div>}
+                                </div>
                             ) : (
                                 <div className="info-value">{supplier.phoneNumber}</div>
                             )}
@@ -295,12 +408,15 @@ const DetailSupplier = () => {
                         <div className="info-item">
                             <div className="info-label">Mã bưu chính</div>
                             {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="info-input"
-                                    value={editedSupplier.postalCode || ''}
-                                    onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                                />
+                                <div className="input-container">
+                                    <input
+                                        type="text"
+                                        className="info-input"
+                                        value={editedSupplier.postalCode || ''}
+                                        onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                                    />
+                                    {validationErrors.postalCode && <div className="error-message">{validationErrors.postalCode}</div>}
+                                </div>
                             ) : (
                                 <div className="info-value">{supplier.postalCode}</div>
                             )}
@@ -337,23 +453,21 @@ const DetailSupplier = () => {
                 </div>
             </div>
 
-            {showConfirmDialog && (
-                <ConfirmPopup
+            <ConfirmPopup
+                    isOpen={showConfirmDialog}
                     message="Bạn có chắc chắn muốn xóa nhà cung cấp này?"
-                    onConfirm={async () => {
+onConfirm={async () => {
                         try {
-                            await supplierApi.deleteSupplier(id);
+                            await supplierApi.delete(id);
                             toast.success("Xóa nhà cung cấp thành công!");
                             navigate("/supplier-list");
                         } catch (err) {
-                            toast.error("Không thể xóa nhà cung cấp");
-                            console.error("Lỗi khi xóa:", err);
+                            toast.error(err.response?.data?.error || "Không thể xóa nhà cung cấp");
                         }
                         setShowConfirmDialog(false);
                     }}
                     onCancel={() => setShowConfirmDialog(false)}
                 />
-            )}
             <div className="supplier-products">
                 <h3>Sản phẩm của nhà cung cấp</h3>
                 <div className="table-container">

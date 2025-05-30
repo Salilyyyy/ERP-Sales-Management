@@ -1,7 +1,5 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../prisma/prismaClient');
 const router = express.Router();
 
 // Create a new stockin
@@ -9,6 +7,7 @@ router.post('/', async (req, res) => {
   const { stockinDate, notes, supplierID, DetailStockins, updatedBy } = req.body;
   try {
     const stockin = await prisma.$transaction(async (tx) => {
+      // Create stockin first
       const createdStockin = await tx.stockins.create({
         data: {
           stockinDate: new Date(stockinDate),
@@ -37,13 +36,17 @@ router.post('/', async (req, res) => {
         }
       });
 
-      // Update product quantities within the same transaction
-      await Promise.all(DetailStockins.map(detail =>
-        tx.product.update({
-          where: { ID: detail.productID },
-          data: { quantity: { increment: detail.quantity } }
-        })
-      ));
+      // Update products in batches of 5
+      const batchSize = 5;
+      for (let i = 0; i < DetailStockins.length; i += batchSize) {
+        const batch = DetailStockins.slice(i, i + batchSize);
+        await Promise.all(batch.map(detail =>
+          tx.product.update({
+            where: { ID: detail.productID },
+            data: { quantity: { increment: detail.quantity } }
+          })
+        ));
+      }
 
       return createdStockin;
     });

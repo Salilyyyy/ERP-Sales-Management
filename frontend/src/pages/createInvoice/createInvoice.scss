@@ -59,6 +59,13 @@
       background: #FBFADA;
       color: #163020;
       border: solid 1px #163020;
+      transition: all 0.3s ease;
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        background: #f0f0f0;
+      }
     }
   }
 
@@ -111,13 +118,24 @@
       padding: 24px;
   
       .form-group {
-        margin-bottom: 16px;
+        margin-bottom: 24px;
+        position: relative;
 
         .input-phone{
           display: flex;
           flex-direction: column;
           align-items: flex-start;
           width: 100%;
+          position: relative;
+
+          .error-message {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            color: #d32f2f;
+            font-size: 12px;
+          }
         }
 
         .input-postcode{
@@ -245,6 +263,8 @@
     display: flex;
     flex-direction: row;
     min-width: 200px;
+    position: relative;
+    margin-bottom: 24px;
 
     &.shipping-label {
       label {
@@ -252,6 +272,14 @@
         color: #163020;
         margin-right: 100px;
       }
+    }
+
+    .error-message {
+      position: absolute;
+      bottom: -20px;
+      left: 40%;
+      color: #d32f2f;
+      font-size: 12px;
     }
 
     select {
@@ -264,6 +292,14 @@
         border-color: #163020;
         outline: none;
         box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+      }
+
+      &.error {
+        border-color: #d32f2f;
+        
+        &:focus {
+          box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
+        }
       }
     }
 
@@ -328,22 +364,67 @@
       }
 
       &.customer-select {
-        width: 60%;
+        width: 80%;
       }
     }
   }
 
-  .checkbox-group {
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    flex-wrap: wrap;
-    margin: 5px 0 5px 0;
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+      position: relative;
 
-    label {
-      font-weight: normal;
+      .shipping-label, .payment-label, .status-label {
+        font-weight: bold;
+      }
+
+      label {
+        font-weight: normal;
+      }
+
+      &.error {
+        .payment-label, .status-label {
+          color: #d32f2f;
+        }
+
+        &::after {
+          content: 'Vui lòng chọn hình thức thanh toán';
+          position: absolute;
+          bottom: -20px;
+          left: 160px;
+          color: #d32f2f;
+          font-size: 12px;
+        }
+      }
+      
+      .radio-group {
+        display: flex;
+        gap: 20px;
+        position: relative;
+
+        &.error {
+          label {
+            color: #d32f2f;
+            
+            input[type="radio"] {
+              border-color: #d32f2f;
+            }
+          }
+
+          &::after {
+            content: 'Vui lòng chọn trạng thái thanh toán';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            color: #d32f2f;
+            font-size: 12px;
+          }
+        }
+      }
     }
-  }
 
   .btn {
     padding: 10px 15px;

@@ -1,6 +1,7 @@
 import './App.css';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { LoadingProvider } from './context/LoadingContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/layout/layout';
@@ -49,6 +50,7 @@ function App() {
     return (
         <div className="App">
             <LoadingProvider>
+                <LanguageProvider>
                 <BrowserRouter>
                     <ToastContainer />
                     <Routes>
@@ -97,6 +99,7 @@ function App() {
                         <Route path="*" element={<Error404 />} />
                     </Routes>
                 </BrowserRouter>
+                </LanguageProvider>
             </LoadingProvider>
         </div>
     );

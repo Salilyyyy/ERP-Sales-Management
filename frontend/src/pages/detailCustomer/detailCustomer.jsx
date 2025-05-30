@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import CustomerRepository from "../../api/apiCustomer";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import CustomerTemplate from "../../components/customerTemplate/customerTemplate";
 import { generateCustomerPDF } from "../../utils/pdfUtils";
 import { toast } from 'react-toastify';
@@ -18,6 +19,11 @@ const DetailCustomer = () => {
     const [editedCustomer, setEditedCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({
+        phoneNumber: '',
+        email: ''
+    });
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
@@ -39,6 +45,7 @@ const DetailCustomer = () => {
             newSearchParams.delete("edit");
             setSearchParams(newSearchParams);
             setIsEditing(false);
+            toast.success('Cập nhật thông tin khách hàng thành công');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -54,11 +61,32 @@ const DetailCustomer = () => {
         setSearchParams(newSearchParams);
     };
 
+    const validatePhoneNumber = (phone) => {
+        const phoneRegex = /^\d{10}$/;
+        return phoneRegex.test(phone) ? '' : 'Số điện thoại phải có đúng 10 chữ số';
+    };
+
+    const validateEmail = (email) => {
+        return email.includes('@') ? '' : 'Email phải chứa ký tự @';
+    };
+
     const handleInputChange = (field, value) => {
         setEditedCustomer(prev => ({
             ...prev,
             [field]: value
         }));
+
+        if (field === 'phoneNumber') {
+            setValidationErrors(prev => ({
+                ...prev,
+                phoneNumber: validatePhoneNumber(value)
+            }));
+        } else if (field === 'email') {
+            setValidationErrors(prev => ({
+                ...prev,
+                email: validateEmail(value)
+            }));
+        }
     };
 
     useEffect(() => {
@@ -101,7 +129,7 @@ const DetailCustomer = () => {
                     </>
                 ) : (
                     <>
-                        <button className="delete">
+                        <button className="delete" onClick={() => setShowDeleteConfirm(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
                         </button>
                         <button className="edit" onClick={handleEditClick}>
@@ -146,29 +174,39 @@ const DetailCustomer = () => {
                 <div className="info-row">
                     <div className="info-item">
                         <div className="info-label">Số điện thoại</div>
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                value={editedCustomer.phoneNumber}
-                                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                                className="info-input"
-                            />
-                        ) : (
-                            <div className="info-value">{customer.phoneNumber}</div>
-                        )}
+                        <div className="valua">
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editedCustomer.phoneNumber}
+                                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                                    className={`info-input ${validationErrors.phoneNumber ? 'error' : ''}`}
+                                />
+                            ) : (
+                                <div className="info-value">{customer.phoneNumber}</div>
+                            )}
+                            {isEditing && validationErrors.phoneNumber && (
+                                <div className="validation-error">{validationErrors.phoneNumber}</div>
+                            )}
+                        </div>
                     </div>
                     <div className="info-item">
                         <div className="info-label">Email</div>
-                        {isEditing ? (
-                            <input
-                                type="email"
-                                value={editedCustomer.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
-                                className="info-input"
-                            />
-                        ) : (
-                            <div className="info-value">{customer.email}</div>
-                        )}
+                        <div className="valua">
+                            {isEditing ? (
+                                <input
+                                    type="email"
+                                    value={editedCustomer.email}
+                                    onChange={(e) => handleInputChange('email', e.target.value)}
+                                    className={`info-input ${validationErrors.email ? 'error' : ''}`}
+                                />
+                            ) : (
+                                <div className="info-value">{customer.email}</div>
+                            )}
+                            {isEditing && validationErrors.email && (
+                                <div className="validation-error">{validationErrors.email}</div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -180,26 +218,46 @@ const DetailCustomer = () => {
                                 type="text"
                                 value={editedCustomer.address}
                                 onChange={(e) => handleInputChange('address', e.target.value)}
-                                className="info-input"
+                                className="info-input-full"
                             />
                         ) : (
                             <div className="info-value">{customer.address}</div>
                         )}
                     </div>
-                    <div className="info-item">
-                        <div className="info-label">Mã số thuế</div>
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                value={editedCustomer.tax}
-                                onChange={(e) => handleInputChange('tax', e.target.value)}
-                                className="info-input"
-                            />
-                        ) : (
-                            <div className="info-value">{customer.tax}</div>
-                        )}
-                    </div>
+                    {customer.organization && (
+                        <div className="info-item">
+                            <div className="info-label">Tên tổ chức</div>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editedCustomer.organization}
+                                    onChange={(e) => handleInputChange('organization', e.target.value)}
+                                    className="info-input"
+                                />
+                            ) : (
+                                <div className="info-value">{customer.organization}</div>
+                            )}
+                        </div>
+                    )}
                 </div>
+
+                {customer.organization && (
+                    <div className="info-row">
+                        <div className="info-item">
+                            <div className="info-label">Mã số thuế</div>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editedCustomer.tax}
+                                    onChange={(e) => handleInputChange('tax', e.target.value)}
+                                    className="info-input"
+                                />
+                            ) : (
+                                <div className="info-value">{customer.tax}</div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 <div className="info-row">
                     <div className="info-item">
@@ -220,7 +278,7 @@ const DetailCustomer = () => {
                                 type="text"
                                 value={editedCustomer.notes}
                                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                                className="info-input"
+                                className="info-input-full"
                             />
                         ) : (
                             <div className="info-value">{customer.notes}</div>
@@ -262,6 +320,23 @@ const DetailCustomer = () => {
                     <p>Không có đơn hàng nào.</p>
                 )}
             </div>
+
+            <ConfirmPopup
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc muốn xóa khách hàng này không?"
+                onConfirm={async () => {
+                    try {
+                        await CustomerRepository.deleteCustomer(id);
+                        navigate('/customer');
+                        toast.success("Xóa khách hàng thành công!");
+                    } catch (err) {
+                        toast.error('Có lỗi xảy ra khi xóa khách hàng');
+                        console.error(err);
+                    }
+                    setShowDeleteConfirm(false);
+                }}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
         </div>
     );
 };

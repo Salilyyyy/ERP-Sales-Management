@@ -306,7 +306,12 @@ const Employee = () => {
                             <tr key={user.ID}>
                                 <td><input type="checkbox" checked={selectedEmployees.includes(user.ID)} onChange={() => handleSelectEmployee(user.ID)} /></td>
                                 <td>{user.name || "N/A"}</td>
-                                <td>{user.userType}</td>
+                                <td>
+                                    {user.userType === 'staff' ? 'Nhân viên' :
+                                     user.userType === 'manager' ? 'Quản lý' :
+                                     user.userType === 'admin' ? 'Quản trị viên' :
+                                     user.userType}
+                                </td>
                                 <td>{user.department}</td>
                                 <td>{user.email}</td>
                                 <td className="action-buttons">

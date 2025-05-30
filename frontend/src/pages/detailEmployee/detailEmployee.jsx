@@ -32,6 +32,8 @@ const DetailEmployee = () => {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [generating, setGenerating] = useState(false);
+    const [phoneError, setPhoneError] = useState("");
+    const [emailError, setEmailError] = useState("");
 
     useEffect(() => {
         const fetchEmployee = async () => {
@@ -142,6 +144,32 @@ const DetailEmployee = () => {
     };
 
     const handleChange = (field, value) => {
+        // Validate phone number as user types
+        if (field === "phoneNumber") {
+            if (value && !/^\d*$/.test(value)) {
+                setPhoneError('Số điện thoại chỉ được chứa chữ số');
+                return;
+            }
+            if (value && value.length > 10) {
+                setPhoneError('Số điện thoại không được quá 10 chữ số');
+                return;
+            }
+            if (value && value.length < 10) {
+                setPhoneError('Số điện thoại phải có đủ 10 chữ số');
+            } else {
+                setPhoneError('');
+            }
+        }
+
+        // Validate email as user types
+        if (field === "email") {
+            if (value && !value.includes('@')) {
+                setEmailError('Email phải chứa ký tự @');
+            } else {
+                setEmailError('');
+            }
+        }
+
         setModifiedFields(prev => new Set([...prev, field]));
         setEditedEmployee(prev => ({
             ...prev,
@@ -152,6 +180,14 @@ const DetailEmployee = () => {
     const handleSave = async () => {
         if (uploadingImage) {
             toast.warning('Đang tải ảnh lên, vui lòng đợi');
+            return;
+        }
+        if (editedEmployee.phoneNumber && !/^\d{10}$/.test(editedEmployee.phoneNumber)) {
+            toast.error('Số điện thoại phải có đúng 10 chữ số');
+            return;
+        }
+        if (editedEmployee.email && !editedEmployee.email.includes('@')) {
+            toast.error('Email phải chứa ký tự @');
             return;
         }
 
@@ -196,14 +232,6 @@ const DetailEmployee = () => {
         }
     };
 
-    const handleCancel = () => {
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete("edit");
-        setSearchParams(newSearchParams);
-        setEditedEmployee(null);
-        setPreviewImage(employee.image);
-    };
-
     if (loading) return <div>Đang tải...</div>;
     if (error) return <div>Lỗi: {error}</div>;
     if (!employee) return <div>Không tìm thấy nhân viên</div>;
@@ -233,9 +261,6 @@ const DetailEmployee = () => {
                     </>
                 ) : (
                     <>
-                        <button className="cancel" onClick={handleCancel}>
-                            <img src={cancelIcon} alt="Hủy" /> Hủy
-                        </button>
                         <button className="save" onClick={handleSave}>
                             <img src={saveIcon} alt="Lưu" /> {saving ? "Đang lưu..." : "Lưu"}
                         </button>
@@ -267,6 +292,10 @@ const DetailEmployee = () => {
             </div>
 
             <div className="info-card">
+                <div className="info-row-id">
+                    <strong>ID:</strong>
+                    <span>{employee.ID}</span>
+                </div>
                 <div className="info-row">
                     <strong>Họ tên</strong>
                     {isEditMode ? (
@@ -305,11 +334,16 @@ const DetailEmployee = () => {
                             value={editedEmployee.userType || ""}
                             onChange={(e) => handleChange("userType", e.target.value)}
                         >
-                            <option value="admin">Quản lý</option>
-                            <option value="employee">Nhân viên</option>
+                            <option value="staff">Nhân viên</option>
+                            <option value="manager">Quản lý</option>
                         </select>
                     ) : (
-                        <span>{employee.userType}</span>
+                        <span>
+                            {employee.userType === "staff" ? "Nhân viên" :
+                             employee.userType === "manager" ? "Quản lý" :
+                             employee.userType === "admin" ? "Quản trị viên" :
+                             employee.userType}
+                        </span>
                     )}
                 </div>
                 <div className="info-row">
@@ -328,17 +362,17 @@ const DetailEmployee = () => {
                     )}
                 </div>
                 <div className="info-row">
-                    <strong>ID Nhân viên</strong>
-                    <span>{employee.ID}</span>
-                </div>
-                <div className="info-row">
                     <strong>Số điện thoại</strong>
                     {isEditMode ? (
-                        <input
-                            type="text"
-                            value={editedEmployee.phoneNumber || ""}
-                            onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                        />
+                        <div className="input-container">
+                            <input
+                                type="text"
+                                value={editedEmployee.phoneNumber || ""}
+                                onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                                className={phoneError ? "error" : ""}
+                            />
+                            {phoneError && <div className="validation-message">{phoneError}</div>}
+                        </div>
                     ) : (
                         <span>{employee.phoneNumber}</span>
                     )}
@@ -346,11 +380,15 @@ const DetailEmployee = () => {
                 <div className="info-row">
                     <strong>Email</strong>
                     {isEditMode ? (
-                        <input
-                            type="email"
-                            value={editedEmployee.email || ""}
-                            onChange={(e) => handleChange("email", e.target.value)}
-                        />
+                        <div className="input-container">
+                            <input
+                                type="email"
+                                value={editedEmployee.email || ""}
+                                onChange={(e) => handleChange("email", e.target.value)}
+                                className={emailError ? "error" : ""}
+                            />
+                            {emailError && <div className="validation-message">{emailError}</div>}
+                        </div>
                     ) : (
                         <span>{employee.email}</span>
                     )}
@@ -374,11 +412,11 @@ const DetailEmployee = () => {
                             value={editedEmployee.status || ""}
                             onChange={(e) => handleChange("status", e.target.value)}
                         >
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="inactive">Ngừng hoạt động</option>
                         </select>
                     ) : (
-                        <span>{employee.status}</span>
+                        <span>{employee.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}</span>
                     )}
                 </div>
             </div>

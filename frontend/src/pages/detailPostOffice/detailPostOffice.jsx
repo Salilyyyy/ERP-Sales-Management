@@ -4,13 +4,13 @@ import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
 import cancelIcon from "../../assets/img/cancel-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { generatePostOfficePDF } from "../../utils/pdfUtils";
 import "./detailPostOffice.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 import apiPostOffice from "../../api/apiPostOffice";
+import apiShipping from "../../api/apiShipping";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 
 const DetailPostOffice = () => {
@@ -24,8 +24,50 @@ const DetailPostOffice = () => {
   const [editedOffice, setEditedOffice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [shipments, setShipments] = useState([]);
+  const [errors, setErrors] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    address: "",
+  });
 
-  // Lấy dữ liệu từ API
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      name: !editedOffice?.name?.trim() ? "Vui lòng nhập tên bưu cục" : "",
+      phoneNumber: !editedOffice?.phoneNumber ? "Vui lòng nhập số điện thoại" :
+        !validatePhoneNumber(editedOffice.phoneNumber) ? "Số điện thoại phải có đúng 10 chữ số" : "",
+      email: !editedOffice?.email ? "Vui lòng nhập email" :
+        !validateEmail(editedOffice.email) ? "Email phải chứa @ và ." : "",
+      address: !editedOffice?.address?.trim() ? "Vui lòng nhập địa chỉ" : "",
+    };
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error);
+  };
+
+  const fetchShipments = async () => {
+    try {
+      const allShipments = await apiShipping.getAll();
+      const officeShipments = allShipments.filter(
+        shipment => shipment.postOfficeID === parseInt(id)
+      );
+      setShipments(officeShipments);
+    } catch (err) {
+      console.error("Error fetching shipments:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchOffice = async () => {
       try {
@@ -33,7 +75,6 @@ const DetailPostOffice = () => {
         setOffice(result);
         setLoading(false);
 
-        // Gán editedOffice nếu đang ở chế độ chỉnh sửa
         if (searchParams.get("edit") === "true") {
           setEditedOffice(result);
         }
@@ -44,92 +85,63 @@ const DetailPostOffice = () => {
     };
 
     fetchOffice();
+    fetchShipments();
   }, [id]);
 
-    const handleDelete = async () => {
-        try {
-            const response = await apiPostOffice.api.delete(`/post-offices/${id}`);
-            if (response) {
-                toast.success("Xóa bưu cục thành công!");
-                setShowConfirmPopup(false);
-                navigate("/post-office");
-            }
-        } catch (err) {
-            toast.error("Xóa bưu cục thất bại: " + err.message);
-            setShowConfirmPopup(false);
-        }
-    };
+  const handleDelete = async () => {
+    try {
+      const response = await apiPostOffice.api.delete(`/post-offices/${id}`);
+      if (response) {
+        toast.success("Xóa bưu cục thành công!");
+        setShowConfirmPopup(false);
+        navigate("/post-office");
+      }
+    } catch (err) {
+      toast.error("Xóa bưu cục thất bại: " + err.message);
+      setShowConfirmPopup(false);
+    }
+  };
 
   const handleCancel = () => {
     setShowConfirmPopup(false);
   };
 
   const handleExport = () => {
-    try {
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      doc.setFontSize(18);
-      doc.text("CHI TIẾT BƯU CỤC", 14, 20);
-
-      doc.setFontSize(11);
-      doc.text(`Ngày xuất: ${new Date().toLocaleDateString("vi-VN")}`, 14, 30);
-
-      const headers = [["Thông tin", "Chi tiết"]];
-      const data = [
-        ["Mã bưu cục", `#BC-${office.ID}`],
-        ["Tên bưu cục", office.name],
-        ["Số điện thoại", office.phoneNumber || ""],
-        ["Email", office.email || ""],
-        ["Địa chỉ", office.address || ""],
-      ];
-
-      autoTable(doc, {
-        head: headers,
-        body: data,
-        startY: 35,
-        theme: "grid",
-        styles: {
-          fontSize: 10,
-          cellPadding: 6,
-          font: "helvetica",
-          halign: "left",
-          overflow: "linebreak",
-          cellWidth: "wrap",
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: 255,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 150 },
-        },
-        margin: { top: 35, left: 10 },
-      });
-
-      doc.save(`chi-tiet-buu-cuc-${office.ID}.pdf`);
+    const success = generatePostOfficePDF(office);
+    if (success) {
       toast.success("Xuất PDF thành công!");
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
+    } else {
       toast.error("Xuất PDF thất bại!");
     }
   };
 
   const handleChange = (field, value) => {
+    if (field === 'phoneNumber' && value !== '' && !/^\d*$/.test(value)) {
+      return;
+    }
+
     setEditedOffice((prev) => ({
       ...prev,
       [field]: value,
     }));
+
+    // Clear validation errors when field is emptied or modified
+    if (value === '' || (field === 'phoneNumber' && value.length < 10)) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+    
+    // Only validate email while typing
+    if (field === 'email' && value.length > 0) {
+      if (!validateEmail(value)) {
+        setErrors(prev => ({ ...prev, email: "Email phải chứa @ và ." }));
+      } else {
+        setErrors(prev => ({ ...prev, email: "" }));
+      }
+    }
   };
 
   const handleEditClick = () => {
     if (!editedOffice) setEditedOffice({ ...office });
-
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set("edit", "true");
     setSearchParams(newSearchParams);
@@ -137,12 +149,25 @@ const DetailPostOffice = () => {
 
   const handleSave = async () => {
     try {
-      await apiPostOffice.update(id, editedOffice);
-      setOffice(editedOffice);
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete("edit");
-      setSearchParams(newSearchParams);
-      toast.success("Cập nhật thành công!");
+      if (!validateForm()) {
+        return;
+      }
+
+      const data = {
+        name: editedOffice.name,
+        phoneNumber: editedOffice.phoneNumber,
+        email: editedOffice.email,
+        address: editedOffice.address,
+      };
+
+      const response = await apiPostOffice.update(id, data);
+      if (response) {
+        setOffice({ ...office, ...data });
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("edit");
+        setSearchParams(newSearchParams);
+        toast.success("Cập nhật thành công!");
+      }
     } catch (err) {
       toast.error("Cập nhật thất bại: " + err.message);
     }
@@ -195,11 +220,14 @@ const DetailPostOffice = () => {
             <div className="info-label">Tên bưu cục</div>
             <div className="info-value">
               {isEditMode ? (
-                <input
-                  type="text"
-                  value={editedOffice?.name || ""}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                />
+                <div className="input-group">
+                  <input
+                    type="text"
+                    value={editedOffice?.name || ""}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                  />
+                  {errors.name && <div className="error-message">{errors.name}</div>}
+                </div>
               ) : (
                 office.name
               )}
@@ -212,11 +240,15 @@ const DetailPostOffice = () => {
             <div className="info-label">Số điện thoại</div>
             <div className="info-value">
               {isEditMode ? (
-                <input
-                  type="text"
-                  value={editedOffice?.phoneNumber || ""}
-                  onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                />
+                <div className="input-group">
+                  <input
+                    type="text"
+                    value={editedOffice?.phoneNumber || ""}
+                    onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                    maxLength={10}
+                  />
+                  {errors.phoneNumber && <div className="error-message">{errors.phoneNumber}</div>}
+                </div>
               ) : (
                 office.phoneNumber
               )}
@@ -226,11 +258,14 @@ const DetailPostOffice = () => {
             <div className="info-label">Email</div>
             <div className="info-value">
               {isEditMode ? (
-                <input
-                  type="email"
-                  value={editedOffice?.email || ""}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                />
+                <div className="input-group">
+                  <input
+                    type="email"
+                    value={editedOffice?.email || ""}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                  />
+                  {errors.email && <div className="error-message">{errors.email}</div>}
+                </div>
               ) : (
                 office.email
               )}
@@ -243,17 +278,55 @@ const DetailPostOffice = () => {
             <div className="info-label">Địa chỉ</div>
             <div className="info-value">
               {isEditMode ? (
-                <input
-                  type="text"
-                  value={editedOffice?.address || ""}
-                  onChange={(e) => handleChange("address", e.target.value)}
-                />
+                <div className="input-group">
+                  <input
+                    type="text" value={editedOffice?.address || ""}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                  />
+                  {errors.address && <div className="error-message">{errors.address}</div>}
+                </div>
               ) : (
                 office.address
               )}
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="shipments-section">
+        <h3>Danh sách vận đơn</h3>
+        {shipments.length > 0 ? (
+          <div className="shipments-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã vận đơn</th>
+                  <th>Người nhận</th>
+                  <th>SĐT người nhận</th>
+                  <th>Địa chỉ nhận</th>
+                  <th>Thời gian gửi</th>
+                  <th>Phí ship</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shipments.map((shipment) => (
+                  <tr key={shipment.ID}>
+                    <td>#{shipment.ID}</td>
+                    <td>{shipment.receiverName}</td>
+                    <td>{shipment.receiverPhone}</td>
+                    <td>{shipment.recipientAddress}</td>
+                    <td>{new Date(shipment.sendTime).toLocaleString('vi-VN')}</td>
+                    <td>{shipment.shippingCost.toLocaleString('vi-VN')}đ</td>
+                    <td>{shipment.receiveTime ? 'Đã giao' : 'Đang giao'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>Chưa có vận đơn nào</p>
+        )}
       </div>
 
       <ConfirmPopup

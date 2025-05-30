@@ -43,7 +43,7 @@ class ProductCategoryRepository extends BaseRepository {
 
     async delete(id) {
         try {
-            await this.delete(`/${id}`);
+            await this.api.delete(this.endpoint + `/${id}`);
         } catch (error) {
             throw this.handleError(error, 'Failed to delete product category');
         }

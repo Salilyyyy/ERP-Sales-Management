@@ -81,6 +81,19 @@ $input-focus-color: #1a3300;
     border-radius: 5px;
   }
 
+  .validation-error{
+    color: red;
+    font-size: 0.875rem;
+    margin-top: 4px;
+  }
+
+  .valua{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+
   .info-row {
     display: flex;
     border-bottom: 1px solid #f0f0f0;
@@ -112,11 +125,12 @@ $input-focus-color: #1a3300;
         border-radius: 5px;
         width: 60%;
       }
+      
 
-      .info-input {
+      .info-input, .info-input-full {
         color: #333;
         padding: 8px;
-        width: 60%;
+        width: 250px;
         border-radius: 5px;
         border: 1px solid $input-border-color;
         background-color: #fff;
@@ -128,6 +142,9 @@ $input-focus-color: #1a3300;
           outline: none;
         }
 
+      }
+      .info-input-full {
+        width: 80%;
       }
     }
 

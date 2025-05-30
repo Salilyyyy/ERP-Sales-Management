@@ -1,9 +1,9 @@
 .customer-form-container {
-  width: 75%;
-  padding: 20px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    .error-message {
+        color: red;
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
 
   .title {
     font-size: 24px;
@@ -94,6 +94,12 @@
 
     .notes {
       width: 80%;
+    }
+
+    .valua {
+      display: flex;
+      flex-direction: column;
+    align-items: flex-start;
     }
   }
 

@@ -15,7 +15,6 @@ $text-color: #1a3300;
     align-items: center;
     margin-bottom: 20px;
     
-
     .back {
       display: flex;
       cursor: pointer;
@@ -77,13 +76,13 @@ $text-color: #1a3300;
       border: 1px solid #163020;
       color: #163020;
     }
-
   }
 
   .detail-supplier-content {
     padding: 20px;
     background-color: #EEF0E5;
     border-radius: 8px;
+
     .supplier-info {
       display: flex;
       flex-wrap: wrap;
@@ -102,13 +101,58 @@ $text-color: #1a3300;
 
           &:only-child {
             width: 100%;
+          }
 
-            .info-input {
-              width: 600px;
+          .input-container {
+            position: relative;
+            width: 215px;
+            
+            input {
+              padding: 8px 12px;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 14px;
+              transition: all 0.2s ease;
+              width: 200px;
+              
+              &:focus {
+                border-color: #163020;
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
+              }
+
+              &:disabled {
+                background-color: #f5f5f5;
+                cursor: not-allowed;
+              }
             }
 
-            .info-value {
-              width: 600px;
+            .error-message {
+              position: absolute;
+              left: 0;
+              bottom: -20px;
+              color: #d32f2f;
+              font-size: 12px;
+              padding: 2px 6px;
+              border-radius: 2px;
+              z-index: 1;
+              white-space: nowrap;
+              background-color: rgba(211, 47, 47, 0.1);
+            }
+          }
+
+          .info-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            &:focus {
+              border-color: #163020;
+              outline: none;
+              box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
             }
           }
 
@@ -135,6 +179,7 @@ $text-color: #1a3300;
               border-radius: 2px;
             }
           }
+
           .info-value-id {
             font-weight: bold;
             color: #d32f2f;
@@ -252,21 +297,7 @@ $text-color: #1a3300;
           }
         }
       }
-      .info-input {
-        padding: 6px;
-        width: 250px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        
-        &:focus {
-          border-color: #163020;
-          outline: none;
-          box-shadow: 0 0 0 2px rgba(22, 48, 32, 0.1);
-        }
-      }
     }
-   
-    
   }
 
   .supplier-products {

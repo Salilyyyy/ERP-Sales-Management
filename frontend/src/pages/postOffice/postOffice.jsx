@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import "./postOffice.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
-import { exportPostOfficesToPDF } from "../../components/postOfficeTemplate/postOfficeTemplate";
+import { useLanguage } from "../../context/LanguageContext";
+import { translations } from "../../translations";
+import { exportPostOfficesToPDF } from "../../utils/pdfUtils";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import viewIcon from "../../assets/img/view-icon.svg";
 import editIcon from "../../assets/img/edit-icon.svg";
@@ -14,6 +16,8 @@ import postOfficeRepository from "../../api/apiPostOffice";
 
 const PostOffice = () => {
     const navigate = useNavigate();
+    const { language } = useLanguage();
+    const t = translations[language];
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +60,7 @@ const PostOffice = () => {
 
     const handleDelete = () => {
         if (selectedPostOffices.length === 0) {
-            toast.warning("Vui lòng chọn bưu cục cần xóa!");
+            toast.warning(t.selectPostOfficeToDelete);
             return;
         }
         setShowConfirmPopup(true);
@@ -72,10 +76,10 @@ const PostOffice = () => {
             );
             await fetchPostOffices();
             setSelectedPostOffices([]);
-            toast.success("Xóa bưu cục thành công!");
+            toast.success(t.deletePostOfficeSuccess);
         } catch (error) {
             console.error("Failed to delete post offices:", error);
-            toast.error("Xóa bưu cục thất bại!");
+            toast.error(t.deletePostOfficeFailed);
         } finally {
             setShowConfirmPopup(false);
         }
@@ -87,14 +91,14 @@ const PostOffice = () => {
 
     const handleExport = () => {
         if (selectedPostOffices.length === 0) {
-            toast.warning("Vui lòng chọn bưu cục cần xuất!");
+            toast.warning(t.selectPostOfficeToExport);
             return;
         }
 
         const selectedOffices = postOffices.filter(office => selectedPostOffices.includes(office.ID));
         const result = exportPostOfficesToPDF(selectedOffices);
         if (result) {
-            toast.success("Xuất danh sách bưu cục thành công!");
+            toast.success(t.exportPostOfficeSuccess);
         }
         setIsDropdownOpen(false);
     };
@@ -138,14 +142,14 @@ const PostOffice = () => {
 
     return (
         <div className="postOffice-container">
-            <h2 className="title">Danh sách bưu cục</h2>
+            <h2 className="title">{t.postOfficeList}</h2>
 
             <div className="top-actions">
                 <div className="search-container">
-                    <img src={searchIcon} alt="Tìm kiếm" className="search-icon" />
+                    <img src={searchIcon} alt={t.search} className="search-icon" />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm ..."
+                        placeholder={t.search}
                         className="search-bar"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -153,19 +157,19 @@ const PostOffice = () => {
                 </div>
 
                 <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-postOffice")}>Thêm mới</button>
+                    <button className="btn add" onClick={() => navigate("/create-postOffice")}>{t.add}</button>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động
+                            {t.actions}
                             <img src={downIcon} alt="▼" className="icon-down" />
                         </button>
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
                                 <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    <img src={deleteIcon} alt={t.delete} /> {t.delete}
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
+                                    <img src={exportIcon} alt={t.export} /> {t.export}
                                 </li>
                             </ul>
                         )}
@@ -179,7 +183,7 @@ const PostOffice = () => {
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
                     >
-                        <option value="all">Mã bưu cục</option>
+                        <option value="all">{t.postOfficeCode}</option>
                         {[...new Set(postOffices.map(c => c.ID))].sort((a, b) => a - b).map(id => (
                             <option key={id} value={id}>{id}</option>
                         ))}
@@ -192,28 +196,28 @@ const PostOffice = () => {
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
                     >
-                        <option value="">Tên bưu cục</option>
+                        <option value="">{t.postOfficeName}</option>
                         {[...new Set(postOffices.map(c => c.name))].map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>Xóa lọc</button>
+                <button className="reset-filter" onClick={() => { setFilterType("all"); setFilterName(""); }}>{t.resetFilter}</button>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải dữ liệu...</div>
+                <div style={{ textAlign: 'center', padding: '20px' }}>{t.loading}</div>
             ) : (
                 <table className="order-table">
                     <thead>
                         <tr>
                             <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                            <th>Mã</th>
-                            <th>Tên bưu cục</th>
-                            <th>Điện thoại</th>
-                            <th>Địa chỉ</th>
-                            <th>Hành động</th>
+                            <th>{t.postOfficeCode}</th>
+                            <th>{t.postOfficeName}</th>
+                            <th>{t.phone}</th>
+                            <th>{t.address}</th>
+                            <th>{t.action}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -225,8 +229,8 @@ const PostOffice = () => {
                                 <td>{office.phoneNumber}</td>
                                 <td>{office.address}</td>
                                 <td className="action-buttons">
-                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt={t.view} /> {t.view}</button>
+                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt={t.edit} /> {t.edit}</button>
                                 </td>
                             </tr>
                         ))}
@@ -237,11 +241,13 @@ const PostOffice = () => {
             <div className="pagination-container">
                 <div className="pagination-left">
                     <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                        <option value={5}>5 hàng</option>
-                        <option value={10}>10 hàng</option>
-                        <option value={15}>15 hàng</option>
+                        <option value={5}>5 {t.rows}</option>
+                        <option value={10}>10 {t.rows}</option>
+                        <option value={15}>15 {t.rows}</option>
                     </select>
-                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredPostOffices.length)} trong tổng số {filteredPostOffices.length} bưu cục</span>
+                    <span>
+                        {t.showing} {startIndex + 1}-{Math.min(endIndex, filteredPostOffices.length)} {t.of} {filteredPostOffices.length} {t.postOffices}
+                    </span>
                 </div>
                 <div className="pagination">
                     <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>
@@ -254,7 +260,7 @@ const PostOffice = () => {
 
             <ConfirmPopup
                 isOpen={showConfirmPopup}
-                message="Bạn có chắc chắn muốn xóa các bưu cục đã chọn?"
+                message={t.deletePostOfficeConfirm}
                 onConfirm={handleConfirmDelete}
                 onCancel={handleCancelDelete}
             />

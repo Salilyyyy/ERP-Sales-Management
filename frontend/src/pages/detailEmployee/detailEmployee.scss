@@ -158,10 +158,64 @@ $text-color: #1a3300;
                     border-color: #163020;
                     box-shadow: 0 0 3px rgba(22, 48, 32, 0.3);
                 }
+
+                &.error {
+                    border-color: #d32f2f;
+                }
+            }
+
+            .input-container {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .validation-message {
+                color: #d32f2f;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+
+        }
+
+        .info-row-id {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+
+            strong {
+                font-weight: 600;
+                font-size: large;
+                color: red;
+                min-width: 50px;
+                display: flex;
+            }
+
+            span {
+                color: red;
+                text-align: right;
+                font-weight: 500;
+                font-size: 20px;
+            }
+
+            input, select {
+                width: 200px;
+                padding: 8px;
+                border: 1px solid #436850;
+                border-radius: 4px;
+                font-size: 14px;
+                background-color: white;
+                color: #1a3300;
+                font-weight: 500;
+
+                &:focus {
+                    outline: none;
+                    border-color: #436850;
+                    box-shadow: 0 0 4px rgba(67, 104, 80, 0.4);
+                }
             }
 
             select {
-              width: 220px;
+                width: 220px;
                 cursor: pointer;
             }
         }

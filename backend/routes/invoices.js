@@ -169,10 +169,16 @@ router.get('/', async (req, res) => {
     }
     
     if (req.query.unshippedOnly === 'true') {
-      where.isDelivery = true;
-      where.Shipments = {
-        none: {} 
-      };
+      where.AND = [
+        { isDelivery: true },
+        {
+          Shipments: {
+            some: {
+              postOfficeID: null
+            }
+          }
+        }
+      ];
     }
 
     const [total, invoices] = await Promise.all([

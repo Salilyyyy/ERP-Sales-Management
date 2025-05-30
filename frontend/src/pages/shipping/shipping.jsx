@@ -5,6 +5,8 @@ import jsPDF from 'jspdf';
 import "./shipping.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
+import { useLanguage } from "../../context/LanguageContext";
+import { translations } from "../../translations";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import ShippingTemplate from "../../components/shippingTemplate/shippingTemplate";
 import viewIcon from "../../assets/img/view-icon.svg";
@@ -19,6 +21,8 @@ import apiPostOffice from "../../api/apiPostOffice";
 
 const Shipping = () => {
     const navigate = useNavigate();
+    const { language } = useLanguage();
+    const t = translations[language];
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -47,7 +51,7 @@ const Shipping = () => {
             setPostOffices(offices);
         } catch (error) {
             console.error("Failed to fetch post offices:", error);
-            toast.error("Không thể tải danh sách bưu cục");
+            toast.error(t.loadError);
         }
     };
 
@@ -93,10 +97,8 @@ const Shipping = () => {
             ]);
 
             const shippings = processResponse(shippingResponse);
-            console.log("Raw shipping data:", shippings);
             setShippingData(shippings);
 
-            console.log("Raw invoice response:", invoicesResponse);
             const invoices = processResponse(invoicesResponse);
             const invoiceMap = invoices.reduce((acc, invoice) => {
                 if (invoice?.id) {
@@ -108,7 +110,7 @@ const Shipping = () => {
 
         } catch (error) {
             const errorMessage = error.name === 'AbortError'
-                ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
+                ? t.loadError
                 : error.message;
             setError(errorMessage);
             console.error("Failed to fetch data:", error);
@@ -128,7 +130,7 @@ const Shipping = () => {
             setShippingData(shippings);
         } catch (error) {
             const errorMessage = error.name === 'AbortError'
-                ? 'Không thể tải dữ liệu. Vui lòng thử lại sau.'
+                ? t.loadError
                 : error.message;
             setError(errorMessage);
             console.error("Failed to fetch shipping data:", error);
@@ -164,7 +166,7 @@ const Shipping = () => {
 
     const handleDelete = () => {
         if (selectedShippings.length === 0) {
-            toast.warning("Vui lòng chọn vận đơn để xóa");
+            toast.warning(t.selectToDelete);
             return;
         }
         setShowDeleteConfirm(true);
@@ -179,9 +181,8 @@ const Shipping = () => {
                 throw new Error("No data returned from API");
             }
 
-            // Get invoice details for this shipping
             const invoiceDetails = await apiInvoice.getById(detailedData.invoiceID);
-            
+
             const processedData = {
                 ...detailedData,
                 PostOffices: detailedData.PostOffices || {},
@@ -200,14 +201,14 @@ const Shipping = () => {
             return processedData;
         } catch (error) {
             console.error(`Error fetching detailed data for shipping ${id}:`, error);
-            toast.error(`Không thể tải thông tin vận đơn ${id}`);
+            toast.error(t.loadError);
             return null;
         }
     };
 
     const handleExport = async () => {
         if (selectedShippings.length === 0) {
-            toast.warning("Vui lòng chọn vận đơn để xuất");
+            toast.warning(t.selectToExport);
             return;
         }
 
@@ -219,7 +220,7 @@ const Shipping = () => {
             const selectedData = detailedResults.filter(data => data !== null);
 
             if (!selectedData.length) {
-                toast.error("Không thể tải thông tin vận đơn");
+                toast.error(t.loadError);
                 return;
             }
 
@@ -266,21 +267,21 @@ const Shipping = () => {
             setIsPrinting(false);
             setIsDropdownOpen(false);
             setSelectedShippingData(null);
-            toast.success("Xuất PDF thành công");
+            toast.success(t.exportSuccess);
 
         } catch (error) {
             console.error("Error exporting PDF:", error);
-            toast.error("Có lỗi xảy ra khi xuất PDF");
+            toast.error(t.exportError);
             setIsPrinting(false);
         }
     };
 
     if (isLoading) {
-        return <div className="loading">Đang tải dữ liệu...</div>;
+        return <div className="loading">{t.loading}</div>;
     }
 
     if (error) {
-        return <div className="error">Lỗi: {error}</div>;
+        return <div className="error">{t.error}{error}</div>;
     }
 
     console.log('Starting filtering with shippingData:', shippingData);
@@ -288,7 +289,7 @@ const Shipping = () => {
         .filter(ship => {
             console.log("Checking ship:", ship);
             return ship?.receiverName;
-        })  // Filter out entries with no receiverName
+        })
         .filter((ship) => {
             const searchMatch = ship?.receiverName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 ship?.ID?.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -310,8 +311,6 @@ const Shipping = () => {
             const postOfficeMatch = filterPostOffice === "" ? true : ship?.postOfficeID === parseInt(filterPostOffice);
             return postOfficeMatch;
         });
-    console.log('Final filtered shippings:', filteredShippings);
-
 
     const handleSelectAll = () => {
         const newSelectAll = !selectAll;
@@ -341,63 +340,63 @@ const Shipping = () => {
 
     return (
         <div className="shipping-container">
-            <h2 className="title">Danh sách vận đơn</h2>
+            <h2 className="title">{t.shippingList}</h2>
 
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                 <div ref={shippingTemplateRef} style={{ width: '595px', background: '#fff', margin: '0 auto' }}>
-                {isPrinting && selectedShippingData && (
-                    <ShippingTemplate 
-                        shipping={{
-                            ...selectedShippingData,
-                            id: selectedShippingData.ID,
-                            date: selectedShippingData.sendTime,
-                            sender: {
-                                name: 'ERP System',
-                                phone: '0123456789',
-                                address: '02 Quang Trung',
-                                city: 'Hải Châu, Đà Nẵng'
-                            },
-                            receiver: {
-                                name: selectedShippingData.receiverName || 'N/A',
-                                phone: selectedShippingData.receiverPhone || 'N/A',
-                                address: selectedShippingData.receiverAddress || 'N/A',
-                                city: selectedShippingData.receiverCity || 'N/A'
-                            },
-                            method: selectedShippingData.shippingMethod || "Standard Delivery",
-                            status: selectedShippingData.status || 'Pending',
-                            trackingNumber: selectedShippingData.trackingNumber || selectedShippingData.ID,
-                            estimatedDelivery: selectedShippingData.receiveTime,
-                            sendTime: selectedShippingData.sendTime,
-                            receiveTime: selectedShippingData.receiveTime,
-                            shippingCost: parseFloat(selectedShippingData.shippingCost) || 0,
-                            insurance: parseFloat(selectedShippingData.insurance) || 0,
-                            additionalFees: parseFloat(selectedShippingData.additionalFees) || 0,
-                            totalCost: (
-                                parseFloat(selectedShippingData.shippingCost || 0) +
-                                parseFloat(selectedShippingData.insurance || 0) +
-                                parseFloat(selectedShippingData.additionalFees || 0)
-                            ).toFixed(2)
-                        }} 
-                        items={selectedShippingData.invoice?.InvoiceDetails?.map(detail => ({
-                            description: detail.Products?.name || 'N/A',
-                            quantity: detail.quantity || 0,
-                            weight: detail.Products?.weight || 'N/A',
-                            length: detail.Products?.length || 'N/A',
-                            width: detail.Products?.width || 'N/A',
-                            height: detail.Products?.height || 'N/A',
-                            value: parseFloat(detail.price || 0)
-                        })) || []}
-                    />
-                )}
+                    {isPrinting && selectedShippingData && (
+                        <ShippingTemplate
+                            shipping={{
+                                ...selectedShippingData,
+                                id: selectedShippingData.ID,
+                                date: selectedShippingData.sendTime,
+                                sender: {
+                                    name: 'ERP System',
+                                    phone: '0123456789',
+                                    address: '02 Quang Trung',
+                                    city: 'Hải Châu, Đà Nẵng'
+                                },
+                                receiver: {
+                                    name: selectedShippingData.receiverName || 'N/A',
+                                    phone: selectedShippingData.receiverPhone || 'N/A',
+                                    address: selectedShippingData.receiverAddress || 'N/A',
+                                    city: selectedShippingData.receiverCity || 'N/A'
+                                },
+                                method: selectedShippingData.shippingMethod || "Standard Delivery",
+                                status: selectedShippingData.status || 'Pending',
+                                trackingNumber: selectedShippingData.trackingNumber || selectedShippingData.ID,
+                                estimatedDelivery: selectedShippingData.receiveTime,
+                                sendTime: selectedShippingData.sendTime,
+                                receiveTime: selectedShippingData.receiveTime,
+                                shippingCost: parseFloat(selectedShippingData.shippingCost) || 0,
+                                insurance: parseFloat(selectedShippingData.insurance) || 0,
+                                additionalFees: parseFloat(selectedShippingData.additionalFees) || 0,
+                                totalCost: (
+                                    parseFloat(selectedShippingData.shippingCost || 0) +
+                                    parseFloat(selectedShippingData.insurance || 0) +
+                                    parseFloat(selectedShippingData.additionalFees || 0)
+                                ).toFixed(2)
+                            }}
+                            items={selectedShippingData.invoice?.InvoiceDetails?.map(detail => ({
+                                description: detail.Products?.name || 'N/A',
+                                quantity: detail.quantity || 0,
+                                weight: detail.Products?.weight || 'N/A',
+                                length: detail.Products?.length || 'N/A',
+                                width: detail.Products?.width || 'N/A',
+                                height: detail.Products?.height || 'N/A',
+                                value: parseFloat(detail.price || 0)
+                            })) || []}
+                        />
+                    )}
                 </div>
             </div>
 
             <div className="top-actions">
                 <div className="search-container">
-                    <img src={searchIcon} alt="Tìm kiếm" className="search-icon" />
+                    <img src={searchIcon} alt={t.search} className="search-icon" />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm ..."
+                        placeholder={t.search}
                         className="search-bar"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -405,19 +404,19 @@ const Shipping = () => {
                 </div>
 
                 <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-shipping")}>Thêm mới</button>
+                    <button className="btn add" onClick={() => navigate("/create-shipping")}>{t.add}</button>
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động
+                            {t.actions}
                             <img src={downIcon} alt="▼" className="icon-down" />
                         </button>
                         {isDropdownOpen && (
                             <ul className="dropdown-menu">
                                 <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    <img src={deleteIcon} alt={t.delete} /> {t.delete}
                                 </li>
                                 <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
+                                    <img src={exportIcon} alt={t.export} /> {t.export}
                                 </li>
                             </ul>
                         )}
@@ -427,7 +426,7 @@ const Shipping = () => {
 
             <ConfirmPopup
                 isOpen={showDeleteConfirm}
-                message={`Bạn có chắc chắn muốn xóa ${selectedShippings.length > 1 ? `${selectedShippings.length} vận đơn` : 'vận đơn'} đã chọn?`}
+                message={t.deleteConfirm(selectedShippings.length)}
                 onConfirm={async () => {
                     try {
                         setIsLoading(true);
@@ -437,10 +436,10 @@ const Shipping = () => {
                                     await apiShipping.delete(id);
                                     return { id, success: true };
                                 } catch (err) {
-                                    return { 
-                                        id, 
-                                        success: false, 
-                                        error: err.response?.data?.message || err.message 
+                                    return {
+                                        id,
+                                        success: false,
+                                        error: err.response?.data?.message || err.message
                                     };
                                 }
                             })
@@ -455,17 +454,17 @@ const Shipping = () => {
                         setIsDropdownOpen(false);
 
                         if (failures.length === 0) {
-                            toast.success(`Đã xóa ${successes} vận đơn thành công`);
+                            toast.success(t.deleteSuccess(successes));
                         } else if (successes === 0) {
-                            toast.error("Không thể xóa vận đơn. Vui lòng thử lại sau");
+                            toast.error(t.deleteFailed);
                             console.error("Delete errors:", failures.map(f => f.value?.error).join(", "));
                         } else {
-                            toast.warning(`Đã xóa ${successes} vận đơn, ${failures.length} vận đơn không thể xóa`);
+                            toast.warning(t.deletePartial(successes, failures.length));
                             console.error("Partial delete errors:", failures.map(f => f.value?.error).join(", "));
                         }
                     } catch (error) {
                         console.error("Error in delete operation:", error);
-                        toast.error("Có lỗi xảy ra: " + (error.response?.data?.message || error.message));
+                        toast.error(t.error + (error.response?.data?.message || error.message));
                     } finally {
                         setIsLoading(false);
                         setShowDeleteConfirm(false);
@@ -484,7 +483,7 @@ const Shipping = () => {
                             setFilterType(e.target.value);
                         }}
                     >
-                        <option value="">Chọn mã đơn hàng</option>
+                        <option value="">{t.selectShippingCode}</option>
                         {[...new Set(shippingData.map(ship => ship.ID))].sort().map(type => {
                             console.log('Adding option:', { type, value: type?.toString() });
                             return <option key={type} value={type?.toString()}>{type?.toString()}</option>;
@@ -498,7 +497,7 @@ const Shipping = () => {
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
                     >
-                        <option value="">Người nhận</option>
+                        <option value="">{t.receiver}</option>
                         {[...new Set(shippingData.map(ship => ship.receiverName))].map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
@@ -511,7 +510,7 @@ const Shipping = () => {
                         value={filterPostOffice}
                         onChange={(e) => setFilterPostOffice(e.target.value)}
                     >
-                        <option value="">Đơn vị vận chuyển</option>
+                        <option value="">{t.selectPostOffice}</option>
                         {postOffices
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(office => (
@@ -521,25 +520,25 @@ const Shipping = () => {
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
-                <button className="reset-filter" onClick={() => { 
-                    setFilterType(""); 
-                    setFilterName(""); 
+                <button className="reset-filter" onClick={() => {
+                    setFilterType("");
+                    setFilterName("");
                     setFilterPostOffice("");
-                }}>Xóa lọc</button>
+                }}>{t.resetFilter}</button>
             </div>
 
             <table className="order-table">
                 <thead>
                     <tr>
                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
-                        <th>Mã đơn hàng</th>
-                        <th>Đơn vị vận chuyển</th>
-                        <th>Người nhận</th>
-                        <th>Mã vận đơn</th>
-                        <th>Thời gian gửi</th>
-                        <th>Dự kiến giao</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th>{t.shippingCode}</th>
+                        <th>{t.shippingUnit}</th>
+                        <th>{t.receiver}</th>
+                        <th>{t.trackingNumber}</th>
+                        <th>{t.sendTime}</th>
+                        <th>{t.expectedDelivery}</th>
+                        <th>{t.status}</th>
+                        <th>{t.action}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -547,15 +546,15 @@ const Shipping = () => {
                         <tr key={ship.ID}>
                             <td><input type="checkbox" checked={selectedShippings.includes(ship.ID)} onChange={() => handleSelectShipping(ship.ID)} /></td>
                             <td>{ship.ID}</td>
-                            <td>{ship.PostOffices?.name || "Không xác định"}</td>
+                            <td>{ship.PostOffices?.name || t.unspecified}</td>
                             <td>{ship.receiverName}</td>
                             <td>{ship.invoiceID}</td>
                             <td>{ship.sendTime ? moment(ship.sendTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
                             <td>{ship.receiveTime ? moment(ship.receiveTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
                             <td>{ship.payer}</td>
                             <td className="action-buttons">
-                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}`)}><img src={viewIcon} alt={t.view} /> {t.view}</button>
+                                <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}?edit=true`)}><img src={editIcon} alt={t.edit} /> {t.edit}</button>
                             </td>
                         </tr>
                     ))}
@@ -565,11 +564,13 @@ const Shipping = () => {
             <div className="pagination-container">
                 <div className="pagination-left">
                     <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))}>
-                        <option value={5}>5 hàng</option>
-                        <option value={10}>10 hàng</option>
-                        <option value={15}>15 hàng</option>
+                        <option value={5}>5 {t.rows}</option>
+                        <option value={10}>10 {t.rows}</option>
+                        <option value={15}>15 {t.rows}</option>
                     </select>
-                    <span>Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredShippings.length)} trong tổng số {filteredShippings.length} vận chuyển</span>
+                    <span>
+                        {t.showing} {startIndex + 1}-{Math.min(endIndex, filteredShippings.length)} {t.of} {filteredShippings.length} {t.shipping}
+                    </span>
                 </div>
                 <div className="pagination">
                     <button className="btn-page" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>{"<"}</button>

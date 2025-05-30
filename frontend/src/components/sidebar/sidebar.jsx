@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import authApi from "../../api/apiAuth";
 import "./sidebar.scss";
+import { useLanguage } from "../../context/LanguageContext";
+import { translations } from "../../translations";
 import DashboardIcon from "../../assets/img/Dashboard-icon.svg";
 import InvoiceIcon from "../../assets/img/Invoice-icon.svg";
 import ProductIcon from "../../assets/img/product-icon.svg";
@@ -22,6 +24,8 @@ const Sidebar = () => {
     const [openSubmenu, setOpenSubmenu] = useState(null);
     const [activeItem, setActiveItem] = useState("");
     const [userRole, setUserRole] = useState("");
+    const { language } = useLanguage();
+    const t = translations[language];
 
     useEffect(() => {
         const currentUser = authApi.getCurrentUser();
@@ -80,7 +84,7 @@ const Sidebar = () => {
             await authApi.logout();
             navigate("/login");
         } catch (error) {
-            console.error("Lỗi đăng xuất:", error);
+            console.error(language === 'en' ? "Logout error:" : "Lỗi đăng xuất:", error);
         }
     };
 
@@ -88,7 +92,7 @@ const Sidebar = () => {
         <div className="sidebar">
             <div className="logo">
                 <img className="logoIcon" src={Logo} alt="Logo" />
-                <span>ERP SYSTEM</span>
+                <span>ERP {language === 'en' ? 'SYSTEM' : 'HỆ THỐNG'}</span>
             </div>
             <ul className="menu">
                 <li
@@ -97,7 +101,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={DashboardIcon} alt="Dashboard" />
-                        <span>Tổng quan</span>
+                        <span>{t.dashboard}</span>
                     </div>
                 </li>
 
@@ -108,7 +112,7 @@ const Sidebar = () => {
                     >
                         <div className="menu-no">
                             <img className="icon" src={EmployeeIcon} alt="Employee" />
-                            <span>Nhân viên</span>
+                            <span>{t.employees}</span>
                         </div>
                     </li>
                 )}
@@ -119,7 +123,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={InvoiceIcon} alt="Invoice" />
-                        <span>Đơn hàng</span>
+                        <span>{t.invoices}</span>
                     </div>
                 </li>
 
@@ -127,7 +131,7 @@ const Sidebar = () => {
                     <div className="menu-main" onClick={() => toggleSubmenu("product")}>
                         <div className="name">
                             <img className="icon" src={ProductIcon} alt="Product" />
-                            <span>Sản phẩm</span>
+                            <span>{t.products}</span>
                         </div>
                         <img
                             className={`downIcon ${openSubmenu === "product" ? "rotate" : ""}`}
@@ -141,13 +145,13 @@ const Sidebar = () => {
                                 className={activeItem === "product-list" ? "active" : ""}
                                 onClick={() => handleItemClick("product-list", "/product")}
                             >
-                                Danh sách sản phẩm
+                                {language === 'en' ? 'Product List' : 'Danh sách sản phẩm'}
                             </li>
                             <li
                                 className={activeItem === "product-category" ? "active" : ""}
                                 onClick={() => handleItemClick("product-category", "/categories")}
                             >
-                                Danh sách loại sản phẩm
+                                {language === 'en' ? 'Category List' : 'Danh sách loại sản phẩm'}
                             </li>
                         </ul>
                     )}
@@ -159,7 +163,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={CustomerIcon} alt="Customer" />
-                        <span>Khách hàng</span>
+                        <span>{t.customers}</span>
                     </div>
                 </li>
 
@@ -167,7 +171,7 @@ const Sidebar = () => {
                     <div className="menu-main" onClick={() => toggleSubmenu("stockIn")}>
                         <div className="name">
                             <img className="icon" src={StockIn} alt="StockIn" />
-                            <span>Nhập hàng</span>
+                            <span>{t.stockIn}</span>
                         </div>
                         <img
                             className={`downIcon ${openSubmenu === "stockIn" ? "rotate" : ""}`}
@@ -181,13 +185,13 @@ const Sidebar = () => {
                                 className={activeItem === "supplier-list" ? "active" : ""}
                                 onClick={() => handleItemClick("supplier-list", "/supplier-list")}
                             >
-                                Danh sách nhà cung cấp
+                                {language === 'en' ? 'Supplier List' : 'Danh sách nhà cung cấp'}
                             </li>
                             <li
                                 className={activeItem === "stock-history" ? "active" : ""}
                                 onClick={() => handleItemClick("stock-history", "/stock-history")}
                             >
-                                Lịch sử nhập hàng
+                                {language === 'en' ? 'Stock History' : 'Lịch sử nhập hàng'}
                             </li>
                         </ul>
                     )}
@@ -197,7 +201,7 @@ const Sidebar = () => {
                     <div className="menu-main" onClick={() => toggleSubmenu("shipping")}>
                         <div className="name">
                             <img className="icon" src={Shipping} alt="Shipping" />
-                            <span>Vận chuyển</span>
+                            <span>{t.shipping}</span>
                         </div>
                         <img
                             className={`downIcon ${openSubmenu === "shipping" ? "rotate" : ""}`}
@@ -211,13 +215,13 @@ const Sidebar = () => {
                                 className={activeItem === "post-office" ? "active" : ""}
                                 onClick={() => handleItemClick("post-office", "/post-office")}
                             >
-                                Danh sách bưu cục
+                                {language === 'en' ? 'Post Office List' : 'Danh sách bưu cục'}
                             </li>
                             <li
                                 className={activeItem === "shipping-list" ? "active" : ""}
                                 onClick={() => handleItemClick("shipping-list", "/shipping-list")}
                             >
-                                Danh sách vận đơn
+                                {language === 'en' ? 'Shipping List' : 'Danh sách vận đơn'}
                             </li>
                         </ul>
                     )}
@@ -229,7 +233,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={Promotion} alt="Promotion" />
-                        <span>Khuyến mãi</span>
+                        <span>{t.promotions}</span>
                     </div>
                 </li>
             </ul>
@@ -241,7 +245,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={Setting} alt="Setting" />
-                        <span>Cài đặt</span>
+                        <span>{t.settings}</span>
                     </div>
                 </li>
                 <li
@@ -250,7 +254,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={Profile} alt="Profile" />
-                        <span>Hồ sơ cá nhân</span>
+                        <span>{t.profile}</span>
                     </div>
                 </li>
                 <li
@@ -259,7 +263,7 @@ const Sidebar = () => {
                 >
                     <div className="menu-no">
                         <img className="icon" src={Logout} alt="Logout" />
-                        <span>Đăng xuất</span>
+                        <span>{t.logout}</span>
                     </div>
                 </li>
             </div>

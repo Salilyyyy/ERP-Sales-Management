@@ -23,6 +23,18 @@ const CreateProduct = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [countries, setCountries] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [errors, setErrors] = useState({
+    name: '',
+    category: '',
+    unit: '',
+    manufacturer: '',
+    origin: '',
+    weight: '',
+    dimensions: '',
+    quantity: '',
+    inPrice: '',
+    outPrice: ''
+  });
 
   const selectRef = useRef(null);
 
@@ -179,16 +191,62 @@ const CreateProduct = () => {
             </button>
             <button className="create" onClick={async () => {
               try {
+                setErrors({
+                  name: '',
+                  category: '',
+                  unit: '',
+                  manufacturer: '',
+                  origin: '',
+                  weight: '',
+                  dimensions: '',
+                  quantity: '',
+                  inPrice: '',
+                  outPrice: ''
+                });
+                
+                let hasError = false;
                 if (!formData.name?.trim()) {
-                  toast.error('Vui lòng nhập tên sản phẩm');
-                  return;
+                  setErrors(prev => ({...prev, name: 'Vui lòng nhập tên sản phẩm'}));
+                  hasError = true;
                 }
                 if (!formData.category) {
-                  toast.error('Vui lòng chọn loại sản phẩm');
-                  return;
+                  setErrors(prev => ({...prev, category: 'Vui lòng chọn loại sản phẩm'}));
+                  hasError = true;
                 }
                 if (!formData.unit) {
-                  toast.error('Vui lòng chọn đơn vị tính');
+                  setErrors(prev => ({...prev, unit: 'Vui lòng chọn đơn vị tính'}));
+                  hasError = true;
+                }
+                if (!formData.manufacturer) {
+                  setErrors(prev => ({...prev, manufacturer: 'Vui lòng chọn nhà sản xuất'}));
+                  hasError = true;
+                }
+                if (!formData.origin) {
+                  setErrors(prev => ({...prev, origin: 'Vui lòng chọn xuất xứ'}));
+                  hasError = true;
+                }
+                if (!formData.weight) {
+                  setErrors(prev => ({...prev, weight: 'Vui lòng nhập khối lượng'}));
+                  hasError = true;
+                }
+                if (!formData.dimensions.length || !formData.dimensions.width || !formData.dimensions.height) {
+                  setErrors(prev => ({...prev, dimensions: 'Vui lòng nhập đầy đủ kích thước'}));
+                  hasError = true;
+                }
+                if (!formData.quantity) {
+                  setErrors(prev => ({...prev, quantity: 'Vui lòng nhập số lượng'}));
+                  hasError = true;
+                }
+                if (!formData.inPrice) {
+                  setErrors(prev => ({...prev, inPrice: 'Vui lòng nhập giá nhập'}));
+                  hasError = true;
+                }
+                if (!formData.outPrice) {
+                  setErrors(prev => ({...prev, outPrice: 'Vui lòng nhập giá bán'}));
+                  hasError = true;
+                }
+
+                if (hasError) {
                   return;
                 }
 
@@ -210,8 +268,11 @@ const CreateProduct = () => {
                   inPrice: parseFloat(formData.inPrice)
                 };
                 await apiProduct.create(productData);
-                toast.success('Tạo sản phẩm thành công');
-                navigate("/product");
+                toast.success('Tạo sản phẩm thành công', {
+                  position: "top-right",
+                  autoClose: 1500,
+                  onClose: () => navigate("/product")
+                });
               } catch (error) {
                 if (error?.response?.data?.error?.includes('Argument') && error?.response?.data?.error?.includes('is missing')) {
                   toast.error('Vui lòng điền đầy đủ thông tin');
@@ -244,175 +305,228 @@ const CreateProduct = () => {
             <div className="form-fields">
               <div className="form-group">
                 <label>Tên sản phẩm</label>
-                <input type="text" name="name" value={formData.name} onChange={handleInputChange} />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleInputChange}
+                    className={errors.name ? 'error-field' : ''} 
+                  />
+                  {errors.name && <span className="error-message">{errors.name}</span>}
+                </div>
               </div>
 
               <div className="form-group">
                 <label>Thuộc loại</label>
-                <div className="select-container">
-                  <select name="category" value={formData.category} onChange={handleInputChange}>
-                    <option value="">Chọn loại sản phẩm</option>
-                    {categories.map((category) => (
-                      <option key={category.ID} value={category.ID}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <div className="select-container">
+                    <select 
+                      name="category" 
+                      value={formData.category} 
+                      onChange={handleInputChange}
+                      className={errors.category ? 'error-field' : ''}
+                    >
+                      <option value="">Chọn loại sản phẩm</option>
+                      {categories.map((category) => (
+                        <option key={category.ID} value={category.ID}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.category && <span className="error-message">{errors.category}</span>}
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Nhà sản xuất</label>
-                <div className="select-container">
-                  <select
-                    name="manufacturer"
-                    value={formData.manufacturer}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Chọn nhà sản xuất</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier.ID} value={supplier.ID}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <div className="select-container">
+                    <select
+                      name="manufacturer"
+                      value={formData.manufacturer}
+                      onChange={handleInputChange}
+                      className={errors.manufacturer ? 'error-field' : ''}
+                    >
+                      <option value="">Chọn nhà sản xuất</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.ID} value={supplier.ID}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.manufacturer && <span className="error-message">{errors.manufacturer}</span>}
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Xuất sứ</label>
-                <div className="custom-select" ref={selectRef}>
-                  <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
-                    {formData.origin ? (
-                      <>
-                        <img
-                          src={countries.find(c => c.name === formData.origin)?.flag}
-                          alt={formData.origin}
-                          className="country-flag"
-                        />
-                        <span>{formData.origin}</span>
-                      </>
-                    ) : (
-                      <span className="placeholder">Chọn xuất xứ</span>
-                    )}
-                  </div>
-                  {isOpen && (
-                    <div className="options-list">
-                      {countries.map((country) => (
-                        <div
-                          key={country.code}
-                          className={`option ${formData.origin === country.name ? 'selected' : ''}`}
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, origin: country.name }));
-                            setIsOpen(false);
-                          }}
-                        >
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <div className={`custom-select ${errors.origin ? 'error-field' : ''}`} ref={selectRef}>
+                    <div className="selected-option" onClick={() => setIsOpen(!isOpen)}>
+                      {formData.origin ? (
+                        <>
                           <img
-                            src={country.flag}
-                            alt={country.name}
+                            src={countries.find(c => c.name === formData.origin)?.flag}
+                            alt={formData.origin}
                             className="country-flag"
                           />
-                          <span>{country.name}</span>
-                        </div>
-                      ))}
+                          <span>{formData.origin}</span>
+                        </>
+                      ) : (
+                        <span className="placeholder">Chọn xuất xứ</span>
+                      )}
                     </div>
-                  )}
+                    {isOpen && (
+                      <div className="options-list">
+                        {countries.map((country) => (
+                          <div
+                            key={country.code}
+                            className={`option ${formData.origin === country.name ? 'selected' : ''}`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, origin: country.name }));
+                              setIsOpen(false);
+                            }}
+                          >
+                            <img
+                              src={country.flag}
+                              alt={country.name}
+                              className="country-flag"
+                            />
+                            <span>{country.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.origin && <span className="error-message">{errors.origin}</span>}
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Đơn vị tính</label>
-                <div className="select-container">
-                  <select name="unit" value={formData.unit} onChange={handleInputChange}>
-                    <option value="">Chọn đơn vị</option>
-                    {units.map((unit, index) => (
-                      <option key={index} value={unit}>{unit}</option>
-                    ))}
-                  </select>
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <div className="select-container">
+                    <select 
+                      name="unit" 
+                      value={formData.unit} 
+                      onChange={handleInputChange}
+                      className={errors.unit ? 'error-field' : ''}
+                    >
+                      <option value="">Chọn đơn vị</option>
+                      {units.map((unit, index) => (
+                        <option key={index} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.unit && <span className="error-message">{errors.unit}</span>}
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Khối lượng (kg)</label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.1"
-                />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <input
+                    type="number"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.1"
+                    className={errors.weight ? 'error-field' : ''}
+                  />
+                  {errors.weight && <span className="error-message">{errors.weight}</span>}
+                </div>
               </div>
 
 
               <div className="form-group">
                 <label>Kích thước</label>
-                <input
-                  type="number"
-                  name="width"
-                  className="width"
-                  placeholder="Rộng(cm)"
-                  value={formData.dimensions.width}
-                  onChange={handleDimensionChange}
-                  min="0"
-                  step="0.1"
-                />
-                <input
-                  type="number"
-                  name="length"
-                  className="length"
-                  placeholder="Dài(cm)"
-                  value={formData.dimensions.length}
-                  onChange={handleDimensionChange}
-                  min="0"
-                  step="0.1"
-                />
-                <input
-                  type="number"
-                  name="height"
-                  className="height"
-                  placeholder="Cao(cm)"
-                  value={formData.dimensions.height}
-                  onChange={handleDimensionChange}
-                  min="0"
-                  step="0.1"
-                />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <div style={{display: 'flex', gap: '8px'}}>
+                    <input
+                      type="number"
+                      name="width"
+                      className={`width ${errors.dimensions ? 'error-field' : ''}`}
+                      placeholder="Rộng(cm)"
+                      value={formData.dimensions.width}
+                      onChange={handleDimensionChange}
+                      min="0"
+                      step="0.1"
+                    />
+                    <input
+                      type="number"
+                      name="length"
+                      className={`length ${errors.dimensions ? 'error-field' : ''}`}
+                      placeholder="Dài(cm)"
+                      value={formData.dimensions.length}
+                      onChange={handleDimensionChange}
+                      min="0"
+                      step="0.1"
+                    />
+                    <input
+                      type="number"
+                      name="height"
+                      className={`height ${errors.dimensions ? 'error-field' : ''}`}
+                      placeholder="Cao(cm)"
+                      value={formData.dimensions.height}
+                      onChange={handleDimensionChange}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                  {errors.dimensions && <span className="error-message">{errors.dimensions}</span>}
+                </div>
               </div>
               <div className="form-group">
                 <label>Số lượng</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity || ""}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="1"
-                />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity || ""}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="1"
+                    className={errors.quantity ? 'error-field' : ''}
+                  />
+                  {errors.quantity && <span className="error-message">{errors.quantity}</span>}
+                </div>
               </div>
 
 
               <div className="form-group">
                 <label>Giá nhập</label>
-                <input
-                  type="number"
-                  name="inPrice"
-                  value={formData.inPrice}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="1000"
-                />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <input
+                    type="number"
+                    name="inPrice"
+                    value={formData.inPrice}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="1000"
+                    className={errors.inPrice ? 'error-field' : ''}
+                  />
+                  {errors.inPrice && <span className="error-message">{errors.inPrice}</span>}
+                </div>
               </div>
 
               <div className="form-group">
                 <label>Giá bán</label>
-                <input
-                  type="number"
-                  name="outPrice"
-                  value={formData.outPrice}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="1000"
-                />
+                <div style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <input
+                    type="number"
+                    name="outPrice"
+                    value={formData.outPrice}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="1000"
+                    className={errors.outPrice ? 'error-field' : ''}
+                  />
+                  {errors.outPrice && <span className="error-message">{errors.outPrice}</span>}
+                </div>
               </div>
 
 

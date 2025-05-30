@@ -5,10 +5,11 @@ import "./createCategory.scss"
 import { useNavigate } from "react-router-dom";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 import { useState } from "react";
+import { toast } from 'react-toastify';
 
 const units = [
   "Cái",
-  "Chiếc", 
+  "Chiếc",
   "Bộ"
 ];
 
@@ -44,7 +45,43 @@ const CreateCategory = () => {
     }
   };
 
+  const [errors, setErrors] = useState({
+    name: '',
+    unit: ''
+  });
+
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {
+      name: '',
+      unit: ''
+    };
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Vui lòng nhập loại sản phẩm';
+      isValid = false;
+    }
+
+    if (!formData.information.unit) {
+      newErrors.unit = 'Vui lòng chọn đơn vị tính';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async () => {
+    if (!formData.name.trim() && !formData.information.unit &&
+      !formData.information.description.trim() && !formData.information.notes.trim()) {
+      toast.error('Vui lòng điền thông tin');
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const payload = {
         name: formData.name,
@@ -95,26 +132,34 @@ const CreateCategory = () => {
       <div className="form-container">
         <div className="form-group">
           <label htmlFor="category">Loại sản phẩm</label>
-          <input
-            type="text"
-            id="category"
-            value={formData.name}
-            onChange={handleChange}
-          />
+          <div className="input-text">
+            <input
+              type="text"
+              id="category"
+              value={formData.name}
+              onChange={handleChange}
+              className={errors.name ? 'error' : ''}
+            />
+            {errors.name && <div className="error-message">{errors.name}</div>}
+          </div>
         </div>
 
         <div className="form-group">
           <label htmlFor="unit">Đơn vị tính</label>
-          <select
-            id="unit"
-            value={formData.information.unit}
-            onChange={handleChange}
-          >
-            <option value="">Chọn đơn vị tính</option>
-            {units.map((unit) => (
-              <option key={unit} value={unit}>{unit}</option>
-            ))}
-          </select>
+          <div className="select-box">
+            <select
+              id="unit"
+              value={formData.information.unit}
+              onChange={handleChange}
+              className={errors.unit ? 'error' : ''}
+            >
+              <option value="">Chọn đơn vị tính</option>
+              {units.map((unit) => (
+                <option key={unit} value={unit}>{unit}</option>
+              ))}
+            </select>
+            {errors.unit && <div className="error-message">{errors.unit}</div>}
+          </div>
         </div>
 
         <div className="form-group">

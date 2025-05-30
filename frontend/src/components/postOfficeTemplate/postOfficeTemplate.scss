@@ -1,0 +1,123 @@
+@media print {
+  .postoffice-template {
+    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+.postoffice-template {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 30px;
+  background-color: white;
+  color: #333;
+  font-family: 'Arial', sans-serif;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 20px;
+
+    .company-info {
+      h1 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      p {
+        margin: 5px 0;
+        color: #666;
+      }
+    }
+
+    .template-title {
+      text-align: right;
+
+      h1 {
+        color: #2c3e50;
+        font-size: 28px;
+        margin-bottom: 15px;
+      }
+
+      .postoffice-number {
+        font-size: 16px;
+        color: #666;
+        margin: 5px 0;
+      }
+
+      .postoffice-date {
+        color: #666;
+      }
+    }
+  }
+
+  .postoffice-info {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+
+    h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 18px;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      td {
+        padding: 8px;
+        line-height: 1.5;
+
+        &:first-child {
+          width: 150px;
+          color: #666;
+        }
+
+        strong {
+          display: flex;
+          font-weight: 600;
+          width: 200px;
+        }
+      }
+    }
+  }
+
+  .postoffice-footer {
+    margin-top: 50px;
+    border-top: 2px solid #eee;
+    padding-top: 20px;
+
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+
+      .signature-block {
+        text-align: center;
+        width: 200px;
+
+        p {
+          margin: 5px 0;
+          
+          &:first-child {
+            font-weight: 600;
+            color: #2c3e50;
+          }
+          
+          &:last-child {
+            color: #666;
+            font-size: 14px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -31,6 +31,7 @@ const DetailShipping = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [selectedShippingData, setSelectedShippingData] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   const shippingTemplateRef = useRef(null);
 
   useEffect(() => {
@@ -98,8 +99,36 @@ const DetailShipping = () => {
 
   const handleSave = async () => {
     try {
+      // Validate required fields
+      const errors = {};
+      if (!editedOrder.Invoices?.ID) {
+        errors.invoiceId = "Vui lòng nhập mã hóa đơn";
+      }
       if (!editedOrder.postOfficeId) {
-        throw new Error("Vui lòng chọn bưu cục");
+        errors.postOfficeId = "Vui lòng chọn bưu cục gửi";
+      }
+      if (!editedOrder.receiverName) {
+        errors.receiverName = "Vui lòng nhập tên người nhận";
+      }
+      if (!editedOrder.sendTime) {
+        errors.sendTime = "Vui lòng chọn thời gian gửi";
+      }
+      if (!editedOrder.receiveTime) {
+        errors.receiveTime = "Vui lòng chọn thời gian nhận";
+      }
+      if (!editedOrder.size) {
+        errors.size = "Vui lòng nhập kích thước";
+      }
+      if (!editedOrder.shippingCost) {
+        errors.shippingCost = "Vui lòng nhập phí vận chuyển";
+      }
+      if (!editedOrder.payer) {
+        errors.payer = "Vui lòng chọn người thanh toán";
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        throw new Error("Vui lòng điền đầy đủ thông tin");
       }
 
       // Transform data to match expected API format
@@ -116,7 +145,40 @@ const DetailShipping = () => {
       setSearchParams(newSearchParams);
       toast.success("Cập nhật thành công!");
     } catch (err) {
-      toast.error("Lỗi khi cập nhật: " + err.message);
+      // Validate all fields
+      const errors = {};
+      if (!editedOrder.Invoices?.ID) {
+        errors.invoiceId = "Vui lòng chọn mã hóa đơn";
+      }
+      if (!editedOrder.postOfficeId) {
+        errors.postOfficeId = "Vui lòng chọn bưu cục gửi";
+      } 
+      if (!editedOrder.receiverName) {
+        errors.receiverName = "Vui lòng nhập tên người nhận";
+      }
+      if (!editedOrder.sendTime) {
+        errors.sendTime = "Vui lòng chọn thời gian gửi";
+      }
+      if (!editedOrder.receiveTime) {
+        errors.receiveTime = "Vui lòng chọn thời gian nhận";
+      }
+      if (!editedOrder.size) {
+        errors.size = "Vui lòng nhập kích thước";
+      }
+      if (!editedOrder.shippingCost) {
+        errors.shippingCost = "Vui lòng nhập phí vận chuyển";
+      }
+      if (!editedOrder.payer) {
+        errors.payer = "Vui lòng chọn người thanh toán";
+      }
+      if (editedOrder.receiverPhone && !/^\d{10}$/.test(editedOrder.receiverPhone)) {
+        errors.receiverPhone = "Số điện thoại phải có đúng 10 chữ số";
+      }
+
+      setValidationErrors(errors);
+      if (Object.keys(errors).length > 0) {
+        toast.error("Vui lòng điền đầy đủ thông tin");
+      }
     }
   };
 
@@ -279,14 +341,17 @@ const DetailShipping = () => {
           </div>
           <div className="info-item">
             <div className="info-label">Mã hóa đơn</div>
-            <div className="info-value">#{order.Invoices?.ID}</div>
+            <div className={`info-value ${validationErrors.invoiceId ? 'error' : ''}`}>
+              #{order.Invoices?.ID}
+              {validationErrors.invoiceId && <div className="error-message">{validationErrors.invoiceId}</div>}
+            </div>
           </div>
         </div>
 
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Bưu cục gửi</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.postOfficeId ? 'error' : ''}`}>
               {isEditMode ? (
                 <select
                   value={editedOrder.postOfficeId || ""}
@@ -307,6 +372,7 @@ const DetailShipping = () => {
               ) : (
                 order.PostOffices?.name
               )}
+              {validationErrors.postOfficeId && <div className="error-message">{validationErrors.postOfficeId}</div>}
             </div>
           </div>
         </div>
@@ -314,7 +380,7 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Tên người nhận</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.receiverName ? 'error' : ''}`}>
               {isEditMode ? (
                 <select
                   value={editedOrder.receiverName || ""}
@@ -337,20 +403,27 @@ const DetailShipping = () => {
               ) : (
                 order.receiverName
               )}
+              {validationErrors.receiverName && <div className="error-message">{validationErrors.receiverName}</div>}
             </div>
           </div>
 
           <div className="info-item">
             <div className="info-label">Số điện thoại</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.receiverPhone ? 'error' : ''}`}>
               {isEditMode ? (
                 <input
                   value={editedOrder.receiverPhone || ""}
-                  onChange={(e) => handleChange("receiverPhone", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || (/^\d{0,10}$/.test(value))) {
+                      handleChange("receiverPhone", value);
+                    }
+                  }}
                 />
               ) : (
                 order.receiverPhone
               )}
+              {validationErrors.receiverPhone && <div className="error-message">{validationErrors.receiverPhone}</div>}
             </div>
           </div>
         </div>
@@ -374,10 +447,10 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Thời gian gửi</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.sendTime ? 'error' : ''}`}>
               {isEditMode ? (
                 <input
-                  className="info-value-time"
+                  className={`info-value-time ${validationErrors.sendTime ? 'error' : ''}`}
                   type="datetime-local"
                   value={new Date(editedOrder.sendTime).toISOString().slice(0, 16)}
                   onChange={(e) => handleChange("sendTime", new Date(e.target.value))}
@@ -385,14 +458,15 @@ const DetailShipping = () => {
               ) : (
                 formatDate(order.sendTime)
               )}
+              {validationErrors.sendTime && <div className="error-message">{validationErrors.sendTime}</div>}
             </div>
           </div>
           <div className="info-item">
             <div className="info-label">Thời gian nhận dự kiến</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.receiveTime ? 'error' : ''}`}>
               {isEditMode ? (
                 <input
-                  className="info-value-time"
+                  className={`info-value-time ${validationErrors.receiveTime ? 'error' : ''}`}
                   type="datetime-local"
                   value={new Date(editedOrder.receiveTime).toISOString().slice(0, 16)}
                   onChange={(e) => handleChange("receiveTime", new Date(e.target.value))}
@@ -400,6 +474,7 @@ const DetailShipping = () => {
               ) : (
                 formatDate(order.receiveTime)
               )}
+              {validationErrors.receiveTime && <div className="error-message">{validationErrors.receiveTime}</div>}
             </div>
           </div>
         </div>
@@ -407,7 +482,7 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Kích thước</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.size ? 'error' : ''}`}>
               {isEditMode ? (
                 <input
                   value={editedOrder.size}
@@ -416,6 +491,7 @@ const DetailShipping = () => {
               ) : (
                 order.size
               )}
+              {validationErrors.size && <div className="error-message">{validationErrors.size}</div>}
             </div>
           </div>
         </div>
@@ -423,7 +499,7 @@ const DetailShipping = () => {
         <div className="info-row">
           <div className="info-item">
             <div className="info-label">Phí vận chuyển</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.shippingCost ? 'error' : ''}`}>
               {isEditMode ? (
                 <input
                   type="number"
@@ -433,12 +509,13 @@ const DetailShipping = () => {
               ) : (
                 `${order.shippingCost} đ`
               )}
+              {validationErrors.shippingCost && <div className="error-message">{validationErrors.shippingCost}</div>}
             </div>
           </div>
 
           <div className="info-item">
             <div className="info-label">Người thanh toán</div>
-            <div className="info-value">
+            <div className={`info-value ${validationErrors.payer ? 'error' : ''}`}>
               {isEditMode ? (
                 <select
                   value={editedOrder.payer}
@@ -450,6 +527,7 @@ const DetailShipping = () => {
               ) : (
                 order.payer === "sender" ? "Người gửi" : "Người nhận"
               )}
+              {validationErrors.payer && <div className="error-message">{validationErrors.payer}</div>}
             </div>
           </div>
         </div>

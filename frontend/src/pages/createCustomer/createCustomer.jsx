@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import apiCustomer from "../../api/apiCustomer";
+import { toast } from "react-toastify";
+import { postalCodes } from "../../mock/mock";
 import "./createCustomer.scss";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
@@ -15,35 +17,120 @@ const CustomerForm = () => {
     const [selectedCity, setSelectedCity] = useState("");
     const [selectedDistrict, setSelectedDistrict] = useState("");
     const [selectedWard, setSelectedWard] = useState("");
+    const [locationError, setLocationError] = useState("");
 
     const [customerName, setCustomerName] = useState("");
+    const [customerNameError, setCustomerNameError] = useState("");
     const [organization, setOrganization] = useState("");
     const [taxCode, setTaxCode] = useState("");
     const [phone, setPhone] = useState("");
+    const [phoneError, setPhoneError] = useState("");
     const [email, setEmail] = useState("");
+    const [emailError, setEmailError] = useState("");
     const [customerType, setCustomerType] = useState("cá nhân");
     const [points, setPoints] = useState("");
     const [address, setAddress] = useState("");
+    const [addressError, setAddressError] = useState("");
     const [notes, setNotes] = useState("");
     const [postCode, setPostCode] = useState("");
+    const [postCodeError, setPostCodeError] = useState("");
 
     const resetForm = () => {
         setCustomerName("");
+        setCustomerNameError("");
         setOrganization("");
         setTaxCode("");
         setPhone("");
+        setPhoneError("");
         setEmail("");
+        setEmailError("");
         setNotes("");
         setCustomerType("cá nhân");
         setPoints("");
         setAddress("");
+        setAddressError("");
         setPostCode("");
+        setPostCodeError("");
+        setLocationError("");
         setSelectedCity("");
         setSelectedDistrict("");
         setSelectedWard("");
         setCities([]);
         setDistricts([]);
         setWards([]);
+    };
+
+    const validatePostalCode = (code) => {
+        if (!code) return true;
+        return postalCodes.some(pc => {
+            const codes = pc.code.split('-');
+            if (codes.length === 1) {
+                return code === codes[0];
+            } else {
+                const [min, max] = codes;
+                return code >= min && code <= max;
+            }
+        });
+    };
+
+    const validateForm = () => {
+        let isValid = true;
+
+        if (!customerName.trim()) {
+            setCustomerNameError("Vui lòng nhập tên khách hàng");
+            isValid = false;
+        } else {
+            setCustomerNameError("");
+        }
+
+        if (!phone) {
+            setPhoneError("Vui lòng nhập số điện thoại");
+            isValid = false;
+        } else if (!/^\d{10}$/.test(phone)) {
+            setPhoneError("Số điện thoại phải có 10 số");
+            isValid = false;
+        } else {
+            setPhoneError("");
+        }
+
+        if (!email) {
+            setEmailError("Vui lòng nhập email");
+            isValid = false;
+        } else if (!email.includes('@')) {
+            setEmailError("Email phải chứa ký tự @");
+            isValid = false;
+        } else {
+            setEmailError("");
+        }
+
+        if (!postCode) {
+            setPostCodeError("Vui lòng nhập mã bưu chính");
+            isValid = false;
+        } else if (!/^\d{5}$/.test(postCode)) {
+            setPostCodeError("Mã bưu chính phải có 5 số");
+            isValid = false;
+        } else if (!validatePostalCode(postCode)) {
+            setPostCodeError("Mã bưu chính không hợp lệ");
+            isValid = false;
+        } else {
+            setPostCodeError("");
+        }
+
+        if (!address.trim()) {
+            setAddressError("Vui lòng nhập địa chỉ");
+            isValid = false;
+        } else {
+            setAddressError("");
+        }
+
+        if (!selectedCity || !selectedDistrict || !selectedWard) {
+            setLocationError("Vui lòng chọn đầy đủ Tỉnh/Thành phố, Quận/Huyện, và Phường/Xã");
+            isValid = false;
+        } else {
+            setLocationError("");
+        }
+
+        return isValid;
     };
 
     useEffect(() => {
@@ -69,23 +156,15 @@ const CustomerForm = () => {
     }, [selectedDistrict]);
 
     const handleCreateCustomer = () => {
-        // Validate required location fields
-        if (!selectedCity || !selectedDistrict || !selectedWard) {
-            alert("Vui lòng chọn đầy đủ Thành phố/Tỉnh, Quận/Huyện, và Phường/Xã");
+        if (!validateForm()) {
             return;
         }
 
         const cityObj = cities.find(c => c.code === parseInt(selectedCity));
         const districtObj = districts.find(d => d.code === parseInt(selectedDistrict));
         const wardObj = wards.find(w => w.code === parseInt(selectedWard));
-
-        if (!cityObj || !districtObj || !wardObj) {
-            alert("Có lỗi khi lấy thông tin địa chỉ. Vui lòng thử lại.");
-            return;
-        }
-
         const fullAddress = `${address}, ${wardObj.name}, ${districtObj.name}, ${cityObj.name}`;
-        
+
         apiCustomer.create({
             name: customerName,
             organization,
@@ -98,14 +177,11 @@ const CustomerForm = () => {
             address: fullAddress,
             notes
         })
-        .then(() => {
-            console.log("Customer created successfully");
-            resetForm();
-            navigate("/customer");
-        })
-        .catch(error => {
-            console.error("Error creating customer:", error);
-        });
+            .then(() => {
+                toast.success("Tạo khách hàng thành công!");
+                resetForm();
+                navigate("/customer");
+            })
     };
 
     return (
@@ -121,75 +197,127 @@ const CustomerForm = () => {
             <form className="customer-form">
                 <div className="form-group">
                     <label>Tên khách hàng</label>
-                    <input type="text" value={customerName} onChange={(e)=> setCustomerName(e.target.value)} />
+                    <div className="valua">
+                        <input type="text" value={customerName} onChange={(e) => {
+                            setCustomerName(e.target.value);
+                            setCustomerNameError("");
+                        }} />
+                        {customerNameError && <div className="error-message">{customerNameError}</div>}
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Loại khách hàng</label>
                     <div className="radio-group">
                         <label>
-                            <input type="radio" name="customerType" value="cá nhân" checked={customerType === "cá nhân"} onChange={(e)=> setCustomerType(e.target.value)} /> Cá nhân
+                            <input type="radio" name="customerType" value="cá nhân" checked={customerType === "cá nhân"} onChange={(e) => setCustomerType(e.target.value)} /> Cá nhân
                         </label>
                         <label>
-                            <input type="radio" name="customerType" value="tổ chức" checked={customerType === "tổ chức"} onChange={(e)=> setCustomerType(e.target.value)} /> Tổ chức
+                            <input type="radio" name="customerType" value="tổ chức" checked={customerType === "tổ chức"} onChange={(e) => setCustomerType(e.target.value)} /> Tổ chức
                         </label>
                     </div>
                 </div>
                 {customerType === "tổ chức" && (
-                    <div className="form-group">
-                        <label>Tên tổ chức</label>
-                        <input type="text" value={organization} onChange={(e)=> setOrganization(e.target.value)} />
-                    </div>
+                    <>
+                        <div className="form-group">
+                            <label>Tên tổ chức</label>
+                            <input type="text" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                            <label>Mã số thuế</label>
+                            <input type="text" value={taxCode} onChange={(e) => setTaxCode(e.target.value)} />
+                        </div>
+                    </>
                 )}
                 <div className="form-group">
-                    <label>Mã số thuế</label>
-                    <input type="text" value={taxCode} onChange={(e)=> setTaxCode(e.target.value)} />
-                </div>
-                <div className="form-group">
                     <label>Điện thoại</label>
-                    <input type="text" value={phone} onChange={(e)=> setPhone(e.target.value)} />
+                    <div className="valua">
+                        <input
+                            type="text"
+                            value={phone}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                if (value.length > 10) return;
+                                setPhone(value);
+                                setPhoneError("");
+                            }}
+                        />
+                        {phoneError && <div className="error-message">{phoneError}</div>}
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Email</label>
-                    <input type="email" value={email} onChange={(e)=> setEmail(e.target.value)} />
+                    <div className="valua">
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setEmail(value);
+                                setEmailError("");
+                            }}
+                        />
+                        {emailError && <div className="error-message">{emailError}</div>}
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Mã bưu chính</label>
-                    <input type="text" value={postCode} onChange={(e)=> setPostCode(e.target.value)} />
+                    <div className="valua">
+                        <input
+                            type="text"
+                            value={postCode}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                if (value.length > 5) return;
+                                setPostCode(value);
+                                setPostCodeError("");
+                            }}
+                        />
+                        {postCodeError && <div className="error-message">{postCodeError}</div>}
+                    </div>
                 </div>
                 <div className="form-group">
                     <label>Điểm thưởng</label>
-                    <input type="text" value={points} onChange={(e)=> setPoints(e.target.value)} />
+                    <input type="text" value={points} onChange={(e) => setPoints(e.target.value)} />
                 </div>
                 <div className="form-group">
                     <label>Địa chỉ</label>
-                    <input type="text" value={address} onChange={(e)=> setAddress(e.target.value)} />
+                    <div className="valua">
+                        <input type="text" value={address} onChange={(e) => {
+                            setAddress(e.target.value);
+                            setAddressError("");
+                        }} />
+                        {addressError && <div className="error-message">{addressError}</div>}
+                    </div>
                 </div>
                 <div className="form-group select-group">
                     <label>Địa phương</label>
-                    <div className="select-container">
-                        <select onChange={(e) => setSelectedCity(e.target.value)} value={selectedCity}>
-                            <option value="">Chọn thành phố/tỉnh</option>
-                            {cities.map((city) => (
-                                <option key={city.code} value={city.code}> {city.name} </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setSelectedDistrict(e.target.value)} value={selectedDistrict} disabled={!selectedCity}>
-                            <option value="">Chọn quận/huyện</option>
-                            {districts.map((district) => (
-                                <option key={district.code} value={district.code}> {district.name} </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setSelectedWard(e.target.value)} value={selectedWard} disabled={!selectedDistrict}>
-                            <option value="">Chọn xã/phường</option>
-                            {wards.map((ward) => (
-                                <option key={ward.code} value={ward.code}> {ward.name} </option>
-                            ))}
-                        </select>
+                    <div className="valua">
+                        <div className="select-container">
+                            <select onChange={(e) => setSelectedCity(e.target.value)} value={selectedCity}>
+                                <option value="">Chọn thành phố/tỉnh</option>
+                                {cities.map((city) => (
+                                    <option key={city.code} value={city.code}> {city.name} </option>
+                                ))}
+                            </select>
+                            <select onChange={(e) => setSelectedDistrict(e.target.value)} value={selectedDistrict} disabled={!selectedCity}>
+                                <option value="">Chọn quận/huyện</option>
+                                {districts.map((district) => (
+                                    <option key={district.code} value={district.code}> {district.name} </option>
+                                ))}
+                            </select>
+                            <select onChange={(e) => setSelectedWard(e.target.value)} value={selectedWard} disabled={!selectedDistrict}>
+                                <option value="">Chọn xã/phường</option>
+                                {wards.map((ward) => (
+                                    <option key={ward.code} value={ward.code}> {ward.name} </option>
+                                ))}
+                            </select>
+                        </div>
+                        {locationError && <div className="error-message">{locationError}</div>}
                     </div>
                 </div>
                 <div className="form-group">
                     <label>Ghi chú</label>
-                    <input type="text" className="notes" value={notes} onChange={(e)=> setNotes(e.target.value)} />
+                    <input type="text" className="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
             </form>
         </div>

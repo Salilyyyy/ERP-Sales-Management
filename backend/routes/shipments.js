@@ -24,8 +24,6 @@ router.post('/', async (req, res) => {
   try {
     const shipment = await prisma.shipments.create({
       data: {
-        invoiceID,
-        postOfficeID,
         receiverName,
         receiverPhone,
         sendTime,
@@ -37,6 +35,16 @@ router.post('/', async (req, res) => {
         recipientAddress,
         recipientName,
         recipientPhone,
+        Invoices: {
+          connect: {
+            ID: invoiceID
+          }
+        },
+        PostOffices: postOfficeID ? {
+          connect: {
+            ID: postOfficeID
+          }
+        } : undefined,
       },
       include: {
         Invoices: true,
@@ -119,8 +127,6 @@ router.put('/:id', async (req, res) => {
     const shipment = await prisma.shipments.update({
       where: { ID: parseInt(id) },
       data: {
-        invoiceID,
-        postOfficeID,
         receiverName,
         receiverPhone,
         sendTime,
@@ -132,6 +138,16 @@ router.put('/:id', async (req, res) => {
         recipientAddress,
         recipientName,
         recipientPhone,
+        Invoices: {
+          connect: {
+            ID: invoiceID
+          }
+        },
+        PostOffices: postOfficeID ? {
+          connect: {
+            ID: postOfficeID
+          }
+        } : undefined,
       },
       include: {
         Invoices: true,

@@ -1,4 +1,7 @@
 import React from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
@@ -42,6 +45,17 @@ const DetailProduct = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
   const [isEditing, setIsEditing] = useState(isEditMode);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await apiProduct.delete(id);
+      toast.success('Sản phẩm đã được xóa thành công!');
+      navigate('/product');
+    } catch (err) {
+      toast.error('Không thể xóa sản phẩm: ' + err.message);
+    }
+  };
 
   useEffect(() => {
     const config = {
@@ -161,20 +175,29 @@ const DetailProduct = () => {
       const newSearchParams = new URLSearchParams(searchParams);
       newSearchParams.delete("edit");
       setSearchParams(newSearchParams);
+      toast.success('Sản phẩm đã được cập nhật thành công!', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
     } catch (err) {
       setError(err.message);
+      toast.error('Không thể cập nhật sản phẩm: ' + err.message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedProduct(null);
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.delete("edit");
-    setSearchParams(newSearchParams);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -245,7 +268,6 @@ const DetailProduct = () => {
     document.body.appendChild(container);
 
     try {
-      // Render template using createRoot
       await new Promise((resolve) => {
         const root = createRoot(productWrapper);
         root.render(<ProductTemplate product={product} />);
@@ -291,6 +313,7 @@ const DetailProduct = () => {
 
   return (
     <div className="detail-product-container">
+      <ToastContainer />
       <div className="header">
         <div className="back" onClick={() => navigate("/product")}>
           <img src={backIcon} alt="Quay lại" />
@@ -313,7 +336,7 @@ const DetailProduct = () => {
           </div>
         ) : (
           <>
-            <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
+            <button className="delete" onClick={() => setShowDeleteConfirm(true)}><img src={deleteIcon} alt="Xóa" /> Xóa</button>
             <button className="edit" onClick={handleEditClick}><img src={editIcon} alt="Sửa" /> Sửa</button>
             <button className="print" onClick={handlePrint}><img src={printIcon} alt="Xuất" /> Xuất </button>
           </>
@@ -373,6 +396,11 @@ const DetailProduct = () => {
 
             <div className="product-info">
               <div className="info-item">
+                <div className="info-label">Mã sản phẩm</div>
+                <div className="info-value">{product.ID}</div>
+              </div>
+              <div className="info-item">
+                
                 <div className="info-label">Tên sản phẩm</div>
                 {isEditing ? (
                   <input
@@ -385,10 +413,7 @@ const DetailProduct = () => {
                   <div className="info-value">{product.name}</div>
                 )}
               </div>
-              <div className="info-item">
-                <div className="info-label">Mã sản phẩm</div>
-                <div className="info-value">{product.ID}</div>
-              </div>
+              
               <div className="info-item">
                 <div className="info-label">Đơn vị tính</div>
                 {isEditing ? (
@@ -603,6 +628,12 @@ const DetailProduct = () => {
         )}
       </div>
 
+      <ConfirmPopup
+        isOpen={showDeleteConfirm}
+        message="Bạn có chắc muốn xóa sản phẩm này không?"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 };

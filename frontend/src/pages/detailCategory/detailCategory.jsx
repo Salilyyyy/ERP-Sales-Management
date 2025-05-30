@@ -1,11 +1,12 @@
 import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
-import printIcon from "../../assets/img/print-icon.svg";
+import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import saveIcon from "../../assets/img/save-icon.svg";
 import "./detailCategory.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import ProductCategoryRepository from "../../api/apiProductCategory";
 
 const units = [
@@ -21,6 +22,7 @@ const DetailCategory = () => {
     const [editedCategory, setEditedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
@@ -38,6 +40,7 @@ const DetailCategory = () => {
             setLoading(true);
             await ProductCategoryRepository.update(id, editedCategory);
             setCategory(editedCategory);
+            toast.success("Sửa loại sản phẩm thành công");
             const newSearchParams = new URLSearchParams(searchParams);
             newSearchParams.delete("edit");
             setSearchParams(newSearchParams);
@@ -48,12 +51,21 @@ const DetailCategory = () => {
         }
     };
 
-    const handleCancel = () => {
-        setIsEditing(false);
-        setEditedCategory(null);
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete("edit");
-        setSearchParams(newSearchParams);
+
+    const handleDelete = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        try {
+            setLoading(true);
+            await ProductCategoryRepository.delete(id);
+            toast.success("Xóa loại sản phẩm thành công");
+            navigate("/categories");
+        } catch (err) {
+            setError(err.message);
+            setLoading(false);
+        }
     };
 
     const handleInputChange = (field, value) => {
@@ -103,7 +115,9 @@ const DetailCategory = () => {
             <div className="actions">
                 {isEditing ? null : (
                     <>
-                        <button className="delete"><img src={deleteIcon} alt="Xóa" /> Xóa</button>
+                        <button className="delete" onClick={handleDelete}>
+                            <img src={deleteIcon} alt="Xóa" /> Xóa
+                        </button>
                     </>
                 )}
                 {isEditing ? (
@@ -151,19 +165,6 @@ const DetailCategory = () => {
                     )}
                 </div>
                 <div className="info-item">
-                    <div className="info-label">Trạng thái</div>
-                    {isEditing ? (
-                        <input
-                            type="text"
-                            value={editedCategory.status}
-                            onChange={(e) => handleInputChange('status', e.target.value)}
-                            className="info-input"
-                        />
-                    ) : (
-                        <div className="info-value">{category.status}</div>
-                    )}
-                </div>
-                <div className="info-item">
                     <div className="info-label">Mô tả</div>
                     {isEditing ? (
                         <textarea
@@ -186,8 +187,14 @@ const DetailCategory = () => {
                     ) : (
                         <div className="info-value">{category.notes}</div>
                     )}
-                </div>
             </div>
+            <ConfirmPopup 
+                isOpen={showDeleteConfirm}
+                message="Bạn có chắc chắn muốn xóa loại sản phẩm này?"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setShowDeleteConfirm(false)}
+            />
+        </div>
         </div>
     );
 }

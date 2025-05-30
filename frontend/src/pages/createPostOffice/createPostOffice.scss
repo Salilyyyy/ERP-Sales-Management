@@ -114,29 +114,48 @@ $border-radius: 5px;
       justify-content: space-between;
     }
   
-    .form-group {
+      .form-group {
       display: flex;
       flex-direction: row;
       margin: 20px;
+      position: relative;
+
       label {
         width: 150px;
         font-weight: bold;
         color: #333;
         display: flex;
         justify-content: flex-start;
-      
+        
+        .required {
+          color: red;
+          margin-left: 4px;
+        }
       }
   
-        input, select {
-          padding: 8px;
-          border: 1px solid #ccc;
-          border-radius: 5px;
-          font-size: 1rem;
-          &:focus {
-            border-color: #007bff;
-            outline: none;
-          }
+      input, select {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1rem;
+        &:focus {
+          border-color: #007bff;
+          outline: none;
         }
+
+        &.error {
+          border-color: #d32f2f;
+        }
+      }
+
+      .error-message {
+        position: absolute;
+        bottom: -20px;
+        left: 150px;
+        color: #d32f2f;
+        font-size: 12px;
+        margin-top: 4px;
+      }
   
         .notes {
           width: 80%;

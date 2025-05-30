@@ -51,10 +51,10 @@ class PromotionRepository extends BaseRepository {
         }
     }
 
-    async delete(id) {
+    async deletePromotion(id) {
         try {
-            const response = await this.delete(`/${id}`);
-            return response;
+            const response = await this.api.delete(`${this.endpoint}/${id}`);
+            return response.data;
         } catch (error) {
             this.handleError(error, "Failed to delete promotion");
         }

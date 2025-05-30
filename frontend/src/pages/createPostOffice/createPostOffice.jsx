@@ -21,6 +21,32 @@ const CreatePostOffice = () => {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [errors, setErrors] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    address: "",
+    province: "",
+    district: "",
+    ward: ""
+  });
+
+  const validateForm = () => {
+    const newErrors = {
+      name: !name.trim() ? "Vui lòng nhập tên bưu cục" : "",
+      phoneNumber: !phoneNumber ? "Vui lòng nhập số điện thoại" :
+        !validatePhoneNumber(phoneNumber) ? "Số điện thoại phải có đúng 10 chữ số" : "",
+      email: !email ? "Vui lòng nhập email" :
+        !validateEmail(email) ? "Email không hợp lệ! Email phải chứa @ và ." : "",
+      address: !address.trim() ? "Vui lòng nhập địa chỉ" : "",
+      province: !selectedProvince ? "Vui lòng chọn tỉnh/thành phố" : "",
+      district: !selectedDistrict ? "Vui lòng chọn quận/huyện" : "",
+      ward: !selectedDistrict ? "Vui lòng chọn phường/xã" : ""
+    };
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error);
+  };
 
   useEffect(() => {
     axios
@@ -62,10 +88,33 @@ const CreatePostOffice = () => {
     setSelectedDistrict("");
     setDistricts([]);
     setWards([]);
+    setErrors({
+      name: "",
+      phoneNumber: "",
+      email: "",
+      address: "",
+      province: "",
+      district: "",
+      ward: ""
+    });
+  };
+
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handleCreate = async () => {
     try {
+      if (!validateForm()) {
+        return;
+      }
+
       const data = {
         name,
         phoneNumber,
@@ -93,37 +142,91 @@ const CreatePostOffice = () => {
           <img src={deleteIcon} alt="Xóa" /> Xóa
         </button>
         <button className="create" onClick={handleCreate}>
-          <img src={createIcon} alt="Tạo" /> Tạo 
+          <img src={createIcon} alt="Tạo" /> Tạo
         </button>
       </div>
 
       <form className="customer-form">
         <div className="info-row">
           <div className="form-group">
-            <label>Tên bưu cục</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+            <label>Tên bưu cục <span className="required">*</span></label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErrors(prev => ({ ...prev, name: "" }));
+              }}
+            />
+            {errors.name && <div className="error-message">{errors.name}</div>}
           </div>
         </div>
 
         <div className="info-row-1">
           <div className="form-group">
-            <label>Điện thoại</label>
-            <input type="text" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+            <label>Điện thoại <span className="required">*</span></label>
+            <input
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^\d*$/.test(value)) {
+                  setPhoneNumber(value);
+                  if (value.length > 0 && value.length !== 10) {
+                    setErrors(prev => ({...prev, phoneNumber: "Số điện thoại phải có đúng 10 số"}));
+                  } else {
+                    setErrors(prev => ({...prev, phoneNumber: ""}));
+                  }
+                }
+              }} 
+              maxLength={10}
+              placeholder="Nhập 10 số"
+            />
+            {errors.phoneNumber && <div className="error-message">{errors.phoneNumber}</div>}
           </div>
           <div className="form-group">
-            <label>Email</label>
-            <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <label>Email <span className="required">*</span></label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEmail(value);
+                if (value.length > 0 && !validateEmail(value)) {
+                  setErrors(prev => ({...prev, email: "Email phải chứa @ và ."}));
+                } else {
+                  setErrors(prev => ({...prev, email: ""}));
+                }
+              }} 
+              placeholder="example@domain.com"
+            />
+            {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
         </div>
 
         <div className="info-row-1">
           <div className="form-group">
-            <label>Địa chỉ</label>
-            <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <label>Địa chỉ <span className="required">*</span></label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                setErrors(prev => ({ ...prev, address: "" }));
+              }}
+            />
+            {errors.address && <div className="error-message">{errors.address}</div>}
           </div>
           <div className="form-group select-group">
-            <label>Tỉnh/ thành phố</label>
-            <select onChange={(e) => setSelectedProvince(e.target.value)} value={selectedProvince} style={{ width: "215px" }}>
+            <label>Tỉnh/ thành phố <span className="required">*</span></label>
+            <select
+              onChange={(e) => {
+                setSelectedProvince(e.target.value);
+                setErrors(prev => ({ ...prev, province: "", district: "", ward: "" }));
+              }}
+              value={selectedProvince}
+              style={{ width: "215px" }}
+            >
               <option value="">Chọn thành phố/tỉnh</option>
               {provinces.map((province) => (
                 <option key={province.code} value={province.code}>
@@ -131,13 +234,22 @@ const CreatePostOffice = () => {
                 </option>
               ))}
             </select>
+            {errors.province && <div className="error-message">{errors.province}</div>}
           </div>
         </div>
 
         <div className="info-row-1">
           <div className="form-group select-group">
-            <label>Quận/ Huyện</label>
-            <select onChange={(e) => setSelectedDistrict(e.target.value)} value={selectedDistrict} disabled={!selectedProvince} style={{ width: "215px" }}>
+            <label>Quận/ Huyện <span className="required">*</span></label>
+            <select
+              onChange={(e) => {
+                setSelectedDistrict(e.target.value);
+                setErrors(prev => ({ ...prev, district: "", ward: "" }));
+              }}
+              value={selectedDistrict}
+              disabled={!selectedProvince}
+              style={{ width: "215px" }}
+            >
               <option value="">Chọn quận/huyện</option>
               {districts.map((district) => (
                 <option key={district.code} value={district.code}>
@@ -145,10 +257,16 @@ const CreatePostOffice = () => {
                 </option>
               ))}
             </select>
+            {errors.district && <div className="error-message">{errors.district}</div>}
           </div>
           <div className="form-group select-group">
-            <label>Xã/ Phường</label>
-            <select disabled={!selectedDistrict} style={{ width: "215px" }}>
+            <label>Xã/ Phường <span className="required">*</span></label>
+            <select
+              disabled={!selectedDistrict}
+              style={{ width: "215px" }}
+              value=""
+              onChange={() => setErrors(prev => ({ ...prev, ward: "" }))}
+            >
               <option value="">Chọn xã/phường</option>
               {wards.map((ward) => (
                 <option key={ward.code} value={ward.code}>
@@ -156,6 +274,7 @@ const CreatePostOffice = () => {
                 </option>
               ))}
             </select>
+            {errors.ward && <div className="error-message">{errors.ward}</div>}
           </div>
         </div>
 

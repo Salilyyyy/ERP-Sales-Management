@@ -86,7 +86,9 @@ const CreateInvoice = () => {
   const [recipientPhoneError, setRecipientPhoneError] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [note, setNote] = useState("");
-  const [isPaid, setIsPaid] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [paymentMethodError, setPaymentMethodError] = useState(false);
+  const [paymentStatusError, setPaymentStatusError] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -112,6 +114,7 @@ const CreateInvoice = () => {
   const [vat, setVat] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -213,7 +216,7 @@ const CreateInvoice = () => {
     setRecipientPhone("");
     setRecipientAddress("");
     setNote("");
-    setIsPaid(false);
+    setPaymentStatus("");
     setSelectedCustomerId("");
     setNewCustomer({
       name: "",
@@ -249,6 +252,8 @@ const CreateInvoice = () => {
   }, [totalAmount, vatRate, selectedPromotion]);
 
   const handleCreateInvoice = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
     try {
       if (!selectedCustomerId) {
         toast.warning("Vui lòng chọn khách hàng");
@@ -261,7 +266,14 @@ const CreateInvoice = () => {
       }
 
       if (!paymentMethod) {
+        setPaymentMethodError(true);
         toast.warning("Vui lòng chọn hình thức thanh toán");
+        return;
+      }
+
+      if (!paymentStatus) {
+        setPaymentStatusError(true);
+        toast.warning("Vui lòng chọn trạng thái thanh toán");
         return;
       }
 
@@ -357,7 +369,7 @@ const CreateInvoice = () => {
           })()
           : recipientAddress,
         note,
-        isPaid,
+        isPaid: paymentStatus === "daThanhToan",
         isDelivery: shippingOption === "ship",
         employeeName: selectedEmployee,
         province: provinces.find(p => p.code === selectedProvince)?.name || "",
@@ -400,6 +412,8 @@ const CreateInvoice = () => {
       navigate("/invoices");
     } catch (error) {
       toast.error(error.message || "Có lỗi xảy ra khi tạo hóa đơn");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -589,7 +603,6 @@ const CreateInvoice = () => {
         const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
         console.log("Wards API response:", response.data);
 
-        // Check if response.data exists and contains wards array, whether directly or nested
         const wardsData = response.data?.wards || (Array.isArray(response.data) ? response.data : []);
 
         if (wardsData && Array.isArray(wardsData)) {
@@ -732,14 +745,12 @@ const CreateInvoice = () => {
       }
 
     } catch (error) {
-      console.error("Error in handleCustomerChange:", error);
       toast.error("Có lỗi xảy ra khi cập nhật thông tin khách hàng");
     }
   };
 
   const handleCreateNewCustomer = async () => {
     try {
-      // Basic validations
       if (!newCustomer.name || !newCustomer.phoneNumber) {
         toast.warning("Vui lòng nhập đầy đủ thông tin khách hàng mới");
         return;
@@ -1115,7 +1126,9 @@ const CreateInvoice = () => {
         <button className="delete" onClick={resetForm}>
           <img src={deleteIcon} alt="Xóa" /> Xóa nội dung
         </button>
-        <button className="create" onClick={handleCreateInvoice}><img src={createIcon} alt="Tạo" /> Tạo hoá đơn</button>
+        <button className="create" onClick={handleCreateInvoice} disabled={isCreating}>
+          <img src={createIcon} alt="Tạo" /> {isCreating ? "Đang tạo..." : "Tạo hoá đơn"}
+        </button>
       </div>
       <div className="section">
         <div className="section-1">
@@ -1322,15 +1335,34 @@ const CreateInvoice = () => {
             </label>
           </div>
           <div className="form-group"></div>
-          <div className="form-group">
-            <label className="status-label">Trạng thái</label>
-            <label className="normal-weight">
-              <input
-                type="checkbox"
-                checked={isPaid}
-                onChange={(e) => setIsPaid(e.target.checked)}
-              /> Đã thanh toán
-            </label>
+          <div className="checkbox-group">
+            <label className="status-label">Trạng thái thanh toán</label>
+            <div className={`radio-group ${paymentStatusError ? 'error' : ''}`}>
+              <label>
+                <input
+                  type="radio"
+                  name="paymentStatus"
+                  value="chuaThanhToan"
+                  checked={paymentStatus === "chuaThanhToan"}
+                  onChange={(e) => {
+                    setPaymentStatus(e.target.value);
+                    setPaymentStatusError(false);
+                  }}
+                /> Chưa thanh toán
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="paymentStatus"
+                  value="daThanhToan"
+                  checked={paymentStatus === "daThanhToan"}
+                  onChange={(e) => {
+                    setPaymentStatus(e.target.value);
+                    setPaymentStatusError(false);
+                  }}
+                /> Đã thanh toán
+              </label>
+            </div>
           </div>
           <div className="form-group">
             <label className="note-label">Ghi chú</label>

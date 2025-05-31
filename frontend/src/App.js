@@ -5,6 +5,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/layout/layout';
+import ProtectedRoute from './components/protectedRoute/protectedRoute';
 import Dashboard from './pages/dashboard/dashboard';
 import LoginPage from './components/login/login';
 import ForgotPassword from './components/forgotPassword/forgotPassword';
@@ -60,7 +61,7 @@ function App() {
                         <Route path="/error-403" element={<Error403 />} />
                         <Route path="/error-401" element={<Error401 />} />
                         <Route path="/error-500" element={<Error500 />} />
-                        <Route path="/" element={<Layout />}>
+                        <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                             <Route index element={<Navigate to="/dashboard" />} />
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="invoices" element={<Invoices />} />

@@ -3,6 +3,7 @@ import apiProduct from "../../api/apiProduct";
 import apiInvoice from "../../api/apiInvoice";
 import apiStockIn from "../../api/apiStockIn";
 import apiCustomer from "../../api/apiCustomer";
+import apiAuth from "../../api/apiAuth";
 import {
   Chart as ChartJS,
   LineElement,
@@ -185,7 +186,7 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Check if authenticated, if not the ProtectedRoute will handle redirect
-        if (!apiCustomer.isAuthenticated()) {
+        if (!apiAuth.isAuthenticated()) {
           return;
         }
 

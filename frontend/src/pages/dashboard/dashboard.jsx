@@ -184,8 +184,10 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Wait for auth before making requests
-        await apiCustomer.waitForAuth();
+        // Check if authenticated, if not the ProtectedRoute will handle redirect
+        if (!apiCustomer.isAuthenticated()) {
+          return;
+        }
 
         // Fetch all data in parallel
         const [
@@ -333,6 +335,7 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // If auth error occurs, ProtectedRoute will handle redirect
       }
     };
 

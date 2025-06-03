@@ -7,13 +7,21 @@ import printIcon from "../../assets/img/print-icon.svg";
 import "./detailPromotion.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import apiPromotion from "../../api/apiPromotion";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 
 const DetailPromotion = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        const user = apiAuth.getCurrentUser();
+        console.log('Current user:', user);
+        return user;
+    }, []);
+    const isStaff = currentUser?.userType === 'staff';
+    console.log('Is staff:', isStaff);
     const [searchParams, setSearchParams] = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
     const [promotion, setPromotion] = useState(null);
@@ -139,7 +147,8 @@ const DetailPromotion = () => {
                 </div>
 
                 <div className="actions">
-                    {!isEditMode ? (
+                {!isEditMode ? (
+                    !isStaff && (
                         <>
                             <button className="delete" onClick={handleDelete}>
                                 <img src={deleteIcon} alt="Xóa" /> Xóa
@@ -148,7 +157,8 @@ const DetailPromotion = () => {
                                 <img src={editIcon} alt="Sửa" /> Sửa
                             </button>
                         </>
-                    ) : (
+                    )
+                ) : (
                         <>
                             <button className="save" onClick={handleSave}>
                                 <img src={saveIcon} alt="Lưu" /> Lưu

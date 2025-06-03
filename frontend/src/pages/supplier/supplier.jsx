@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import "./supplier.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
@@ -18,6 +19,13 @@ import supplierApi from "../../api/apiSupplier";
 
 const Suppliers = () => {
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        const user = apiAuth.getCurrentUser();
+        console.log('Current user:', user);
+        return user;
+    }, []);
+    const isStaff = currentUser?.userType === 'staff';
+    console.log('Is staff:', isStaff);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -222,28 +230,30 @@ const Suppliers = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-supplier")}>Thêm mới</button>
-                    <div className="dropdown" ref={dropdownRef}>
-                        <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động
-                            <img src={downIcon} alt="▼" className="icon-down" />
-                        </button>
-                        {isDropdownOpen && (
-                            <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={(e) => {
-                                    e.stopPropagation(); 
-                                    handleDelete();
-                                }}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
-                                <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt="Xuất" /> Xuất
-                                </li>
-                            </ul>
-                        )}
+                {!isStaff && (
+                    <div className="button">
+                        <button className="btn add" onClick={() => navigate("/create-supplier")}>Thêm mới</button>
+                        <div className="dropdown" ref={dropdownRef}>
+                            <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                                Hành động
+                                <img src={downIcon} alt="▼" className="icon-down" />
+                            </button>
+                            {isDropdownOpen && (
+                                <ul className="dropdown-menu">
+                                    <li className="dropdown-item" onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        handleDelete();
+                                    }}>
+                                        <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    </li>
+                                    <li className="dropdown-item" onClick={handleExport}>
+                                        <img src={exportIcon} alt="Xuất" /> Xuất
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
@@ -257,7 +267,7 @@ const Suppliers = () => {
             <table className="supplier-table">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                        {!isStaff && <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>}
                         <th>Mã</th>
                         <th>Nhà cung cấp</th>
                         <th>Điện thoại</th>
@@ -269,13 +279,15 @@ const Suppliers = () => {
                 <tbody>
                     {paginatedSuppliers.map((supplier) => (
                         <tr key={supplier.ID}>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedSuppliers.includes(supplier.ID)}
-                                    onChange={() => handleSelectSupplier(supplier.ID)}
-                                />
-                            </td>
+                            {!isStaff && (
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedSuppliers.includes(supplier.ID)}
+                                        onChange={() => handleSelectSupplier(supplier.ID)}
+                                    />
+                                </td>
+                            )}
                             <td>{supplier.ID}</td>
                             <td>{supplier.name}</td>
                             <td>{supplier.phoneNumber}</td>
@@ -285,9 +297,11 @@ const Suppliers = () => {
                                 <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}`)}>
                                     <img src={viewIcon} alt="Xem" /> Xem
                                 </button>
-                                <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}?edit=true`)}>
-                                    <img src={editIcon} alt="Sửa" /> Sửa
-                                </button>
+                                {!isStaff && (
+                                    <button className="btn-icon" onClick={() => navigate(`/supplier/${supplier.ID}?edit=true`)}>
+                                        <img src={editIcon} alt="Sửa" /> Sửa
+                                    </button>
+                                )}
                             </td>
                         </tr>
                     ))}

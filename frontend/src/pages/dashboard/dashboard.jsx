@@ -180,45 +180,37 @@ const Dashboard = () => {
   const [newCustomers, setNewCustomers] = useState([]);
   const [lowestStock, setLowestStock] = useState([]);
   const [highestStock, setHighestStock] = useState([]);
-  const TARGET_CUSTOMERS = 500;
+  const TARGET_CUSTOMERS = 300;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Check if authenticated, if not the ProtectedRoute will handle redirect
         if (!apiAuth.isAuthenticated()) {
           return;
         }
 
-        // Fetch all data in parallel
         const [
           newCustomers,
           invoicesResponse,
           stockInsResponse,
-          productsResponse,
-          newCustomersCount
+          productsResponse
         ] = await Promise.all([
           apiCustomer.getNewCustomers(),
           apiInvoice.getAll(),
           apiStockIn.getAll(),
-          apiProduct.getAll(),
-          apiCustomer.getNewCustomersCount()
+          apiProduct.getAll()
         ]);
 
-        // Set new customers data
         setNewCustomers(newCustomers);
-        setNewCustomersCount(newCustomersCount?.count || 0);
+        setNewCustomersCount(Array.isArray(newCustomers) ? newCustomers.length : 0);
 
-        // Process invoices data
         const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : invoicesResponse?.data || [];
         const chartData = calculateRevenueData(invoices, timeFilter);
         setRevenueData(chartData);
 
-        // Process stock data
         const stockIns = Array.isArray(stockInsResponse) ? stockInsResponse : stockInsResponse?.data || [];
         const productData = new Map();
 
-        // Process products and sales data
         const processProductData = () => {
           invoices.forEach((invoice) => {
             if (!invoice?.InvoiceDetails) return;
@@ -293,7 +285,7 @@ const Dashboard = () => {
           return Array.from(productData.values())
             .map(product => ({
               ...product,
-              remainingStock: product.stockInQuantity - product.salesQuantity
+              remainingStock: Math.max(0, product.stockInQuantity - product.salesQuantity)
             }))
             .sort((a, b) => b.salesQuantity - a.salesQuantity)
             .slice(0, 3)
@@ -311,7 +303,6 @@ const Dashboard = () => {
         const sortedProducts = processProductData();
         setTopProducts(sortedProducts);
 
-        // Process inventory data
         const products = Array.isArray(productsResponse) ? productsResponse : productsResponse?.data || [];
         const sortedInventory = [...products].sort((a, b) => a.quantity - b.quantity);
 
@@ -336,7 +327,6 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // If auth error occurs, ProtectedRoute will handle redirect
       }
     };
 
@@ -350,7 +340,7 @@ const Dashboard = () => {
   const donutCard = {
     title: "Khách hàng mới",
     percent: (newCustomersCount / TARGET_CUSTOMERS) * 100,
-    target: `${newCustomersCount}/${TARGET_CUSTOMERS}`,
+    newCustomers: newCustomersCount,
     lastMonth: `Mục tiêu tháng: ${TARGET_CUSTOMERS} khách hàng`
   };
 

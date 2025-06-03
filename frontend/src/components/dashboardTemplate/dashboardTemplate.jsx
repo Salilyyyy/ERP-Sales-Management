@@ -237,18 +237,19 @@ const DashboardTemplate = ({
 
         <div className="card donut-card">
           <h4>{donutCard.title}</h4>
-          <div className="donut">
-            <div
-              className="circle"
-              style={{ '--percent': `${donutCard.percent}%` }}
-            >
-              {donutCard.percent.toFixed(1)}%
-            </div>
-            <div className="percent">
-              <strong>{donutCard.target}</strong><br />
-              <small>{donutCard.lastMonth}</small>
-            </div>
-          </div>
+      <div className="donut">
+        <div
+          className="circle"
+          style={{ '--percent': `${donutCard.percent}%` }}
+        >
+          {donutCard.percent.toFixed(1)}%
+        </div>
+        <div className="percent">
+          <strong>{donutCard.newCustomers} khách hàng mới</strong><br />
+          <small>(trong 30 ngày qua)</small><br />
+          <small>{donutCard.lastMonth}</small>
+        </div>
+      </div>
         </div>
       </div>
 

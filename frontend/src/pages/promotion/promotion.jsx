@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import "./promotion.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -25,6 +26,13 @@ const formatDateTime = (dateString) => {
 
 const Promotion = () => {
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        const user = apiAuth.getCurrentUser();
+        console.log('Current user:', user);
+        return user;
+    }, []);
+    const isStaff = currentUser?.userType === 'staff';
+    console.log('Is staff:', isStaff);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -189,22 +197,24 @@ const Promotion = () => {
                     />
                 </div>
 
-                <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-promotion")}>Thêm mới</button>
-                    <div className="dropdown" ref={dropdownRef}>
-                        <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            Hành động
-                            <img src={downIcon} alt="▼" className="icon-down" />
-                        </button>
-                        {isDropdownOpen && (
-                            <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDeleteClick}>
-                                    <img src={deleteIcon} alt="Xóa" /> Xóa
-                                </li>
-                            </ul>
-                        )}
+                {!isStaff && (
+                    <div className="button">
+                        <button className="btn add" onClick={() => navigate("/create-promotion")}>Thêm mới</button>
+                        <div className="dropdown" ref={dropdownRef}>
+                            <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                                Hành động
+                                <img src={downIcon} alt="▼" className="icon-down" />
+                            </button>
+                            {isDropdownOpen && (
+                                <ul className="dropdown-menu">
+                                    <li className="dropdown-item" onClick={handleDeleteClick}>
+                                        <img src={deleteIcon} alt="Xóa" /> Xóa
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <div className="filter">
@@ -243,7 +253,7 @@ const Promotion = () => {
                     <table className="promotion-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                                {!isStaff && <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>}
                                 <th>ID</th>
                                 <th>Tên khuyến mãi</th>
                                 <th>Ngày bắt đầu</th>
@@ -257,13 +267,15 @@ const Promotion = () => {
                         <tbody>
                             {paginatedPromotions.map((promotion) => (
                                 <tr key={promotion.ID}>
-                                    <td>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedPromotions.includes(promotion.ID)}
-                                            onChange={() => handleSelectPromotion(promotion.ID)}
-                                        />
-                                    </td>
+                                    {!isStaff && (
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedPromotions.includes(promotion.ID)}
+                                                onChange={() => handleSelectPromotion(promotion.ID)}
+                                            />
+                                        </td>
+                                    )}
                                     <td>{promotion.ID}</td>
                                     <td>{promotion.name}</td>
                                     <td>{formatDateTime(promotion.dateCreate)}</td>
@@ -273,7 +285,9 @@ const Promotion = () => {
                                     <td>{promotion.quantity}</td>
                                     <td className="action-buttons">
                                         <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>
-                                        <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                        {!isStaff && (
+                                            <button className="btn-icon" onClick={() => navigate(`/promotion/${promotion.ID}?edit=true`)}><img src={editIcon} alt="Sửa" /> Sửa</button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

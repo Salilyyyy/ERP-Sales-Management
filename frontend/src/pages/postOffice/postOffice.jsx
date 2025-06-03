@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import "./postOffice.scss";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-toastify';
@@ -16,6 +17,13 @@ import postOfficeRepository from "../../api/apiPostOffice";
 
 const PostOffice = () => {
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        const user = apiAuth.getCurrentUser();
+        console.log('Current user:', user);
+        return user;
+    }, []);
+    const isStaff = currentUser?.userType === 'staff';
+    console.log('Is staff:', isStaff);
     const { language } = useLanguage();
     const t = translations[language];
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -156,25 +164,27 @@ const PostOffice = () => {
                     />
                 </div>
 
-                <div className="button">
-                    <button className="btn add" onClick={() => navigate("/create-postOffice")}>{t.add}</button>
-                    <div className="dropdown" ref={dropdownRef}>
-                        <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            {t.actions}
-                            <img src={downIcon} alt="▼" className="icon-down" />
-                        </button>
-                        {isDropdownOpen && (
-                            <ul className="dropdown-menu">
-                                <li className="dropdown-item" onClick={handleDelete}>
-                                    <img src={deleteIcon} alt={t.delete} /> {t.delete}
-                                </li>
-                                <li className="dropdown-item" onClick={handleExport}>
-                                    <img src={exportIcon} alt={t.export} /> {t.export}
-                                </li>
-                            </ul>
-                        )}
+                {!isStaff && (
+                    <div className="button">
+                        <button className="btn add" onClick={() => navigate("/create-postOffice")}>{t.add}</button>
+                        <div className="dropdown" ref={dropdownRef}>
+                            <button className="btn action" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                                {t.actions}
+                                <img src={downIcon} alt="▼" className="icon-down" />
+                            </button>
+                            {isDropdownOpen && (
+                                <ul className="dropdown-menu">
+                                    <li className="dropdown-item" onClick={handleDelete}>
+                                        <img src={deleteIcon} alt={t.delete} /> {t.delete}
+                                    </li>
+                                    <li className="dropdown-item" onClick={handleExport}>
+                                        <img src={exportIcon} alt={t.export} /> {t.export}
+                                    </li>
+                                </ul>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
             <div className="filter">
                 <div className="select-wrapper">
@@ -212,7 +222,7 @@ const PostOffice = () => {
                 <table className="order-table">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                            {!isStaff && <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>}
                             <th>{t.postOfficeCode}</th>
                             <th>{t.postOfficeName}</th>
                             <th>{t.phone}</th>
@@ -223,14 +233,16 @@ const PostOffice = () => {
                     <tbody>
                         {paginatedPostOffices.map((office) => (
                             <tr key={office.ID}>
-                                <td><input type="checkbox" checked={selectedPostOffices.includes(office.ID)} onChange={() => handleSelectPostOffice(office.ID)} /></td>
+                                {!isStaff && <td><input type="checkbox" checked={selectedPostOffices.includes(office.ID)} onChange={() => handleSelectPostOffice(office.ID)} /></td>}
                                 <td>{office.ID}</td>
                                 <td>{office.name}</td>
                                 <td>{office.phoneNumber}</td>
                                 <td>{office.address}</td>
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}`)}><img src={viewIcon} alt={t.view} /> {t.view}</button>
-                                    <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt={t.edit} /> {t.edit}</button>
+                                    {!isStaff && (
+                                        <button className="btn-icon" onClick={() => navigate(`/postOffice/${office.ID}?edit=true`)}><img src={editIcon} alt={t.edit} /> {t.edit}</button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

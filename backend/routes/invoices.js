@@ -46,13 +46,32 @@ const { promotionID, customerID, employeeName, exportTime, paymentMethod, tax, d
         isDelivery
       } = req.body;
 
+      if (promotionID) {
+        const promotion = await tx.promotions.findUnique({
+          where: { ID: parseInt(promotionID) }
+        });
+
+        if (!promotion) {
+          throw new Error(`Promotion with ID ${promotionID} not found`);
+        }
+
+        if (promotion.quantity <= 0) {
+          throw new Error(`Promotion ${promotion.name} is out of stock`);
+        }
+
+        await tx.promotions.update({
+          where: { ID: parseInt(promotionID) },
+          data: { quantity: { decrement: 1 } }
+        });
+      }
+
       const invoiceData = {
         Customers: {
-        connect: { ID: customerID }
-      },
-      Creator: {
-        connect: { ID: creator.ID }
-      },
+          connect: { ID: customerID }
+        },
+        Creator: {
+          connect: { ID: creator.ID }
+        },
       exportTime: exportTime || new Date(),
         paymentMethod,
         tax,
@@ -281,6 +300,7 @@ router.put('/:id', async (req, res) => {
         where: { ID: parseInt(id) },
         select: {
           ID: true,
+          promotionID: true,
           InvoiceDetails: {
             select: {
               productID: true,
@@ -305,8 +325,34 @@ router.put('/:id', async (req, res) => {
         updateData.Creator = { connect: { ID: updateFields.creatorID } };
       }
       if (updateFields.promotionID !== undefined) {
+        if (currentInvoice.promotionID) {
+          await tx.promotions.update({
+            where: { ID: currentInvoice.promotionID },
+            data: { quantity: { increment: 1 } }
+          });
+        }
+
+        if (updateFields.promotionID) {
+          const newPromotion = await tx.promotions.findUnique({
+            where: { ID: parseInt(updateFields.promotionID) }
+          });
+
+          if (!newPromotion) {
+            throw new Error(`Promotion with ID ${updateFields.promotionID} not found`);
+          }
+
+          if (newPromotion.quantity <= 0) {
+            throw new Error(`Promotion ${newPromotion.name} is out of stock`);
+          }
+
+          await tx.promotions.update({
+            where: { ID: parseInt(updateFields.promotionID) },
+            data: { quantity: { decrement: 1 } }
+          });
+        }
+
         updateData.Promotions = updateFields.promotionID ? 
-          { connect: { ID: updateFields.promotionID } } : 
+          { connect: { ID: parseInt(updateFields.promotionID) } } : 
           { disconnect: true };
       }
       if (updateFields.exportTime !== undefined) updateData.exportTime = updateFields.exportTime;
@@ -459,6 +505,7 @@ router.delete('/:id', async (req, res) => {
         where: { ID: parseInt(id) },
         select: {
           ID: true,
+          promotionID: true,
           InvoiceDetails: {
             select: {
               productID: true,
@@ -466,12 +513,17 @@ router.delete('/:id', async (req, res) => {
             }
           }
         }
-    }, {
-      timeout: 30000
-    });
+      });
 
       if (!invoice) {
         throw new Error('Invoice not found');
+      }
+
+      if (invoice.promotionID) {
+        await tx.promotions.update({
+          where: { ID: invoice.promotionID },
+          data: { quantity: { increment: 1 } }
+        });
       }
 
       if (invoice.InvoiceDetails.length > 0) {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 import SupplierTemplate from "../../components/supplierTemplate/supplierTemplate";
 import html2pdf from "html2pdf.js";
@@ -18,6 +19,13 @@ import { toast } from 'react-toastify';
 const DetailSupplier = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const currentUser = useMemo(() => {
+        const user = apiAuth.getCurrentUser();
+        console.log('Current user:', user);
+        return user;
+    }, []);
+    const isStaff = currentUser?.userType === 'staff';
+    console.log('Is staff:', isStaff);
     const [supplier, setSupplier] = useState(null);
     const [editedSupplier, setEditedSupplier] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -52,8 +60,8 @@ const DetailSupplier = () => {
 
     useEffect(() => {
         const fetchCountries = async () => {
-                const countriesData = await apiCountry.getAll();
-                setCountries(countriesData);
+            const countriesData = await apiCountry.getAll();
+            setCountries(countriesData);
         };
         fetchCountries();
     }, []);
@@ -125,7 +133,7 @@ const DetailSupplier = () => {
 
     const validateFields = () => {
         const errors = {};
-        
+
         // Validate email if not empty
         if (editedSupplier.email) {
             if (!editedSupplier.email.includes('@') || !editedSupplier.email.includes('.')) {
@@ -176,8 +184,8 @@ const DetailSupplier = () => {
             setSearchParams(newSearchParams);
             setIsEditing(false);
             toast.success("Cập nhật thành công");
-            } catch (error) {
-                setError(error.response?.data?.error || error.message);
+        } catch (error) {
+            setError(error.response?.data?.error || error.message);
             toast.error(error.response?.data?.error || "Cập nhật thất bại");
         } finally {
             setLoading(false);
@@ -225,7 +233,7 @@ const DetailSupplier = () => {
             </div>
 
             <div className="actions">
-                {!isEditing ? (
+                {!isEditing && !isStaff ? (
                     <>
                         <button className="delete" onClick={() => setShowConfirmDialog(true)}>
                             <img src={deleteIcon} alt="Xóa" /> Xóa
@@ -234,34 +242,34 @@ const DetailSupplier = () => {
                         <button className="edit" onClick={handleEditClick}>
                             <img src={editIcon} alt="Sửa" /> Sửa
                         </button>
-<button className="print" onClick={() => {
-    const element = document.createElement('div');
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
-    document.body.appendChild(element);
+                        <button className="print" onClick={() => {
+                            const element = document.createElement('div');
+                            element.style.position = 'absolute';
+                            element.style.left = '-9999px';
+                            document.body.appendChild(element);
 
-    const root = document.createElement('div');
-    element.appendChild(root);
-    import('react-dom/client').then((ReactDOM) => {
-        ReactDOM.createRoot(root).render(<SupplierTemplate supplier={supplier} />);
-        
-        setTimeout(() => {
-            const opt = {
-                margin: 10,
-                filename: `supplier-${supplier.ID}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+                            const root = document.createElement('div');
+                            element.appendChild(root);
+                            import('react-dom/client').then((ReactDOM) => {
+                                ReactDOM.createRoot(root).render(<SupplierTemplate supplier={supplier} />);
 
-            html2pdf().from(root).set(opt).save().then(() => {
-                document.body.removeChild(element);
-            });
-        }, 1000);
-    });
-}}>
-    <img src={printIcon} alt="Xuất" /> Xuất
-</button>
+                                setTimeout(() => {
+                                    const opt = {
+                                        margin: 10,
+                                        filename: `supplier-${supplier.ID}.pdf`,
+                                        image: { type: 'jpeg', quality: 0.98 },
+                                        html2canvas: { scale: 2, letterRendering: true },
+                                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                                    };
+
+                                    html2pdf().from(root).set(opt).save().then(() => {
+                                        document.body.removeChild(element);
+                                    });
+                                }, 1000);
+                            });
+                        }}>
+                            <img src={printIcon} alt="Xuất" /> Xuất
+                        </button>
                     </>
                 ) : (
                     <>
@@ -454,20 +462,20 @@ const DetailSupplier = () => {
             </div>
 
             <ConfirmPopup
-                    isOpen={showConfirmDialog}
-                    message="Bạn có chắc chắn muốn xóa nhà cung cấp này?"
-onConfirm={async () => {
-                        try {
-                            await supplierApi.delete(id);
-                            toast.success("Xóa nhà cung cấp thành công!");
-                            navigate("/supplier-list");
-                        } catch (err) {
-                            toast.error(err.response?.data?.error || "Không thể xóa nhà cung cấp");
-                        }
-                        setShowConfirmDialog(false);
-                    }}
-                    onCancel={() => setShowConfirmDialog(false)}
-                />
+                isOpen={showConfirmDialog}
+                message="Bạn có chắc chắn muốn xóa nhà cung cấp này?"
+                onConfirm={async () => {
+                    try {
+                        await supplierApi.delete(id);
+                        toast.success("Xóa nhà cung cấp thành công!");
+                        navigate("/supplier-list");
+                    } catch (err) {
+                        toast.error(err.response?.data?.error || "Không thể xóa nhà cung cấp");
+                    }
+                    setShowConfirmDialog(false);
+                }}
+                onCancel={() => setShowConfirmDialog(false)}
+            />
             <div className="supplier-products">
                 <h3>Sản phẩm của nhà cung cấp</h3>
                 <div className="table-container">

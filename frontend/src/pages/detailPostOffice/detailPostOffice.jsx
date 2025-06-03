@@ -8,7 +8,8 @@ import { generatePostOfficePDF } from "../../utils/pdfUtils";
 import "./detailPostOffice.scss";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import apiAuth from "../../api/apiAuth";
 import apiPostOffice from "../../api/apiPostOffice";
 import apiShipping from "../../api/apiShipping";
 import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
@@ -16,6 +17,13 @@ import ConfirmPopup from "../../components/confirmPopup/confirmPopup";
 const DetailPostOffice = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUser = useMemo(() => {
+    const user = apiAuth.getCurrentUser();
+    console.log('Current user:', user);
+    return user;
+  }, []);
+  const isStaff = currentUser?.userType === 'staff';
+  console.log('Is staff:', isStaff);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
@@ -129,7 +137,7 @@ const DetailPostOffice = () => {
     if (value === '' || (field === 'phoneNumber' && value.length < 10)) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
-    
+
     // Only validate email while typing
     if (field === 'email' && value.length > 0) {
       if (!validateEmail(value)) {
@@ -187,16 +195,18 @@ const DetailPostOffice = () => {
       </div>
 
       <div className="actions">
-        {!isEditMode && (
+        {!isEditMode && !isStaff && (
           <button className="delete" onClick={() => setShowConfirmPopup(true)}>
             <img src={deleteIcon} alt="Xóa" /> Xóa
           </button>
         )}
 
         {!isEditMode ? (
-          <button className="edit" onClick={handleEditClick}>
-            <img src={editIcon} alt="Sửa" /> Sửa
-          </button>
+          !isStaff && (
+            <button className="edit" onClick={handleEditClick}>
+              <img src={editIcon} alt="Sửa" /> Sửa
+            </button>
+          )
         ) : (
           <button className="save" onClick={handleSave}>
             <img src={saveIcon} alt="Lưu" /> Lưu

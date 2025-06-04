@@ -179,8 +179,8 @@ const Suppliers = () => {
     };
 
     if (isLoading) {
-        return (
-            <div className="suppliers-container">
+    return (
+        <div className="page-container suppliers-container">
                 <LoadingSpinner />
             </div>
         );
@@ -241,7 +241,7 @@ const Suppliers = () => {
                             {isDropdownOpen && (
                                 <ul className="dropdown-menu">
                                     <li className="dropdown-item" onClick={(e) => {
-                                        e.stopPropagation(); 
+                                        e.stopPropagation();
                                         handleDelete();
                                     }}>
                                         <img src={deleteIcon} alt="Xóa" /> Xóa

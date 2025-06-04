@@ -134,9 +134,9 @@ const CreateEmployee = () => {
                         const userData = {
                             ...cleanData,
                             needsPasswordReset: true,
-                            image: formData.image || null 
+                            image: formData.image || null
                         };
-                        console.log('Creating user with data:', userData); 
+                        console.log('Creating user with data:', userData);
                         const response = await userApi.createUser(userData);
 
                         if (!response || !response.ID) {
@@ -263,33 +263,34 @@ const CreateEmployee = () => {
                             <label>Phòng ban</label>
                             <select
                                 value={formData.department || ""}
-                                    onChange={(e) => {
-                                        const value = e.target.value.trim();
-                                        setFormData({ ...formData, department: value });
-                                        if (!value) {
-                                            setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
-                                        } else if (!['sales', 'accounting', 'warehouse'].includes(value)) {
-                                            setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
-                                        } else {
-                                            setErrors(prev => {
-                                                const { department, ...rest } = prev;
-                                                return rest;
-                                            });
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        const value = e.target.value.trim();
-                                        if (!value) {
-                                            setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
-                                        } else if (!['sales', 'accounting', 'warehouse'].includes(value)) {
-                                            setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
-                                        }
-                                    }}
+                                onChange={(e) => {
+                                    const value = e.target.value.trim();
+                                    setFormData({ ...formData, department: value });
+                                    if (!value) {
+                                        setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
+                                    } else if (!['sales', 'accounting', 'warehouse', 'Customer Service'].includes(value)) {
+                                        setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
+                                    } else {
+                                        setErrors(prev => {
+                                            const { department, ...rest } = prev;
+                                            return rest;
+                                        });
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    const value = e.target.value.trim();
+                                    if (!value) {
+                                        setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
+                                    } else if (!['sales', 'accounting', 'warehouse', 'Customer Service'].includes(value)) {
+                                        setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
+                                    }
+                                }}
                                 className={errors.department ? "error" : ""}
                             >
                                 <option value="">Chọn phòng ban</option>
                                 <option value="sales">Kinh doanh</option>
                                 <option value="accounting">Kế toán</option>
+                                <option value="Customer Service">Chăm sóc khách hàng</option>
                                 <option value="warehouse">Kho</option>
                             </select>
                         </div>

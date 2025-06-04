@@ -186,7 +186,7 @@ const DetailPostOffice = () => {
   if (!office) return <h2>Không tìm thấy bưu cục</h2>;
 
   return (
-    <div className="detail-postOffice-container">
+    <div className="page-container detail-postOffice-container">
       <div className="header">
         <div className="back" onClick={() => navigate("/post-office")}>
           <img src={backIcon} alt="Quay lại" />

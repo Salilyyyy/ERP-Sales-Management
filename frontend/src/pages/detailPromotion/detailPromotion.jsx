@@ -138,7 +138,7 @@ const DetailPromotion = () => {
 
     return (
         <>
-            <div className="promotion-detail-container">
+            <div className="page-container promotion-detail-container">
                 <div className="header">
                     <div className="back" onClick={() => navigate("/promotion")}>
                         <img src={backIcon} alt="Quay lại" />

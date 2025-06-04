@@ -1,4 +1,4 @@
-import './App.css';
+import './App.scss';
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { LoadingProvider } from './context/LoadingContext';
 import { LanguageProvider } from './context/LanguageContext';

@@ -339,7 +339,7 @@ const Shipping = () => {
     };
 
     return (
-        <div className="shipping-container">
+        <div className="page-container shipping-container">
             <h2 className="title">{t.shippingList}</h2>
 
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>

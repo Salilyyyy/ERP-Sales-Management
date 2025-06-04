@@ -10,7 +10,7 @@ $text-color: #1a3300;
     color: $text-color;
 
     .title {
-        font-size: 30px;
+        font-size: calc(var(--base-font-size) * 1.5);
         font-weight: bold;
         margin-bottom: 15px;
     }
@@ -43,7 +43,7 @@ $text-color: #1a3300;
             flex: 1;
             padding: 8px;
             border: none;
-            font-size: 14px;
+            font-size: calc(var(--base-font-size) * 0.875);
             outline: none;
         }
 
@@ -57,7 +57,7 @@ $text-color: #1a3300;
             width: 150px;
             padding: 8px 12px;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: calc(var(--base-font-size) * 0.875);
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s ease;
@@ -98,7 +98,7 @@ $text-color: #1a3300;
             
             select {
                 padding: 10px 15px;
-                font-size: 14px;
+                font-size: calc(var(--base-font-size) * 0.875);
                 border-radius: 5px;
                 border: 1px solid #ccc;
                 background-color: #fff;
@@ -125,7 +125,7 @@ $text-color: #1a3300;
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 5px 10px;
-            font-size: 14px;
+            font-size: calc(var(--base-font-size) * 0.875);
             cursor: pointer;
             transition: background-color 0.3s ease;
     
@@ -156,7 +156,7 @@ $text-color: #1a3300;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
-                font-size: 14px;
+                font-size: calc(var(--base-font-size) * 0.875);
                 transition: 0.3s;
                 justify-content: center;
 
@@ -237,13 +237,13 @@ $text-color: #1a3300;
                 padding: 5px 10px;
                 border: 1px solid #1a3300;
                 border-radius: 5px;
-                font-size: 14px;
+                font-size: calc(var(--base-font-size) * 0.875);
                 cursor: pointer;
                 background-color: #fff;
             }
     
             span {
-                font-size: 14px;
+                font-size: calc(var(--base-font-size) * 0.875);
                 color: #436850;
         
             }
@@ -259,7 +259,7 @@ $text-color: #1a3300;
                 border-radius: 5px;
                 background-color: #fff;
                 cursor: pointer;
-                font-size: 14px;
+                font-size: calc(var(--base-font-size) * 0.875);
                 transition: all 0.3s;
     
                 &:hover {

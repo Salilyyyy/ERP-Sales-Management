@@ -209,7 +209,7 @@ const Employee = () => {
 
 
     return (
-        <div className="employee-container">
+        <div className="page-container employee-container">
             <h2 className="title">Danh sách nhân viên</h2>
 
             <div className="top-actions">
@@ -308,11 +308,17 @@ const Employee = () => {
                                 <td>{user.name || "N/A"}</td>
                                 <td>
                                     {user.userType === 'staff' ? 'Nhân viên' :
-                                     user.userType === 'manager' ? 'Quản lý' :
-                                     user.userType === 'admin' ? 'Quản trị viên' :
-                                     user.userType}
+                                        user.userType === 'manager' ? 'Quản lý' :
+                                            user.userType === 'admin' ? 'Quản trị viên' :
+                                                user.userType}
                                 </td>
-                                <td>{user.department}</td>
+                                <td>
+                                    {user.department === 'Customer Service' ? 'Chăm sóc khách hàng' :
+                                        user.department === 'accounting' ? 'Kinh doanh' :
+                                            user.department === 'sales' ? 'Kế toán' :
+                                                user.department === 'warehouse' ? 'Kho' :
+                                                    user.department}
+                                </td>
                                 <td>{user.email}</td>
                                 <td className="action-buttons">
                                     <button className="btn-icon" onClick={() => navigate(`/employee/${user.ID}`)}><img src={viewIcon} alt="Xem" /> Xem</button>

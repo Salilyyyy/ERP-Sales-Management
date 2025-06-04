@@ -1,7 +1,8 @@
 .dashboard {
-  padding: 24px;
-  width: 75%;
+  padding: 20px;
+  width: 100%;
   background: #f8f9fa;
+  font-family: 'Noto Sans', sans-serif;
 
   .dashboard-header {
     display: flex;
@@ -11,12 +12,35 @@
     flex-wrap: wrap;
     gap: 20px;
 
+    .statistics-summary {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        label {
+          color: #4a5568;
+          font-weight: 500;
+        }
+
+        span {
+          color: #2d3748;
+          font-weight: 600;
+        }
+      }
+    }
+
     .stats-container {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
 
-        .stat-box {
+      .stat-box {
           background: linear-gradient(145deg, #ffffff, #f8f9fa);
           padding: 20px 24px;
           border-radius: 12px;
@@ -44,7 +68,7 @@
           }
 
           h3 {
-            font-size: 14px;
+            font-size: calc(var(--base-font-size) * 0.875);
             color: #64748b;
             margin-bottom: 12px;
             font-weight: 500;
@@ -63,7 +87,7 @@
           }
 
           .value {
-            font-size: 28px;
+            font-size: calc(var(--base-font-size) * 1.75);
             font-weight: 700;
             color: #1e293b;
             display: flex;
@@ -83,7 +107,7 @@
             }
 
             small {
-              font-size: 14px;
+              font-size: calc(var(--base-font-size) * 0.875);
               color: #64748b;
               font-weight: normal;
               margin-left: 4px;
@@ -99,7 +123,7 @@
         width: 100%;
         min-width: 160px;
         padding: 8px 12px;
-        font-size: 14px;
+        font-size: calc(var(--base-font-size) * 0.875);
         border: 1px solid #b3c5d4;
         border-radius: 4px;
         color: #163020;
@@ -132,7 +156,7 @@
         display: block;
         margin-bottom: 6px;
         color: #163020;
-        font-size: 14px;
+        font-size: calc(var(--base-font-size) * 0.875);
       }
     }
 
@@ -170,7 +194,7 @@
 
   .grid-container {
     display: grid;
-    grid-template-columns: 2fr 1.5fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     grid-template-rows: auto auto;
     gap: 24px;
     grid-template-areas:
@@ -214,7 +238,7 @@
 
       h3, h4 {
         color: #2c3e50;
-        font-size: 1.25rem;
+        font-size: calc(var(--base-font-size) * 1.25);
         margin-bottom: 1rem;
         font-weight: 600;
         text-align: center;
@@ -299,7 +323,7 @@
           color: #2d3748;
           font-weight: 500;
           transition: all 0.2s ease;
-          font-size: 14px;
+          font-size: calc(var(--base-font-size) * 0.875);
 
           &:hover {
             background: linear-gradient(135deg, #e9ecef, #dee2e6);
@@ -378,7 +402,7 @@
           align-items: center;
           justify-content: center;
           font-weight: bold;
-          font-size: 1.25rem;
+            font-size: calc(var(--base-font-size) * 1.25);
           box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
           position: relative;
           animation: rotate 1.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -416,7 +440,7 @@
           text-align: left;
 
           strong {
-            font-size: 18px;
+            font-size: calc(var(--base-font-size) * 1.125);
             color: #2d3748;
             display: block;
             margin-bottom: 4px;
@@ -425,7 +449,7 @@
 
           small {
             color: #718096;
-            font-size: 0.875rem;
+            font-size: calc(var(--base-font-size) * 0.875);
             display: block;
             position: relative;
             padding-left: 12px;
@@ -446,7 +470,6 @@
     }
   }
 
-  // ===================== Popup Export =====================
   .popup-overlay {
     position: fixed;
     top: 0;
@@ -470,7 +493,7 @@
     h3 {
       margin-bottom: 20px;
       color: #163020;
-      font-size: 1.2rem;
+      font-size: calc(var(--base-font-size) * 1.2);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -494,11 +517,33 @@
         margin-bottom: 8px;
         font-weight: 500;
         color: #2d3748;
-        font-size: 0.95rem;
+        font-size: calc(var(--base-font-size) * 0.95);
         display: flex;
         align-items: center;
         gap: 4px;
       }
+      .radio-group {
+        display: flex;
+        gap: 20px;
+        margin-top: 4px;
+
+        label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0;
+          cursor: pointer;
+          
+          input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: #436850;
+          }
+        }
+      }
+
       input{
         width: 80%;
       }
@@ -507,7 +552,7 @@
       input {
         width: 100%;
         padding: 8px 12px;
-        font-size: 14px;
+        font-size: calc(var(--base-font-size) * 0.875);
         border: 1px solid #b3c5d4;
         border-radius: 4px;
         color: #163020;
@@ -557,7 +602,7 @@
         cursor: pointer;
         border: none;
         transition: all 0.2s ease;
-        font-size: 14px;
+        font-size: calc(var(--base-font-size) * 0.875);
       }
 
       .cancel-btn {

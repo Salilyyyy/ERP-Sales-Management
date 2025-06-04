@@ -182,7 +182,7 @@ const Promotion = () => {
     };
 
     return (
-        <div className="promotion-container">
+        <div className="page-container promotion-container">
             <h2 className="title">Danh sách khuyến mãi</h2>
 
             <div className="top-actions">

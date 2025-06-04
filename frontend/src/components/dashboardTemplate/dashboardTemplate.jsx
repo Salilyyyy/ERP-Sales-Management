@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { Line } from "react-chartjs-2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import "./dashboardTemplate.scss";
 import downloadIcon from "../../assets/img/export-icon.svg";
-import upIcon from "../../assets/img/up-icon.svg";
-import downIcon from "../../assets/img/down-iconn.svg";
+
 
 const DashboardTemplate = ({
   showPopup,
@@ -22,10 +19,8 @@ const DashboardTemplate = ({
   stockStats,
   donutCard
 }) => {
-  const [exportType, setExportType] = useState("pdf");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  // Function to handle Vietnamese text encoding for PDF
   const encodeVietnamese = (text) => {
     if (typeof text !== 'string') return text;
     
@@ -62,89 +57,87 @@ const DashboardTemplate = ({
   };
 
   const handleExport = () => {
-    if (exportType === "pdf") {
-      const doc = new jsPDF('p', 'mm', 'a4');
-      doc.setLanguage("vi");
+    const doc = new jsPDF('p', 'mm', 'a4');
 
-      // Set title
-      doc.setFontSize(16);
-      const title = encodeVietnamese("Bảng sản phẩm bán chạy");
-      const pageWidth = doc.internal.pageSize.width;
-      doc.text(title, pageWidth/2, 20, { align: "center" });
+    doc.setFontSize(18);
+    doc.text(encodeVietnamese("Báo cáo tổng quan"), doc.internal.pageSize.width/2, 20, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(encodeVietnamese(`Từ ngày: ${startDate} - Đến ngày: ${endDate}`), doc.internal.pageSize.width/2, 30, { align: "center" });
 
-      // Prepare table data
-      const tableRows = topProducts.map((p, index) => [
-        index + 1,
-        encodeVietnamese(p.name),
-        encodeVietnamese(p.price),
-        p.quantity,
-        p.stockIn,
-        p.remainingStock,
-        encodeVietnamese(p.revenue)
-      ]);
+    doc.setFontSize(14);
+    doc.text(encodeVietnamese("Thống kê doanh thu & đơn hàng"), 14, 45);
+    doc.setFontSize(12);
+    doc.text(encodeVietnamese(`Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')}đ`), 14, 55);
+    doc.text(encodeVietnamese(`Tổng đơn hàng: ${totalOrders}`), 14, 65);
 
-      // Configure table
-      autoTable(doc, {
-        head: [[
-          "STT",
-          encodeVietnamese("Ten san pham"),
-          encodeVietnamese("Gia ban"),
-          encodeVietnamese("Da ban"),
-          encodeVietnamese("Nhap vao"),
-          encodeVietnamese("Ton kho"),
-          encodeVietnamese("Doanh thu")
-        ]],
-        body: tableRows,
-        startY: 30,
-        theme: 'grid',
-        styles: {
-          fontSize: 10,
-          cellPadding: 3,
-          minCellHeight: 14,
-          valign: 'middle',
-          font: 'helvetica',
-          overflow: 'linebreak',
-          fontStyle: 'normal'
-        },
-        headStyles: {
-          fillColor: [109, 109, 255],
-          textColor: 255,
-          fontSize: 11,
-          halign: 'center'
-        },
-        columnStyles: {
-          0: { halign: 'center' }, // STT
-          2: { halign: 'right' },  // Giá bán
-          3: { halign: 'right' },  // Đã bán
-          4: { halign: 'right' },  // Nhập vào
-          5: { halign: 'right' },  // Tồn kho
-          6: { halign: 'right' }   // Doanh thu
-        }
-      });
+    doc.setFontSize(14);
+    doc.text(encodeVietnamese("Hàng tồn kho"), 14, 85);
+    doc.setFontSize(12);
+    let yPos = 95;
+    stockStats.forEach(item => {
+      doc.text(encodeVietnamese(`${item.label}: ${item.change}`), 14, yPos);
+      yPos += 10;
+    });
 
-      doc.save("thong-ke.pdf");
-    } else if (exportType === "excel") {
-      const excelData = topProducts.map((p, index) => ({
-        STT: index + 1,
-        "Tên sản phẩm": p.name,
-        "Giá bán": p.price,
-        "Đã bán": p.quantity,
-        "Nhập vào": p.stockIn,
-        "Tồn kho": p.remainingStock,
-        "Doanh thu": p.revenue
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sản phẩm");
-      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-      const data = new Blob([excelBuffer], { type: "application/octet-stream" });
-      saveAs(data, "thong-ke.xlsx");
-    }
+    const tableRows = topProducts.map((p, index) => [
+      index + 1,
+      encodeVietnamese(p.name),
+      encodeVietnamese(p.price),
+      p.quantity,
+      p.stockIn,
+      p.remainingStock,
+      encodeVietnamese(p.revenue)
+    ]);
+
+    autoTable(doc, {
+      head: [[
+        "STT",
+        encodeVietnamese("Tên sản phẩm"),
+        encodeVietnamese("Giá bán"),
+        encodeVietnamese("Đã bán"),
+        encodeVietnamese("Nhập vào"), 
+        encodeVietnamese("Tồn kho"),
+        encodeVietnamese("Doanh thu")
+      ]],
+      body: tableRows,
+      startY: yPos + 20,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3,
+        minCellHeight: 14,
+        valign: 'middle',
+        font: 'helvetica'
+      },
+      headStyles: {
+        fillColor: [109, 109, 255],
+        textColor: 255,
+        fontSize: 11,
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        6: { halign: 'right' }
+      }
+    });
+
+    const finalY = (doc.previousAutoTable?.finalY || yPos + 80) + 20;
+    doc.setFontSize(14);
+    doc.text(encodeVietnamese("Thống kê khách hàng"), 14, finalY);
+    doc.setFontSize(12);
+    doc.text(encodeVietnamese(`${donutCard.newCustomers} khách hàng mới (trong 30 ngày qua)`), 14, finalY + 10);
+    doc.text(encodeVietnamese(donutCard.lastMonth), 14, finalY + 20);
+
+    doc.save("bao-cao-tong-quan.pdf");
 
     setShowPopup(false);
   };
   return (
-    <div className="dashboard">
+    <div className="page-container dashboard">
       <div className="dashboard-header">
         <h2>Tổng quan</h2>
         <button className="export-btn" onClick={() => setShowPopup(true)}>
@@ -257,13 +250,6 @@ const DashboardTemplate = ({
         <div className="popup-overlay">
           <div className="popup-content">
             <h3>Xuất dữ liệu</h3>
-            <div className="form-group">
-              <label>Định dạng:</label>
-              <select value={exportType} onChange={(e) => setExportType(e.target.value)}>
-                <option value="pdf">PDF</option>
-                <option value="excel">Excel</option>
-              </select>
-            </div>
             <div className="form-group">
               <label>Ngày bắt đầu:</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

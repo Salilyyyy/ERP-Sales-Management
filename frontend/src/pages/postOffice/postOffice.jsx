@@ -149,7 +149,7 @@ const PostOffice = () => {
     };
 
     return (
-        <div className="postOffice-container">
+        <div className="page-container postOffice-container">
             <h2 className="title">{t.postOfficeList}</h2>
 
             <div className="top-actions">

@@ -39,7 +39,7 @@ $warning-color: #E9762B;
       h3 {
         margin-bottom: 1.5rem;
         color: #d32f2f;
-        font-size: 1.3rem;
+        font-size: calc(var(--base-font-size) * 1.3);
         font-weight: 600;
       }
 
@@ -75,7 +75,7 @@ $warning-color: #E9762B;
 
           td {
             color: #444;
-            font-size: 0.95rem;
+            font-size: calc(var(--base-font-size) * 0.95);
 
             &:first-child {
               font-weight: 600;
@@ -205,7 +205,7 @@ $warning-color: #E9762B;
             bottom: -20px;
             left: 0;
             color: #d32f2f;
-            font-size: 12px;
+            font-size: calc(var(--base-font-size) * 0.75);
             margin-top: 4px;
           }
         }
@@ -223,7 +223,7 @@ $warning-color: #E9762B;
     padding: 6px 10px;
     border: 1px solid $border-color;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: calc(var(--base-font-size) * 0.875);
     background-color: #fff;
     color: $text-color;
 

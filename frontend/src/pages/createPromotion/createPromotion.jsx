@@ -5,6 +5,7 @@ import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import createIcon from "../../assets/img/create-icon.svg";
 import apiPromotion from "../../api/apiPromotion";
+import { toast } from "react-toastify";
 
 const CreatePromotion = () => {
     const navigate = useNavigate();
@@ -39,6 +40,13 @@ const CreatePromotion = () => {
     };
 
     const handleSubmit = async () => {
+        if (!formData.name || !formData.dateCreate || !formData.dateEnd || 
+            !formData.value || !formData.minValue || !formData.quantity) {
+            toast.error("Vui lòng nhập đầy đủ thông tin");
+            return;
+        }
+
+        try {
             const payload = {
                 name: formData.name,
                 dateCreate: new Date(formData.dateCreate).toISOString(),
@@ -46,11 +54,13 @@ const CreatePromotion = () => {
                 value: parseFloat(formData.value),
                 minValue: parseFloat(formData.minValue),
                 quantity: parseInt(formData.quantity, 10),
-                type: formData.type 
+                type: formData.type || "percentage"
             };
             await apiPromotion.create(payload);
             navigate("/promotion");
-       
+        } catch (error) {
+            toast.error("Có lỗi xảy ra khi tạo khuyến mãi");
+        }
     };
 
     return (

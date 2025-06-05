@@ -83,7 +83,7 @@
         .close-btn {
           background: none;
           border: none;
-          font-size: 24px;
+          font-size: calc(var(--base-font-size) * 1.5);
           color: #666;
           cursor: pointer;
           padding: 0 4px;
@@ -112,7 +112,7 @@
             padding: 8px 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: calc(var(--base-font-size) * 0.875);
 
             &:focus {
               outline: none;
@@ -158,7 +158,7 @@
         button {
           padding: 8px 16px;
           border-radius: 4px;
-          font-size: 14px;
+          font-size: calc(var(--base-font-size) * 0.875);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -220,7 +220,7 @@
     position: relative;
   
     h2 {
-      font-size: 20px;
+      font-size: calc(var(--base-font-size) * 1.25);
       font-weight: bold;
       margin-bottom: 30px;
     }
@@ -232,7 +232,7 @@
       margin-bottom: 20px;
   
       label {
-        font-size: 16px;
+        font-size: var(--base-font-size);
         width: 200px;
         font-weight: bold;
         display: flex;
@@ -242,7 +242,7 @@
         padding: 6px 12px;
         border-radius: 6px;
         border: 1px solid #ccc;
-        font-size: 14px;
+        font-size: calc(var(--base-font-size) * 0.875);
       }
   
       .theme-toggle {
@@ -290,7 +290,7 @@
           padding: 6px 12px;
           border-radius: 6px;
           border: 1px solid #ccc;
-          font-size: 14px;
+          font-size: calc(var(--base-font-size) * 0.875);
         }
       }
   
@@ -302,7 +302,7 @@
           border-radius: 5px;
           display: flex;
           align-items: center;
-          font-size: 14px;
+          font-size: calc(var(--base-font-size) * 0.875);
           cursor: pointer;
   
           img {
@@ -319,7 +319,7 @@
         .help-icon {
           width: 24px;
           height: 24px;
-          font-size: 20px;
+          font-size: calc(var(--base-font-size) * 1.25);
           color: #163020;
           background-color: #dfe4d7;
           border-radius: 50%;

@@ -92,7 +92,7 @@ const Sidebar = () => {
         <div className="sidebar">
             <div className="logo">
                 <img className="logoIcon" src={Logo} alt="Logo" />
-                <span>ERP {language === 'en' ? 'SYSTEM' : 'HỆ THỐNG'}</span>
+                <span> {language === 'en' ? 'ERP SYSTEM' : 'HỆ THỐNG ERP'}</span>
             </div>
             <ul className="menu">
                 <li

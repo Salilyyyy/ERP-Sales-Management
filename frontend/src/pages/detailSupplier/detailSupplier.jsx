@@ -224,7 +224,7 @@ const DetailSupplier = () => {
     }
 
     return (
-        <div className="detail-supplier-container">
+        <div className="page-container detail-supplier-container">
             <div className="header">
                 <div className="back" onClick={() => navigate("/supplier-list")}>
                     <img src={backIcon} alt="Quay lại" />

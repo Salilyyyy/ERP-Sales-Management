@@ -1,0 +1,98 @@
+:root {
+  --base-font-size: 16px;
+  --background-color: #ffffff;
+  --text-color: #000000;
+}
+
+[data-font-size="small"] {
+  --base-font-size: 13px;
+}
+[data-font-size="medium"] {
+  --base-font-size: 16px;
+}
+[data-font-size="large"] {
+  --base-font-size: 24px;
+}
+
+.page-container {
+  padding: 40px;
+  color: var(--text-color);
+  
+  h1 {
+    font-size: calc(var(--base-font-size) * 1.5);
+    margin-bottom: 24px;
+  }
+  
+  h2 {
+    font-size: calc(var(--base-font-size) * 1.25);
+    margin-bottom: 20px;
+  }
+  
+  h3 {
+    font-size: calc(var(--base-font-size) * 1.1);
+    margin-bottom: 16px;
+  }
+  
+  p, span, div {
+    font-size: var(--base-font-size);
+  }
+  
+  label {
+    font-size: var(--base-font-size);
+    font-weight: bold;
+  }
+  
+  input, select, textarea {
+    font-size: calc(var(--base-font-size) * 0.875);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  
+  button {
+    font-size: calc(var(--base-font-size) * 0.875);
+    padding: 8px 16px;
+    border-radius: 6px;
+  }
+  
+  table {
+    font-size: var(--base-font-size);
+    
+    th {
+      font-size: calc(var(--base-font-size) * 1.1);
+      font-weight: bold;
+    }
+    
+    td {
+      font-size: var(--base-font-size);
+    }
+  }
+}
+
+// Modal styles
+.modal-container {
+  h1 {
+    font-size: calc(var(--base-font-size) * 1.5);
+  }
+  
+  h2 {
+    font-size: calc(var(--base-font-size) * 1.25);
+  }
+  
+  p, span, div {
+    font-size: var(--base-font-size);
+  }
+  
+  label {
+    font-size: var(--base-font-size);
+    font-weight: bold;
+  }
+  
+  input, select, textarea {
+    font-size: calc(var(--base-font-size) * 0.875);
+  }
+  
+  button {
+    font-size: calc(var(--base-font-size) * 0.875);
+  }
+}

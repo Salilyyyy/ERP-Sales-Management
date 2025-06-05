@@ -201,7 +201,6 @@ const DashboardTemplate = ({
                 <th>Giá bán</th>
                 <th>Đã bán</th>
                 <th>Nhập vào</th>
-                <th>Tồn kho</th>
                 <th>Doanh thu</th>
               </tr>
             </thead>
@@ -213,14 +212,6 @@ const DashboardTemplate = ({
                   <td>{product.price}</td>
                   <td>{product.quantity}</td>
                   <td>{product.stockIn}</td>
-                  <td>
-                    <span style={{ 
-                      color: product.remainingStock < 10 ? '#ff4d4f' : 
-                             product.remainingStock < 30 ? '#faad14' : '#52c41a'
-                    }}>
-                      {product.remainingStock}
-                    </span>
-                  </td>
                   <td>{product.revenue}</td>
                 </tr>
               ))}

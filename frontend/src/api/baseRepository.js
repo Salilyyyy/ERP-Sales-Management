@@ -113,7 +113,6 @@ class BaseRepository {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         const cacheKey = `${requestKey}${JSON.stringify(params)}`;
         
-        // Check cache first
         const cachedData = this.cache.get(cacheKey);
         if (cachedData && (Date.now() - cachedData.timestamp < this.cacheTimeout)) {
             return cachedData.data;
@@ -131,7 +130,6 @@ class BaseRepository {
                     return [];
                 }
 
-                // Cache the response
                 this.cache.set(cacheKey, {
                     data: response.data,
                     timestamp: Date.now()
@@ -155,45 +153,41 @@ class BaseRepository {
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
         BaseRepository.setLoadingState(requestKey, true);
 
-        try {
-            const response = await this.api.post(this.endpoint + this.normalizePath(path), data, config);
-            BaseRepository.setLoadingState(requestKey, false);
+        let attempts = 0;
+        const backoffDelay = 1000; 
 
-            if (response.status === 204) {
-                return null;
-            }
-            if (!response || !response.data) {
-                throw new Error('Invalid API response received');
-            }
-
-            return response.data;
-        } catch (error) {
-            BaseRepository.setLoadingState(requestKey, false);
-
-            if (error.isValidationError) {
-                throw error;
-            }
-
-            let attempts = 1;
-            while (attempts < maxRetries) {
-                try {
-                    await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
-                    const retryResponse = await this.api.post(this.endpoint + this.normalizePath(path), data);
-
-                    if (!retryResponse || !retryResponse.data) {
-                        throw new Error('Invalid API response received');
+        while (attempts < maxRetries) {
+            try {
+                const response = await this.api.post(
+                    this.endpoint + this.normalizePath(path),
+                    data,
+                    {
+                        ...config,
+                        timeout: 10000 
                     }
+                );
+                BaseRepository.setLoadingState(requestKey, false);
 
-                    BaseRepository.setLoadingState(requestKey, false);
-                    return retryResponse.data;
-                } catch (retryError) {
-                    attempts++;
-                    if (attempts === maxRetries) {
-                        throw retryError;
-                    }
+                this.invalidateRelatedCache(path);
+
+                if (response.status === 204) return null;
+                if (!response || !response.data) {
+                    throw new Error('Invalid API response received');
                 }
+
+                return response.data;
+            } catch (error) {
+                attempts++;
+                
+                if (attempts === maxRetries || error.isValidationError) {
+                    BaseRepository.setLoadingState(requestKey, false);
+                    throw error;
+                }
+
+                const jitter = Math.random() * 100;
+                const delay = Math.min(backoffDelay * Math.pow(2, attempts) + jitter, 5000);
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
-            throw error;
         }
     }
 
@@ -202,11 +196,19 @@ class BaseRepository {
         BaseRepository.setLoadingState(requestKey, true);
 
         let attempts = 0;
+        const backoffDelay = 1000;
 
         while (attempts < maxRetries) {
             try {
-                const response = await this.api.put(this.endpoint + this.normalizePath(path), data);
+                const response = await this.api.put(
+                    this.endpoint + this.normalizePath(path),
+                    data,
+                    { timeout: 10000 }
+                );
                 BaseRepository.setLoadingState(requestKey, false);
+
+                this.invalidateRelatedCache(path);
+
                 return response.data;
             } catch (error) {
                 attempts++;
@@ -215,7 +217,9 @@ class BaseRepository {
                     throw error;
                 }
 
-                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+                const jitter = Math.random() * 100;
+                const delay = Math.min(backoffDelay * Math.pow(2, attempts) + jitter, 5000);
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
     }
@@ -225,21 +229,42 @@ class BaseRepository {
         BaseRepository.setLoadingState(requestKey, true);
 
         let attempts = 0;
+        const backoffDelay = 1000;
 
         while (attempts < maxRetries) {
             try {
-                const response = await this.api.delete(this.endpoint + this.normalizePath(path));
+                const response = await this.api.delete(
+                    this.endpoint + this.normalizePath(path),
+                    { timeout: 10000 }
+                );
                 BaseRepository.setLoadingState(requestKey, false);
+
+                this.invalidateRelatedCache(path);
+
                 return response.data;
             } catch (error) {
                 attempts++;
-
                 if (attempts === maxRetries) {
                     BaseRepository.setLoadingState(requestKey, false);
                     throw error;
                 }
 
-                await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, attempts), 5000)));
+                const jitter = Math.random() * 100;
+                const delay = Math.min(backoffDelay * Math.pow(2, attempts) + jitter, 5000);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    invalidateRelatedCache(path) {
+        const pathSegments = path.split('/').filter(Boolean);
+        if (pathSegments.length === 0) return;
+
+        const resourceType = pathSegments[0];
+        
+        for (const [key] of this.cache) {
+            if (key.includes(resourceType)) {
+                this.cache.delete(key);
             }
         }
     }

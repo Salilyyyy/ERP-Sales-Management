@@ -16,13 +16,15 @@ class BaseRepository {
     constructor(endpoint = '') {
         this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:10000/';
         this.endpoint = endpoint;
+        this.cache = new Map();
+        this.cacheTimeout = 60000; 
 
         this.api = axios.create({
             baseURL: this.baseURL,
             headers: {
                 'Content-Type': 'application/json',
             },
-            timeout: 30000
+            timeout: 10000 
         });
 
         this.api.interceptors.request.use(async (config) => {
@@ -109,19 +111,31 @@ class BaseRepository {
             await this.waitForAuth();
         }
         const requestKey = `${this.endpoint}${this.normalizePath(path)}`;
-        BaseRepository.setLoadingState(requestKey, true);
+        const cacheKey = `${requestKey}${JSON.stringify(params)}`;
+        
+        // Check cache first
+        const cachedData = this.cache.get(cacheKey);
+        if (cachedData && (Date.now() - cachedData.timestamp < this.cacheTimeout)) {
+            return cachedData.data;
+        }
 
+        BaseRepository.setLoadingState(requestKey, true);
         let attempts = 0;
 
         while (attempts < maxRetries) {
             try {
                 const response = await this.api.get(this.endpoint + this.normalizePath(path), { params });
-
                 BaseRepository.setLoadingState(requestKey, false);
 
                 if (!response || !response.data) {
                     return [];
                 }
+
+                // Cache the response
+                this.cache.set(cacheKey, {
+                    data: response.data,
+                    timestamp: Date.now()
+                });
 
                 return response.data;
             } catch (error) {

@@ -31,11 +31,6 @@ class AuthRepository extends BaseRepository {
             const response = await this.get(`/verify-reset-token/${token}`);
             return response;
         } catch (error) {
-            console.error('Verify reset token error:', {
-                message: error.message,
-                details: error.details,
-                status: error.status
-            });
             throw error;
         }
     }
@@ -69,7 +64,6 @@ class AuthRepository extends BaseRepository {
 
     isAuthenticated() {
         const token = localStorage.getItem('auth_token');
-        console.log('Checking authentication, token:', token);
         return !!token;
     }
 }

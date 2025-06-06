@@ -74,7 +74,6 @@ const Invoices = () => {
             });
 
             if (response.success && Array.isArray(response.data)) {
-                console.log("Invoices:", response.data);
                 setInvoices(response.data);
                 setTotalItems(response.pagination.total || 0);
                 setError(null);
@@ -83,7 +82,6 @@ const Invoices = () => {
                 setError("Dữ liệu không hợp lệ");
             }
         } catch (error) {
-            console.error("Lỗi khi lấy hóa đơn:", error);
             setInvoices([]);
             setError("Không thể kết nối đến máy chủ");
         }

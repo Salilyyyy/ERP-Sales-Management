@@ -55,7 +55,6 @@ const Shipping = () => {
         }
     };
 
-    // Utility function for handling API requests with timeout and retry
     const makeRequest = async (request, timeout = 30000, maxRetries = 3) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -67,7 +66,6 @@ const Shipping = () => {
                 return response;
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    console.log(`Request attempt ${attempt} timed out`);
                 } else {
                     console.error(`Request attempt ${attempt} failed:`, error);
                 }
@@ -113,7 +111,6 @@ const Shipping = () => {
                 ? t.loadError
                 : error.message;
             setError(errorMessage);
-            console.error("Failed to fetch data:", error);
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -133,7 +130,6 @@ const Shipping = () => {
                 ? t.loadError
                 : error.message;
             setError(errorMessage);
-            console.error("Failed to fetch shipping data:", error);
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -197,10 +193,8 @@ const Shipping = () => {
                 invoice: invoiceDetails
             };
 
-            console.log(`Processed shipping data ${id}:`, processedData);
             return processedData;
         } catch (error) {
-            console.error(`Error fetching detailed data for shipping ${id}:`, error);
             toast.error(t.loadError);
             return null;
         }
@@ -228,7 +222,6 @@ const Shipping = () => {
 
             for (let i = 0; i < selectedData.length; i++) {
                 const currentShipping = selectedData[i];
-                console.log("Processing shipping data:", currentShipping);
                 setSelectedShippingData(currentShipping);
 
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -270,7 +263,6 @@ const Shipping = () => {
             toast.success(t.exportSuccess);
 
         } catch (error) {
-            console.error("Error exporting PDF:", error);
             toast.error(t.exportError);
             setIsPrinting(false);
         }
@@ -287,7 +279,6 @@ const Shipping = () => {
     console.log('Starting filtering with shippingData:', shippingData);
     const filteredShippings = (shippingData || [])
         .filter(ship => {
-            console.log("Checking ship:", ship);
             return ship?.receiverName;
         })
         .filter((ship) => {
@@ -457,13 +448,10 @@ const Shipping = () => {
                             toast.success(t.deleteSuccess(successes));
                         } else if (successes === 0) {
                             toast.error(t.deleteFailed);
-                            console.error("Delete errors:", failures.map(f => f.value?.error).join(", "));
                         } else {
                             toast.warning(t.deletePartial(successes, failures.length));
-                            console.error("Partial delete errors:", failures.map(f => f.value?.error).join(", "));
                         }
                     } catch (error) {
-                        console.error("Error in delete operation:", error);
                         toast.error(t.error + (error.response?.data?.message || error.message));
                     } finally {
                         setIsLoading(false);
@@ -479,13 +467,11 @@ const Shipping = () => {
                         className="filter-type"
                         value={filterType}
                         onChange={(e) => {
-                            console.log('Selected filter type:', e.target.value);
                             setFilterType(e.target.value);
                         }}
                     >
                         <option value="">{t.selectShippingCode}</option>
                         {[...new Set(shippingData.map(ship => ship.ID))].sort().map(type => {
-                            console.log('Adding option:', { type, value: type?.toString() });
                             return <option key={type} value={type?.toString()}>{type?.toString()}</option>;
                         })}
                     </select>

@@ -2,7 +2,6 @@ import backIcon from "../../assets/img/back-icon.svg";
 import deleteIcon from "../../assets/img/delete-icon.svg";
 import editIcon from "../../assets/img/white-edit.svg";
 import saveIcon from "../../assets/img/save-icon.svg";
-import cancelIcon from "../../assets/img/cancel-icon.svg";
 import printIcon from "../../assets/img/print-icon.svg";
 import { generatePostOfficePDF } from "../../utils/pdfUtils";
 import "./detailPostOffice.scss";
@@ -19,11 +18,9 @@ const DetailPostOffice = () => {
   const navigate = useNavigate();
   const currentUser = useMemo(() => {
     const user = apiAuth.getCurrentUser();
-    console.log('Current user:', user);
     return user;
   }, []);
   const isStaff = currentUser?.userType === 'staff';
-  console.log('Is staff:', isStaff);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
@@ -72,7 +69,6 @@ const DetailPostOffice = () => {
       );
       setShipments(officeShipments);
     } catch (err) {
-      console.error("Error fetching shipments:", err);
     }
   };
 
@@ -133,12 +129,10 @@ const DetailPostOffice = () => {
       [field]: value,
     }));
 
-    // Clear validation errors when field is emptied or modified
     if (value === '' || (field === 'phoneNumber' && value.length < 10)) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
 
-    // Only validate email while typing
     if (field === 'email' && value.length > 0) {
       if (!validateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Email phải chứa @ và ." }));

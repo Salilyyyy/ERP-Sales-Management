@@ -37,7 +37,6 @@ const Product = () => {
 
     const cloudName = 'dlrm4ccbs';
     const apiKey = '679573739148611';
-    const apiSecret = '9IqI3iaNI1e9mwTp8V6uomrwFts';
 
     useEffect(() => {
         fetchProducts();
@@ -49,7 +48,6 @@ const Product = () => {
             const response = await productCategoryApi.getAll();
             setCategories(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
-            console.error("Error fetching categories:", error);
             setCategories([]);
         }
     };
@@ -61,7 +59,6 @@ const Product = () => {
             const productsList = Array.isArray(response.data) ? response.data : [];
             setProducts(productsList);
         } catch (error) {
-            console.error("Error fetching products:", error);
             setProducts([]);
         } finally {
             setLoading(false);
@@ -85,9 +82,7 @@ const Product = () => {
                 url: { secure: true }
             });
             setCld(cloudinary);
-            console.log("Cloudinary initialized successfully");
         } catch (error) {
-            console.error("Error initializing Cloudinary:", error);
         }
     }, []);
 

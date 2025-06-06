@@ -99,13 +99,23 @@ const CreateStockIn = () => {
         }));
     };
 
-    const handleProductSelect = (value) => {
+const handleProductSelect = (value) => {
+        if (!value) return; 
+
         if (value === "__new__") {
             setShowNewProductModal(true);
             setNewProduct(initialNewProduct);
+            setCurrentProduct(null);
         } else {
             const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
             const product = selectedSupplier?.Products.find(p => p.name === value);
+            
+            const isProductAlreadySelected = selectedProducts.some(p => p.ID === product.ID);
+            if (isProductAlreadySelected) {
+                setError("Sản phẩm này đã được chọn");
+                return;
+            }
+
             if (product && selectedSupplier) {
                 const productToAdd = {
                     ID: product.ID,
@@ -124,10 +134,12 @@ const CreateStockIn = () => {
                     description: product.description,
                     produceCategoriesID: product.produceCategoriesID,
                     supplierID: selectedSupplier.ID,
-                    isNew: false
+                    isNew: false,
+                    errors: {}
                 };
                 setCurrentProduct(productToAdd);
                 setShowNewProductModal(true);
+                setError(""); 
             }
         }
     };
@@ -143,6 +155,20 @@ const CreateStockIn = () => {
     };
 
     const validateNewProduct = () => {
+        if (currentProduct) {
+            const errors = {};
+            const requiredFields = ['unitPrice', 'sellingPrice', 'quantity'];
+
+            requiredFields.forEach(field => {
+                if (!currentProduct[field]) {
+                    errors[field] = 'Vui lòng nhập thông tin';
+                }
+            });
+
+            setCurrentProduct(prev => ({ ...prev, errors: errors }));
+            return Object.keys(errors).length === 0;
+        }
+
         const errors = {};
         const requiredFields = ['name', 'produceCategoriesID', 'unit', 'unitPrice', 'sellingPrice', 'quantity'];
 
@@ -162,12 +188,18 @@ const CreateStockIn = () => {
         }
         try {
             if (currentProduct) {
-                const existingProduct = suppliers
-                    .find(s => s.name === formData.supplier)
-                    ?.Products?.find(p => p.ID === currentProduct.ID);
-
-                if (!existingProduct) {
+                const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
+                const product = selectedSupplier?.Products?.find(p => p.ID === currentProduct.ID);
+                
+                if (!product) {
                     throw new Error("Không tìm thấy sản phẩm");
+                }
+
+                const isProductAlreadySelected = selectedProducts.some(p => p.ID === product.ID);
+                if (isProductAlreadySelected) {
+                    setError("Sản phẩm này đã được chọn");
+                    setShowNewProductModal(false);
+                    return;
                 }
 
                 const errors = { ...initialValidationErrors };
@@ -191,27 +223,9 @@ const CreateStockIn = () => {
                     return;
                 }
 
-                await apiProduct.update(currentProduct.ID, {
-                    name: currentProduct.name,
-                    inPrice: parseFloat(currentProduct.unitPrice),
-                    outPrice: parseFloat(currentProduct.sellingPrice),
-                    supplierID: parseInt(currentProduct.supplierID),
-                    unit: currentProduct.unit,
-                    weight: parseFloat(currentProduct.weight) || 0,
-                    length: parseFloat(currentProduct.length) || 0,
-                    width: parseFloat(currentProduct.width) || 0,
-                    height: parseFloat(currentProduct.height) || 0,
-                    origin: currentProduct.origin,
-                    quantity: existingProduct.quantity + parseInt(currentProduct.quantity), // Cộng thêm số lượng mới
-                    title: currentProduct.title || currentProduct.name,
-                    description: currentProduct.description || "",
-                    produceCategoriesID: parseInt(currentProduct.produceCategoriesID)
-                });
-
                 setSelectedProducts(prev => [...prev, currentProduct]);
             } else {
                 const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
-                // Create product and get response with ID
                 const response = await apiProduct.create({
                     name: newProduct.name,
                     inPrice: parseFloat(newProduct.unitPrice),
@@ -229,11 +243,9 @@ const CreateStockIn = () => {
                     produceCategoriesID: parseInt(newProduct.produceCategoriesID)
                 });
 
-                // Extract product data from response
                 const productData = response.data;
                 console.log("Created product:", productData);
 
-                // Add product with proper ID to selected products
                 const productToAdd = {
                     ID: parseInt(productData.ID),
                     productID: parseInt(productData.ID),
@@ -257,6 +269,7 @@ const CreateStockIn = () => {
             setShowNewProductModal(false);
             setNewProduct(initialNewProduct);
             setCurrentProduct(null);
+            setError(""); 
         } catch (error) {
             console.error("Lỗi khi tạo sản phẩm mới:", error.message);
         }
@@ -271,11 +284,6 @@ const CreateStockIn = () => {
                 return;
             }
 
-            // Log for debugging
-            console.log("Selected products:", selectedProducts);
-
-            // Build stockin data
-            // Prepare stockin data
             const stockInData = {
                 stockinDate: new Date(formData.date).toISOString(),
                 notes: formData.description || "",
@@ -284,7 +292,6 @@ const CreateStockIn = () => {
                 DetailStockins: []
             };
 
-            // Prepare detail stockins separately to ensure correct format
             for (const product of selectedProducts) {
                 const productID = parseInt(product.productID || product.ID);
                 if (!productID) {
@@ -298,7 +305,6 @@ const CreateStockIn = () => {
                 });
             }
 
-            // Validate critical fields
             if (!stockInData.stockinDate || !stockInData.supplierID || !stockInData.DetailStockins.length) {
                 setError("Vui lòng điền đầy đủ thông tin cần thiết.");
                 return;
@@ -442,7 +448,7 @@ const CreateStockIn = () => {
                             <div className="info-label">Tên mặt hàng</div>
                             <select
                                 name="itemName"
-                                value=""
+                                value={currentProduct?.name || ""}
                                 onChange={handleChange}
                                 required
                             >

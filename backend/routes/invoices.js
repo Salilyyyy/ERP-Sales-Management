@@ -89,6 +89,20 @@ const { promotionID, customerID, employeeName, exportTime, paymentMethod, tax, d
         data: invoiceData
       });
 
+      if (customerID) {
+        const bonusPointsToAdd = Math.floor(req.body.total / 100000);
+        if (bonusPointsToAdd > 0) {
+          await tx.customers.update({
+            where: { ID: customerID },
+            data: {
+              bonusPoints: {
+                increment: bonusPointsToAdd
+              }
+            }
+          });
+        }
+      }
+
       if (isDelivery) {
         await tx.shipments.create({
           data: {
@@ -454,6 +468,21 @@ router.put('/:id', async (req, res) => {
         where: { ID: parseInt(id) },
         data: updateData
       });
+
+      // Update bonus points if total amount changed
+      if (updateFields.total !== undefined && updateFields.customerID !== undefined) {
+        const bonusPointsToAdd = Math.floor(updateFields.total / 100000);
+        if (bonusPointsToAdd > 0) {
+          await tx.customers.update({
+            where: { ID: updateFields.customerID },
+            data: {
+              bonusPoints: {
+                increment: bonusPointsToAdd
+              }
+            }
+          });
+        }
+      }
 
       return cleanInvoice;
     }, {

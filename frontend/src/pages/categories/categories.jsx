@@ -25,12 +25,9 @@ const Categories = () => {
     const fetchCategories = async () => {
         try {
             setIsLoading(true);
-            console.log("Fetching categories...");
             const data = await ProductCategoryRepository.getAll();
-            console.log("Processed categories data:", data);
             setCategories(data);
         } catch (err) {
-            console.error("Error fetching categories:", err);
             toast.error(err.message);
         } finally {
             setIsLoading(false);
@@ -58,7 +55,6 @@ const Categories = () => {
             setIsDropdownOpen(false);
             toast.success("Xóa thành công");
         } catch (err) {
-            console.error('Delete error:', err);
             toast.error("Lỗi khi xóa: " + err.message);
         } finally {
             setIsLoading(false);
@@ -169,7 +165,6 @@ const Categories = () => {
                                             ? [...selectedIds, Number(category.ID)]
                                             : selectedIds.filter(id => id !== Number(category.ID));
                                         setSelectedIds(newSelectedIds);
-                                        console.log('Selected IDs after toggle:', newSelectedIds);
                                     }}
                                 />
                             </td>

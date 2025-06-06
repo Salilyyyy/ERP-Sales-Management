@@ -19,11 +19,9 @@ const PostOffice = () => {
     const navigate = useNavigate();
     const currentUser = useMemo(() => {
         const user = apiAuth.getCurrentUser();
-        console.log('Current user:', user);
         return user;
     }, []);
     const isStaff = currentUser?.userType === 'staff';
-    console.log('Is staff:', isStaff);
     const { language } = useLanguage();
     const t = translations[language];
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -49,7 +47,6 @@ const PostOffice = () => {
             setPostOffices(response);
             setLoading(false);
         } catch (error) {
-            console.error("Failed to fetch post offices:", error);
             setLoading(false);
         }
     };
@@ -86,7 +83,6 @@ const PostOffice = () => {
             setSelectedPostOffices([]);
             toast.success(t.deletePostOfficeSuccess);
         } catch (error) {
-            console.error("Failed to delete post offices:", error);
             toast.error(t.deletePostOfficeFailed);
         } finally {
             setShowConfirmPopup(false);

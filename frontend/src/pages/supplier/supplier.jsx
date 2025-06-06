@@ -25,7 +25,6 @@ const Suppliers = () => {
         return user;
     }, []);
     const isStaff = currentUser?.userType === 'staff';
-    console.log('Is staff:', isStaff);
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -64,7 +63,6 @@ const Suppliers = () => {
             setError(null);
         } catch (err) {
             setError('Không thể tải danh sách nhà cung cấp');
-            console.error('Lỗi khi fetch:', err);
         }
     };
 
@@ -209,7 +207,6 @@ const Suppliers = () => {
                         setShowDeleteConfirm(false);
                         toast.success("Xóa nhà cung cấp thành công");
                     } catch (err) {
-                        console.error("Error deleting suppliers:", err);
                         const errorMessage = err.response?.data?.error || "Có lỗi xảy ra khi xóa nhà cung cấp";
                         toast.error(errorMessage);
                     }

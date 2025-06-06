@@ -16,7 +16,37 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/index.js"
+      "dest": "backend/index.js",
+      "headers": {
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
+        "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+      }
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "frontend/build/manifest.json",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "frontend/build/static/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "frontend/build/favicon.ico"
+    },
+    {
+      "src": "/logo.png",
+      "dest": "frontend/build/logo.png"
     },
     {
       "src": "/(.*)",

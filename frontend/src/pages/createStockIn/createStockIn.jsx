@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import LoadingSpinner from "../../components/loadingSpinner/loadingSpinner";
 import BaseRepository from "../../api/baseRepository";
 import apiStockIn from "../../api/apiStockIn";
@@ -43,15 +44,21 @@ const initialValidationErrors = {
     quantity: ""
 };
 
-const steps = [
-    { number: 1, text: "Thông tin cơ bản" },
-    { number: 2, text: "Chọn sản phẩm" },
-    { number: 3, text: "Xem chi tiết" }
-];
+let language = 'vi';
 
 const CreateStockIn = () => {
     const navigate = useNavigate();
+    const { language: currentLang } = useLanguage();
+    language = currentLang;
     const [currentStep, setCurrentStep] = useState(1);
+
+    const steps = [
+        { number: 1, text: language === 'en' ? "Basic Information" : "Thông tin cơ bản" },
+        { number: 2, text: language === 'en' ? "Select Products" : "Chọn sản phẩm" },
+        { number: 3, text: language === 'en' ? "Review Details" : "Xem chi tiết" }
+    ];
+
+
     const [suppliers, setSuppliers] = useState([]);
     const [categories, setCategories] = useState([]);
     const [countries, setCountries] = useState([]);
@@ -74,7 +81,7 @@ const CreateStockIn = () => {
                 setCategories(categoriesRes);
                 setCountries(countriesRes);
             } catch (error) {
-                console.error("Lỗi khi tải dữ liệu:", error.message);
+                console.error(language === 'en' ? "Error loading data:" : "Lỗi khi tải dữ liệu:", error.message);
             }
         };
         fetchInitialData();
@@ -99,8 +106,8 @@ const CreateStockIn = () => {
         }));
     };
 
-const handleProductSelect = (value) => {
-        if (!value) return; 
+    const handleProductSelect = (value) => {
+        if (!value) return;
 
         if (value === "__new__") {
             setShowNewProductModal(true);
@@ -109,10 +116,10 @@ const handleProductSelect = (value) => {
         } else {
             const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
             const product = selectedSupplier?.Products.find(p => p.name === value);
-            
+
             const isProductAlreadySelected = selectedProducts.some(p => p.ID === product.ID);
             if (isProductAlreadySelected) {
-                setError("Sản phẩm này đã được chọn");
+                setError(language === 'en' ? "This product has already been selected" : "Sản phẩm này đã được chọn");
                 return;
             }
 
@@ -139,7 +146,7 @@ const handleProductSelect = (value) => {
                 };
                 setCurrentProduct(productToAdd);
                 setShowNewProductModal(true);
-                setError(""); 
+                setError("");
             }
         }
     };
@@ -161,7 +168,7 @@ const handleProductSelect = (value) => {
 
             requiredFields.forEach(field => {
                 if (!currentProduct[field]) {
-                    errors[field] = 'Vui lòng nhập thông tin';
+                    errors[field] = language === 'en' ? 'Please enter information' : 'Vui lòng nhập thông tin';
                 }
             });
 
@@ -190,14 +197,14 @@ const handleProductSelect = (value) => {
             if (currentProduct) {
                 const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
                 const product = selectedSupplier?.Products?.find(p => p.ID === currentProduct.ID);
-                
+
                 if (!product) {
-                    throw new Error("Không tìm thấy sản phẩm");
+                    throw new Error(language === 'en' ? "Product not found" : "Không tìm thấy sản phẩm");
                 }
 
                 const isProductAlreadySelected = selectedProducts.some(p => p.ID === product.ID);
                 if (isProductAlreadySelected) {
-                    setError("Sản phẩm này đã được chọn");
+                    setError(language === 'en' ? "This product has already been selected" : "Sản phẩm này đã được chọn");
                     setShowNewProductModal(false);
                     return;
                 }
@@ -244,7 +251,6 @@ const handleProductSelect = (value) => {
                 });
 
                 const productData = response.data;
-                console.log("Created product:", productData);
 
                 const productToAdd = {
                     ID: parseInt(productData.ID),
@@ -269,9 +275,9 @@ const handleProductSelect = (value) => {
             setShowNewProductModal(false);
             setNewProduct(initialNewProduct);
             setCurrentProduct(null);
-            setError(""); 
+            setError("");
         } catch (error) {
-            console.error("Lỗi khi tạo sản phẩm mới:", error.message);
+            console.error(language === 'en' ? "Error creating new product:" : "Lỗi khi tạo sản phẩm mới:", error.message);
         }
     };
 
@@ -280,7 +286,7 @@ const handleProductSelect = (value) => {
         try {
             const selectedSupplier = suppliers.find(s => s.name === formData.supplier);
             if (!selectedSupplier) {
-                console.error("No supplier selected");
+                console.error(language === 'en' ? "No supplier selected" : "Chưa chọn nhà cung cấp");
                 return;
             }
 
@@ -295,7 +301,7 @@ const handleProductSelect = (value) => {
             for (const product of selectedProducts) {
                 const productID = parseInt(product.productID || product.ID);
                 if (!productID) {
-                    setError("Một số sản phẩm thiếu ID. Vui lòng kiểm tra lại.");
+                    setError(language === 'en' ? "Some products are missing IDs. Please check again." : "Một số sản phẩm thiếu ID. Vui lòng kiểm tra lại.");
                     return;
                 }
                 stockInData.DetailStockins.push({
@@ -306,23 +312,19 @@ const handleProductSelect = (value) => {
             }
 
             if (!stockInData.stockinDate || !stockInData.supplierID || !stockInData.DetailStockins.length) {
-                setError("Vui lòng điền đầy đủ thông tin cần thiết.");
+                setError(language === 'en' ? "Please fill in all required information." : "Vui lòng điền đầy đủ thông tin cần thiết.");
                 return;
             }
 
-            console.log("Sending stockin data:", stockInData);
             try {
                 const result = await apiStockIn.create(stockInData);
-                console.log("Create stockin result:", result);
                 setError("");
                 navigate("/stock-history");
             } catch (error) {
-                console.error("API Error:", error);
-                setError("Tạo đơn nhập thất bại. Vui lòng kiểm tra lại thông tin và thử lại.");
+                setError(language === 'en' ? "Failed to create stock in. Please check the information and try again." : "Tạo đơn nhập thất bại. Vui lòng kiểm tra lại thông tin và thử lại.");
             }
         } catch (error) {
-            console.error("Submit Error:", error);
-            setError("Vui lòng kiểm tra lại thông tin sản phẩm và thử lại.");
+            setError(language === 'en' ? "Please check the product information and try again." : "Vui lòng kiểm tra lại thông tin sản phẩm và thử lại.");
         }
     };
 
@@ -384,7 +386,7 @@ const handleProductSelect = (value) => {
                 <div className="back" onClick={() => navigate("/stock-history")}>
                     <img src={backIcon} alt="Quay lại" />
                 </div>
-                <h2>Tạo mới đơn nhập</h2>
+                <h2>{language === 'en' ? "Create New Stock In" : "Tạo mới đơn nhập"}</h2>
             </div>
 
 
@@ -405,7 +407,7 @@ const handleProductSelect = (value) => {
                 {currentStep === 1 && (
                     <div className="step-content">
                         <div className="info-item">
-                            <div className="info-label">Ngày nhập</div>
+                            <div className="info-label">{language === 'en' ? "Import Date" : "Ngày nhập"}</div>
                             <input
                                 type="date"
                                 name="date"
@@ -416,14 +418,14 @@ const handleProductSelect = (value) => {
                         </div>
 
                         <div className="info-item">
-                            <div className="info-label">Nhà cung cấp</div>
+                            <div className="info-label">{language === 'en' ? "Supplier" : "Nhà cung cấp"}</div>
                             <select
                                 name="supplier"
                                 value={formData.supplier}
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Chọn nhà cung cấp</option>
+                                <option value="">{language === 'en' ? "Select supplier" : "Chọn nhà cung cấp"}</option>
                                 {suppliers.map((s, i) => (
                                     <option key={i} value={s.name}>{s.name}</option>
                                 ))}
@@ -431,7 +433,7 @@ const handleProductSelect = (value) => {
                         </div>
 
                         <div className="info-item">
-                            <div className="info-label">Tên người đại diện</div>
+                            <div className="info-label">{language === 'en' ? "Representative Name" : "Tên người đại diện"}</div>
                             <input
                                 type="text"
                                 name="representative"
@@ -445,33 +447,33 @@ const handleProductSelect = (value) => {
                 {currentStep === 2 && (
                     <div className="step-content">
                         <div className="info-item">
-                            <div className="info-label">Tên mặt hàng</div>
+                            <div className="info-label">{language === 'en' ? "Product Name" : "Tên mặt hàng"}</div>
                             <select
                                 name="itemName"
                                 value={currentProduct?.name || ""}
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Chọn mặt hàng</option>
+                                <option value="">{language === 'en' ? "Select product" : "Chọn mặt hàng"}</option>
                                 {suppliers
                                     .find(s => s.name === formData.supplier)
                                     ?.Products?.map(p => (
                                         <option key={p.ID} value={p.name}>{p.name}</option>
                                     ))}
-                                <option value="__new__">+ Thêm sản phẩm mới</option>
+                                <option value="__new__">{language === 'en' ? "+ Add new product" : "+ Thêm sản phẩm mới"}</option>
                             </select>
                         </div>
 
                         <div className="selected-products">
-                            <h3>Sản phẩm đã chọn</h3>
+                            <h3>{language === 'en' ? "Selected Products" : "Sản phẩm đã chọn"}</h3>
                             <table className="selected-products-table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Tên sản phẩm</th>
-                                        <th>Số lượng</th>
-                                        <th>Đơn giá</th>
-                                        <th>Thành tiền</th>
+                                        <th>{language === 'en' ? "Product Name" : "Tên sản phẩm"}</th>
+                                        <th>{language === 'en' ? "Quantity" : "Số lượng"}</th>
+                                        <th>{language === 'en' ? "Unit Price" : "Đơn giá"}</th>
+                                        <th>{language === 'en' ? "Total" : "Thành tiền"}</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -499,14 +501,14 @@ const handleProductSelect = (value) => {
                 {currentStep === 3 && (
                     <div className="step-content">
                         <div className="summary">
-                            <h3>Chi tiết đơn nhập</h3>
+                            <h3>{language === 'en' ? "Stock In Details" : "Chi tiết đơn nhập"}</h3>
                             <table className="summary-table">
                                 <thead>
                                     <tr>
-                                        <th>Tên sản phẩm</th>
-                                        <th>Số lượng</th>
-                                        <th>Đơn giá</th>
-                                        <th>Thành tiền</th>
+                                        <th>{language === 'en' ? "Product Name" : "Tên sản phẩm"}</th>
+                                        <th>{language === 'en' ? "Quantity" : "Số lượng"}</th>
+                                        <th>{language === 'en' ? "Unit Price" : "Đơn giá"}</th>
+                                        <th>{language === 'en' ? "Total" : "Thành tiền"}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -522,18 +524,18 @@ const handleProductSelect = (value) => {
                             </table>
 
                             <div className="info-item">
-                                <div className="info-label">Ghi chú</div>
+                                <div className="info-label">{language === 'en' ? "Note" : "Ghi chú"}</div>
                                 <input
                                     type="text"
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    placeholder="Nhập ghi chú (nếu có)"
+                                    placeholder={language === 'en' ? "Enter note (if any)" : "Nhập ghi chú (nếu có)"}
                                 />
                             </div>
 
                             <div className="info-item">
-                                <div className="info-label">Tổng tiền</div>
+                                <div className="info-label">{language === 'en' ? "Total Amount" : "Tổng tiền"}</div>
                                 <input
                                     type="number"
                                     value={calculateTotal()}
@@ -553,7 +555,7 @@ const handleProductSelect = (value) => {
                 <div className="actions">
                     {currentStep > 1 && (
                         <button type="button" className="previous" onClick={prevStep}>
-                            Quay lại
+                            {language === 'en' ? "Back" : "Quay lại"}
                         </button>
                     )}
                     {currentStep < 3 && (
@@ -563,13 +565,13 @@ const handleProductSelect = (value) => {
                             onClick={nextStep}
                             disabled={!validateStep(currentStep)}
                         >
-                            Tiếp theo
+                            {language === 'en' ? "Next" : "Tiếp theo"}
                         </button>
                     )}
                     {currentStep === 3 && (
                         <>
                             <button type="button" className="delete" onClick={resetForm}>
-                                <img src={deleteIcon} alt="Xóa" /> Xóa
+                                <img src={deleteIcon} alt={language === 'en' ? "Delete" : "Xóa"} /> {language === 'en' ? "Delete" : "Xóa"}
                             </button>
                             <button
                                 type="button"
@@ -577,7 +579,7 @@ const handleProductSelect = (value) => {
                                 onClick={handleSubmit}
                                 disabled={!validateStep(currentStep)}
                             >
-                                <img src={createIcon} alt="Tạo mới" /> Tạo mới
+                                <img src={createIcon} alt={language === 'en' ? "Create" : "Tạo mới"} /> {language === 'en' ? "Create" : "Tạo mới"}
                             </button>
                         </>
                     )}
@@ -587,12 +589,12 @@ const handleProductSelect = (value) => {
             {showNewProductModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <h3>{currentProduct ? 'Thêm số lượng sản phẩm' : 'Thêm sản phẩm mới'}</h3>
+                        <h3>{currentProduct ? (language === 'en' ? 'Add Product Quantity' : 'Thêm số lượng sản phẩm') : (language === 'en' ? 'Add New Product' : 'Thêm sản phẩm mới')}</h3>
 
                         {currentProduct ? (
                             <>
                                 <div className="info-item">
-                                    <div className="info-label">Tên sản phẩm</div>
+                                    <div className="info-label">{language === 'en' ? "Product Name" : "Tên sản phẩm"}</div>
                                     <input
                                         type="text"
                                         value={currentProduct.name}
@@ -601,7 +603,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Giá nhập</div>
+                                    <div className="info-label">{language === 'en' ? "Import Price" : "Giá nhập"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -617,7 +619,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Giá bán</div>
+                                    <div className="info-label">{language === 'en' ? "Selling Price" : "Giá bán"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -633,7 +635,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Số lượng</div>
+                                    <div className="info-label">{language === 'en' ? "Quantity" : "Số lượng"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -651,7 +653,7 @@ const handleProductSelect = (value) => {
                         ) : (
                             <>
                                 <div className="info-item">
-                                    <div className="info-label">Tên sản phẩm mới</div>
+                                    <div className="info-label">{language === 'en' ? "New Product Name" : "Tên sản phẩm mới"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="text"
@@ -666,14 +668,14 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Danh mục</div>
+                                    <div className="info-label">{language === 'en' ? "Category" : "Danh mục"}</div>
                                     <div style={{ width: '100%' }}>
                                         <select
                                             value={newProduct.produceCategoriesID}
                                             onChange={(e) => setNewProduct(prev => ({ ...prev, produceCategoriesID: e.target.value }))}
                                             required
                                         >
-                                            <option value="">Chọn danh mục</option>
+                                            <option value="">{language === 'en' ? "Select category" : "Chọn danh mục"}</option>
                                             {categories.map((category) => (
                                                 <option key={category.ID} value={category.ID}>
                                                     {category.name}
@@ -687,14 +689,14 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Đơn vị tính</div>
+                                    <div className="info-label">{language === 'en' ? "Unit" : "Đơn vị tính"}</div>
                                     <div style={{ width: '100%' }}>
                                         <select
                                             value={newProduct.unit}
                                             onChange={(e) => setNewProduct(prev => ({ ...prev, unit: e.target.value }))}
                                             required
                                         >
-                                            <option value="">Chọn đơn vị tính</option>
+                                            <option value="">{language === 'en' ? "Select unit" : "Chọn đơn vị tính"}</option>
                                             {categories.map((category, index) => (
                                                 <option key={index} value={category.name}>
                                                     {category.name}
@@ -708,11 +710,11 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Kích thước (cm)</div>
+                                    <div className="info-label">{language === 'en' ? "Dimensions (cm)" : "Kích thước (cm)"}</div>
                                     <div style={{ display: 'flex', gap: '10px' }}>
                                         <input
                                             type="number"
-                                            placeholder="Dài"
+                                            placeholder={language === 'en' ? "Length" : "Dài"}
                                             value={newProduct.length}
                                             onChange={(e) => setNewProduct(prev => ({ ...prev, length: e.target.value }))}
                                             required
@@ -721,7 +723,7 @@ const handleProductSelect = (value) => {
                                         />
                                         <input
                                             type="number"
-                                            placeholder="Rộng"
+                                            placeholder={language === 'en' ? "Width" : "Rộng"}
                                             value={newProduct.width}
                                             onChange={(e) => setNewProduct(prev => ({ ...prev, width: e.target.value }))}
                                             required
@@ -730,7 +732,7 @@ const handleProductSelect = (value) => {
                                         />
                                         <input
                                             type="number"
-                                            placeholder="Cao"
+                                            placeholder={language === 'en' ? "Height" : "Cao"}
                                             value={newProduct.height}
                                             onChange={(e) => setNewProduct(prev => ({ ...prev, height: e.target.value }))}
                                             required
@@ -741,7 +743,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Khối lượng (gram)</div>
+                                    <div className="info-label">{language === 'en' ? "Weight (grams)" : "Khối lượng (gram)"}</div>
                                     <input
                                         type="number"
                                         value={newProduct.weight}
@@ -752,14 +754,14 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Xuất xứ</div>
+                                    <div className="info-label">{language === 'en' ? "Origin" : "Xuất xứ"}</div>
                                     <select
                                         value={newProduct.origin}
                                         onChange={(e) => setNewProduct(prev => ({ ...prev, origin: e.target.value }))}
                                         required
                                         className="country-select"
                                     >
-                                        <option value="">Chọn quốc gia</option>
+                                        <option value="">{language === 'en' ? "Select country" : "Chọn quốc gia"}</option>
                                         {countries.map((country) => (
                                             <option
                                                 key={country.code}
@@ -772,7 +774,7 @@ const handleProductSelect = (value) => {
                                     </select>
                                 </div>
                                 <div className="info-item">
-                                    <div className="info-label">Giá nhập</div>
+                                    <div className="info-label">{language === 'en' ? "Import Price" : "Giá nhập"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -788,7 +790,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Giá bán</div>
+                                    <div className="info-label">{language === 'en' ? "Selling Price" : "Giá bán"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -804,7 +806,7 @@ const handleProductSelect = (value) => {
                                 </div>
 
                                 <div className="info-item">
-                                    <div className="info-label">Số lượng</div>
+                                    <div className="info-label">{language === 'en' ? "Quantity" : "Số lượng"}</div>
                                     <div style={{ width: '100%' }}>
                                         <input
                                             type="number"
@@ -822,11 +824,11 @@ const handleProductSelect = (value) => {
 
 
                                 <div className="info-item">
-                                    <div className="info-label">Mô tả</div>
+                                    <div className="info-label">{language === 'en' ? "Description" : "Mô tả"}</div>
                                     <textarea
                                         value={newProduct.description}
                                         onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
-                                        placeholder="Nhập mô tả sản phẩm"
+                                        placeholder={language === 'en' ? "Enter product description" : "Nhập mô tả sản phẩm"}
                                     />
                                 </div>
                             </>
@@ -834,10 +836,10 @@ const handleProductSelect = (value) => {
 
                         <div className="actions">
                             <button type="button" className="previous" onClick={() => setShowNewProductModal(false)}>
-                                Hủy
+                                {language === 'en' ? "Cancel" : "Hủy"}
                             </button>
                             <button type="button" className="create" onClick={handleCreateNewProduct}>
-                                Xác nhận
+                                {language === 'en' ? "Confirm" : "Xác nhận"}
                             </button>
                         </div>
                     </div>

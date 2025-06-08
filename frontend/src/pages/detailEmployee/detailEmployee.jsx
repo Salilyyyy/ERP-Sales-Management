@@ -340,9 +340,9 @@ const DetailEmployee = () => {
                     ) : (
                         <span>
                             {employee.userType === "staff" ? "Nhân viên" :
-                             employee.userType === "manager" ? "Quản lý" :
-                             employee.userType === "admin" ? "Quản trị viên" :
-                             employee.userType}
+                                employee.userType === "manager" ? "Quản lý" :
+                                    employee.userType === "admin" ? "Quản trị viên" :
+                                        employee.userType}
                         </span>
                     )}
                 </div>

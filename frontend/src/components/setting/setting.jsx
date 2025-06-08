@@ -11,7 +11,9 @@ import saveIcon from "../../assets/img/save-icon.svg";
 
 const Settings = () => {
   const { language, setLanguage } = useLanguage();
-  const [fontSize, setFontSize] = useState("medium");
+  const [fontSize, setFontSize] = useState(() => {
+    return localStorage.getItem('font_size') || "medium";
+  });
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [emailContent, setEmailContent] = useState({
@@ -28,12 +30,15 @@ The Team`
   const t = translations[language];
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-font-size", fontSize);
+    const htmlElement = document.querySelector('html');
+    htmlElement.setAttribute('data-font-size', fontSize);
   }, [fontSize]);
 
   const handleFontSizeChange = (e) => {
-    setFontSize(e.target.value);
-    const size = language === 'en' ? translations.en[e.target.value] : translations.vi[e.target.value];
+    const newSize = e.target.value;
+    setFontSize(newSize);
+    localStorage.setItem('font_size', newSize);
+    const size = language === 'en' ? translations.en[newSize] : translations.vi[newSize];
     toast.success(t.fontSizeChanged(size));
   };
 

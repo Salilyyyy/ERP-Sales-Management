@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import apiProduct from "../../api/apiProduct";
 import apiInvoice from "../../api/apiInvoice";
 import apiStockIn from "../../api/apiStockIn";
@@ -20,6 +21,7 @@ import downIcon from "../../assets/img/down-iconn.svg";
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
 const Dashboard = () => {
+  const { language } = useLanguage();
   const [showPopup, setShowPopup] = useState(false);
   const [timeFilter, setTimeFilter] = useState("day");
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -28,19 +30,37 @@ const Dashboard = () => {
     labels: [],
     datasets: [
       {
-        label: "Doanh thu",
+        label: language === 'en' ? "Revenue" : "Doanh thu",
         data: [],
         borderColor: "#6D6DFF",
         tension: 0.4,
       },
       {
-        label: "Đơn hàng",
+        label: language === 'en' ? "Orders" : "Đơn hàng",
         data: [],
         borderColor: "#E08AFF",
         tension: 0.4,
       },
     ],
   });
+
+  useEffect(() => {
+    if (revenueData.datasets.length > 0) {
+      setRevenueData(prevData => ({
+        ...prevData,
+        datasets: [
+          {
+            ...prevData.datasets[0],
+            label: language === 'en' ? "Revenue" : "Doanh thu"
+          },
+          {
+            ...prevData.datasets[1],
+            label: language === 'en' ? "Orders" : "Đơn hàng"
+          }
+        ]
+      }));
+    }
+  }, [language]);
 
   const calculateRevenueData = (invoices, period) => {
     const data = new Map();
@@ -312,7 +332,7 @@ const Dashboard = () => {
         setLowestStock(lowest.map(product => ({
           label: product.name,
           width: `${(product.quantity / 100) * 100}%`,
-          change: `${product.quantity} sản phẩm`,
+          change: language === 'en' ? `${product.quantity} products` : `${product.quantity} sản phẩm`,
           icon: downIcon,
           color: "red"
         })));
@@ -338,15 +358,16 @@ const Dashboard = () => {
   const stockStats = [...lowestStock, ...highestStock];
 
   const donutCard = {
-    title: "Khách hàng mới",
+    title: language === 'en' ? "New Customers" : "Khách hàng mới",
     percent: (newCustomersCount / TARGET_CUSTOMERS) * 100,
     newCustomers: newCustomersCount,
-    lastMonth: `Mục tiêu tháng: ${TARGET_CUSTOMERS} khách hàng`
+    lastMonth: language === 'en' ? `Monthly Target: ${TARGET_CUSTOMERS} customers` : `Mục tiêu tháng: ${TARGET_CUSTOMERS} khách hàng`
   };
 
 
   return (
     <DashboardTemplate
+      language={language}
       showPopup={showPopup}
       setShowPopup={setShowPopup}
       timeFilter={timeFilter}

@@ -4,14 +4,62 @@
   --text-color: #000000;
 }
 
-[data-font-size="small"] {
-  --base-font-size: 13px;
+html {
+  font-size: var(--base-font-size);
 }
-[data-font-size="medium"] {
+
+body {
+  font-size: var(--base-font-size);
+}
+
+html[data-font-size="small"] {
+  --base-font-size: 14px;
+}
+html[data-font-size="medium"] {
   --base-font-size: 16px;
 }
-[data-font-size="large"] {
+html[data-font-size="large"] {
   --base-font-size: 24px;
+}
+
+h1 {
+  font-size: calc(var(--base-font-size) * 1.5);
+}
+
+h2 {
+  font-size: calc(var(--base-font-size) * 1.25);
+}
+
+h3 {
+  font-size: calc(var(--base-font-size) * 1.1);
+}
+
+p, span, div {
+  font-size: var(--base-font-size);
+}
+
+label {
+  font-size: var(--base-font-size);
+}
+
+input, select, textarea {
+  font-size: calc(var(--base-font-size) * 0.875);
+}
+
+button {
+  font-size: calc(var(--base-font-size) * 0.875);
+}
+
+table {
+  font-size: var(--base-font-size);
+  
+  th {
+    font-size: calc(var(--base-font-size) * 1.1);
+  }
+  
+  td {
+    font-size: var(--base-font-size);
+  }
 }
 
 .page-container {
@@ -69,7 +117,6 @@
   }
 }
 
-// Modal styles
 .modal-container {
   h1 {
     font-size: calc(var(--base-font-size) * 1.5);

@@ -8,8 +8,9 @@ class AuthRepository extends BaseRepository {
     async login(email, password, rememberMe = false) {
         try {
             const response = await this.post('/login', { email, password, rememberMe });
-                localStorage.setItem('auth_token', `Bearer ${response.token}`);
-                localStorage.setItem('user', JSON.stringify(response.user));
+            localStorage.setItem('auth_token', `Bearer ${response.token}`);
+            localStorage.setItem('user', JSON.stringify(response.user));
+            localStorage.setItem('remember_me', rememberMe.toString());
             return response;
         } catch (error) {
             throw error;
@@ -51,6 +52,7 @@ class AuthRepository extends BaseRepository {
         try {
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user');
+            localStorage.removeItem('remember_me');
             return true;
         } catch (error) {
             throw error;

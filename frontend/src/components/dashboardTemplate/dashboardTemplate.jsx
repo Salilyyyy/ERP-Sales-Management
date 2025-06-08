@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from "../../context/LanguageContext";
 import { Line } from "react-chartjs-2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -7,6 +8,7 @@ import downloadIcon from "../../assets/img/export-icon.svg";
 
 
 const DashboardTemplate = ({
+  language,
   showPopup,
   setShowPopup,
   timeFilter,
@@ -60,18 +62,18 @@ const DashboardTemplate = ({
     const doc = new jsPDF('p', 'mm', 'a4');
 
     doc.setFontSize(18);
-    doc.text(encodeVietnamese("Báo cáo tổng quan"), doc.internal.pageSize.width/2, 20, { align: "center" });
+    doc.text(encodeVietnamese(language === 'en' ? "Overview Report" : "Báo cáo tổng quan"), doc.internal.pageSize.width/2, 20, { align: "center" });
     doc.setFontSize(10);
-    doc.text(encodeVietnamese(`Từ ngày: ${startDate} - Đến ngày: ${endDate}`), doc.internal.pageSize.width/2, 30, { align: "center" });
+    doc.text(encodeVietnamese(language === 'en' ? `From: ${startDate} - To: ${endDate}` : `Từ ngày: ${startDate} - Đến ngày: ${endDate}`), doc.internal.pageSize.width/2, 30, { align: "center" });
 
     doc.setFontSize(14);
-    doc.text(encodeVietnamese("Thống kê doanh thu & đơn hàng"), 14, 45);
+    doc.text(encodeVietnamese(language === 'en' ? "Revenue & Orders Statistics" : "Thống kê doanh thu & đơn hàng"), 14, 45);
     doc.setFontSize(12);
-    doc.text(encodeVietnamese(`Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')}đ`), 14, 55);
-    doc.text(encodeVietnamese(`Tổng đơn hàng: ${totalOrders}`), 14, 65);
+    doc.text(encodeVietnamese(language === 'en' ? `Total Revenue: ${totalRevenue.toLocaleString('vi-VN')}đ` : `Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')}đ`), 14, 55);
+    doc.text(encodeVietnamese(language === 'en' ? `Total Orders: ${totalOrders}` : `Tổng đơn hàng: ${totalOrders}`), 14, 65);
 
     doc.setFontSize(14);
-    doc.text(encodeVietnamese("Hàng tồn kho"), 14, 85);
+    doc.text(encodeVietnamese(language === 'en' ? "Inventory" : "Hàng tồn kho"), 14, 85);
     doc.setFontSize(12);
     let yPos = 95;
     stockStats.forEach(item => {
@@ -91,13 +93,13 @@ const DashboardTemplate = ({
 
     autoTable(doc, {
       head: [[
-        "STT",
-        encodeVietnamese("Tên sản phẩm"),
-        encodeVietnamese("Giá bán"),
-        encodeVietnamese("Đã bán"),
-        encodeVietnamese("Nhập vào"), 
-        encodeVietnamese("Tồn kho"),
-        encodeVietnamese("Doanh thu")
+        language === 'en' ? "No." : "STT",
+        encodeVietnamese(language === 'en' ? "Product Name" : "Tên sản phẩm"),
+        encodeVietnamese(language === 'en' ? "Price" : "Giá bán"),
+        encodeVietnamese(language === 'en' ? "Sold" : "Đã bán"),
+        encodeVietnamese(language === 'en' ? "Stock In" : "Nhập vào"),
+        encodeVietnamese(language === 'en' ? "In Stock" : "Tồn kho"),
+        encodeVietnamese(language === 'en' ? "Revenue" : "Doanh thu")
       ]],
       body: tableRows,
       startY: yPos + 20,
@@ -127,9 +129,9 @@ const DashboardTemplate = ({
 
     const finalY = (doc.previousAutoTable?.finalY || yPos + 80) + 20;
     doc.setFontSize(14);
-    doc.text(encodeVietnamese("Thống kê khách hàng"), 14, finalY);
+    doc.text(encodeVietnamese(language === 'en' ? "Customer Statistics" : "Thống kê khách hàng"), 14, finalY);
     doc.setFontSize(12);
-    doc.text(encodeVietnamese(`${donutCard.newCustomers} khách hàng mới (trong 30 ngày qua)`), 14, finalY + 10);
+    doc.text(encodeVietnamese(language === 'en' ? `${donutCard.newCustomers} new customers (in the last 30 days)` : `${donutCard.newCustomers} khách hàng mới (trong 30 ngày qua)`), 14, finalY + 10);
     doc.text(encodeVietnamese(donutCard.lastMonth), 14, finalY + 20);
 
     doc.save("bao-cao-tong-quan.pdf");
@@ -139,23 +141,23 @@ const DashboardTemplate = ({
   return (
     <div className="page-container dashboard">
       <div className="dashboard-header">
-        <h2>Tổng quan</h2>
+        <h2>{language === 'en' ? "Overview" : "Tổng quan"}</h2>
         <button className="export-btn" onClick={() => setShowPopup(true)}>
-          <img src={downloadIcon} alt="Export" /> Xuất
+          <img src={downloadIcon} alt="Export" /> {language === 'en' ? "Export" : "Xuất"}
         </button>
       </div>
 
       <div className="grid-container">
         <div className="card chart-card">
           <div className="chart-header">
-            <h4>Thống kê doanh thu & đơn hàng</h4>
+            <h4>{language === 'en' ? "Revenue & Orders Statistics" : "Thống kê doanh thu & đơn hàng"}</h4>
             <div className="statistics-summary">
               <div className="stat-item">
-                <label>Tổng doanh thu:</label>
+                <label>{language === 'en' ? "Total Revenue:" : "Tổng doanh thu:"}</label>
                 <span>{totalRevenue.toLocaleString('vi-VN')}đ</span>
               </div>
               <div className="stat-item">
-                <label>Tổng đơn hàng:</label>
+                <label>{language === 'en' ? "Total Orders:" : "Tổng đơn hàng:"}</label>
                 <span>{totalOrders}</span>
               </div>
             </div>
@@ -165,9 +167,9 @@ const DashboardTemplate = ({
                 onChange={(e) => setTimeFilter(e.target.value)}
                 className="time-filter"
               >
-                <option value="day">Hôm nay</option>
-                <option value="week">Tuần này</option>
-                <option value="month">Tháng này</option>
+                <option value="day">{language === 'en' ? "Today" : "Hôm nay"}</option>
+                <option value="week">{language === 'en' ? "This Week" : "Tuần này"}</option>
+                <option value="month">{language === 'en' ? "This Month" : "Tháng này"}</option>
               </select>
             </div>
           </div>
@@ -175,7 +177,7 @@ const DashboardTemplate = ({
         </div>
 
         <div className="card stock-card">
-          <h4>Hàng tồn kho</h4>
+          <h4>{language === 'en' ? "Inventory" : "Hàng tồn kho"}</h4>
           {stockStats.map((item, index) => (
             <div className="stock-row" key={index}>
               <span>{item.label}</span>
@@ -191,17 +193,17 @@ const DashboardTemplate = ({
 
         <div className="card table-card">
           <div className="table-header">
-            <h4>Sản phẩm bán chạy</h4>
+            <h4>{language === 'en' ? "Best Selling Products" : "Sản phẩm bán chạy"}</h4>
           </div>
           <table>
             <thead>
               <tr>
-                <th>STT</th>
-                <th>Tên sản phẩm</th>
-                <th>Giá bán</th>
-                <th>Đã bán</th>
-                <th>Nhập vào</th>
-                <th>Doanh thu</th>
+                <th>{language === 'en' ? "No." : "STT"}</th>
+                <th>{language === 'en' ? "Product Name" : "Tên sản phẩm"}</th>
+                <th>{language === 'en' ? "Price" : "Giá bán"}</th>
+                <th>{language === 'en' ? "Sold" : "Đã bán"}</th>
+                <th>{language === 'en' ? "Stock In" : "Nhập vào"}</th>
+                <th>{language === 'en' ? "Revenue" : "Doanh thu"}</th>
               </tr>
             </thead>
             <tbody>
@@ -229,8 +231,8 @@ const DashboardTemplate = ({
           {donutCard.percent.toFixed(1)}%
         </div>
         <div className="percent">
-          <strong>{donutCard.newCustomers} khách hàng mới</strong><br />
-          <small>(trong 30 ngày qua)</small><br />
+          <strong>{language === 'en' ? `${donutCard.newCustomers} new customers` : `${donutCard.newCustomers} khách hàng mới`}</strong><br />
+          <small>{language === 'en' ? "(in the last 30 days)" : "(trong 30 ngày qua)"}</small><br />
           <small>{donutCard.lastMonth}</small>
         </div>
       </div>
@@ -240,18 +242,18 @@ const DashboardTemplate = ({
       {showPopup && (
         <div className="popup-overlay">
           <div className="popup-content">
-            <h3>Xuất dữ liệu</h3>
+            <h3>{language === 'en' ? "Export Data" : "Xuất dữ liệu"}</h3>
             <div className="form-group">
-              <label>Ngày bắt đầu:</label>
+              <label>{language === 'en' ? "Start Date:" : "Ngày bắt đầu:"}</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Ngày kết thúc:</label>
+              <label>{language === 'en' ? "End Date:" : "Ngày kết thúc:"}</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div className="popup-actions">
-              <button className="cancel-btn" onClick={() => setShowPopup(false)}>Huỷ</button>
-              <button className="confirm-btn" onClick={handleExport}>Xuất</button>
+              <button className="cancel-btn" onClick={() => setShowPopup(false)}>{language === 'en' ? "Cancel" : "Huỷ"}</button>
+              <button className="confirm-btn" onClick={handleExport}>{language === 'en' ? "Export" : "Xuất"}</button>
             </div>
           </div>
         </div>

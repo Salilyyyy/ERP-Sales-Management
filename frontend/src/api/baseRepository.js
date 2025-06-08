@@ -50,17 +50,19 @@ class BaseRepository {
             },
             (error) => {
 
-                if (error.response?.status === 401) {
-                    const errorMessage = error.response?.data?.error || 'Vui lòng đăng nhập để tiếp tục';
-                    toast.error(errorMessage);
-                    if (!window.location.pathname.includes('login')) {
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    const isTokenError = error.response?.data?.error?.includes('Invalid or expired token');
+                    const rememberMe = localStorage.getItem('remember_me') === 'true';
+                    
+                    if (isTokenError && !rememberMe && !window.location.pathname.includes('login')) {
                         localStorage.removeItem('auth_token');
+                        localStorage.removeItem('user');
                         window.location.href = '/login';
+                        const errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                        toast.error(errorMessage);
+                        return Promise.reject(new Error(errorMessage));
                     }
-                    return Promise.reject(new Error(errorMessage));
-                }
-
-                if (error.response?.status === 403) {
+                    
                     const errorMessage = error.response?.data?.error || 'Bạn không có quyền truy cập';
                     toast.error(errorMessage);
                     return Promise.reject(new Error(errorMessage));

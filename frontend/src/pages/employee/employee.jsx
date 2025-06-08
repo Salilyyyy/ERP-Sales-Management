@@ -261,9 +261,8 @@ const Employee = () => {
                         onChange={(e) => setFilterType(e.target.value)}
                     >
                         <option value="all">Chức vụ</option>
-                        {[...new Set(employees.map(e => e.userType))].map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
+                        <option value="staff">Nhân viên</option>
+                        <option value="manager">Quản lý</option>
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>

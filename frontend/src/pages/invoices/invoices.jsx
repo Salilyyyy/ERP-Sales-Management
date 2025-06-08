@@ -292,10 +292,17 @@ const Invoices = () => {
                 onConfirm={async () => {
                     try {
                         await Promise.all(selectedInvoices.map((id) => InvoiceRepository.delete(id)));
-                        toast.success("Xóa đơn hàng thành công!");
+                        
+                        setInvoices(prevInvoices => 
+                            prevInvoices.filter(invoice => !selectedInvoices.includes(invoice.id))
+                        );
+                        setTotalItems(prev => prev - selectedInvoices.length);
                         setSelectedInvoices([]);
-                        fetchInvoices();
                         setIsDropdownOpen(false);
+                        
+                        toast.success("Xóa đơn hàng thành công!");
+                        
+                        await fetchInvoices();
                     } catch (error) {
                         console.error("Xóa lỗi:", error);
                         toast.error("Không thể xóa đơn hàng!");

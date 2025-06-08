@@ -53,10 +53,7 @@ const CreateEmployee = () => {
             });
         }
     }, []);
-    const [errors, setErrors] = useState({
-        userType: "Vui lòng chọn chức vụ",
-        department: "Vui lòng chọn phòng ban"
-    });
+    const [errors, setErrors] = useState({});
 
     const resetForm = () => {
         setFormData({
@@ -194,24 +191,6 @@ const CreateEmployee = () => {
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     setFormData({ ...formData, name: value });
-                                    if (!value.trim()) {
-                                        setErrors(prev => ({ ...prev, name: "Tên không được bỏ trống" }));
-                                    } else if (value.trim().length < 2) {
-                                        setErrors(prev => ({ ...prev, name: "Tên phải có ít nhất 2 ký tự" }));
-                                    } else {
-                                        setErrors(prev => {
-                                            const { name, ...rest } = prev;
-                                            return rest;
-                                        });
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    const value = e.target.value;
-                                    if (!value.trim()) {
-                                        setErrors(prev => ({ ...prev, name: "Tên không được bỏ trống" }));
-                                    } else if (value.trim().length < 2) {
-                                        setErrors(prev => ({ ...prev, name: "Tên phải có ít nhất 2 ký tự" }));
-                                    }
                                 }}
                                 className={errors.name ? "error" : ""}
                             />
@@ -228,24 +207,6 @@ const CreateEmployee = () => {
                                     onChange={(e) => {
                                         const value = e.target.value.trim();
                                         setFormData({ ...formData, userType: value });
-                                        if (!value) {
-                                            setErrors(prev => ({ ...prev, userType: "Vui lòng chọn chức vụ" }));
-                                        } else if (!['manager', 'staff'].includes(value)) {
-                                            setErrors(prev => ({ ...prev, userType: "Chức vụ không hợp lệ" }));
-                                        } else {
-                                            setErrors(prev => {
-                                                const { userType, ...rest } = prev;
-                                                return rest;
-                                            });
-                                        }
-                                    }}
-                                    onBlur={(e) => {
-                                        const value = e.target.value.trim();
-                                        if (!value) {
-                                            setErrors(prev => ({ ...prev, userType: "Vui lòng chọn chức vụ" }));
-                                        } else if (!['manager', 'staff'].includes(value)) {
-                                            setErrors(prev => ({ ...prev, userType: "Chức vụ không hợp lệ" }));
-                                        }
                                     }}
                                     className={errors.userType ? "error" : ""}
                                 >
@@ -266,24 +227,6 @@ const CreateEmployee = () => {
                                 onChange={(e) => {
                                     const value = e.target.value.trim();
                                     setFormData({ ...formData, department: value });
-                                    if (!value) {
-                                        setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
-                                    } else if (!['sales', 'accounting', 'warehouse', 'Customer Service'].includes(value)) {
-                                        setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
-                                    } else {
-                                        setErrors(prev => {
-                                            const { department, ...rest } = prev;
-                                            return rest;
-                                        });
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    const value = e.target.value.trim();
-                                    if (!value) {
-                                        setErrors(prev => ({ ...prev, department: "Vui lòng chọn phòng ban" }));
-                                    } else if (!['sales', 'accounting', 'warehouse', 'Customer Service'].includes(value)) {
-                                        setErrors(prev => ({ ...prev, department: "Phòng ban không hợp lệ" }));
-                                    }
                                 }}
                                 className={errors.department ? "error" : ""}
                             >
@@ -306,25 +249,6 @@ const CreateEmployee = () => {
                                 onChange={(e) => {
                                     const value = e.target.value.trim();
                                     setFormData({ ...formData, email: value });
-
-                                    if (!value) {
-                                        setErrors(prev => ({ ...prev, email: "Email không được bỏ trống" }));
-                                    } else if (!isValidEmail(value)) {
-                                        setErrors(prev => ({ ...prev, email: "Email không đúng định dạng (example@domain.com)" }));
-                                    } else {
-                                        setErrors(prev => {
-                                            const { email, ...rest } = prev;
-                                            return rest;
-                                        });
-                                    }
-                                }}
-                                onBlur={(e) => {
-                                    const value = e.target.value.trim();
-                                    if (!value) {
-                                        setErrors(prev => ({ ...prev, email: "Email không được bỏ trống" }));
-                                    } else if (!isValidEmail(value)) {
-                                        setErrors(prev => ({ ...prev, email: "Email không đúng định dạng (example@domain.com)" }));
-                                    }
                                 }}
                                 className={errors.email ? "error" : ""}
                             />

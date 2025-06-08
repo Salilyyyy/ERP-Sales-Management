@@ -24,7 +24,7 @@ class BaseRepository {
             headers: {
                 'Content-Type': 'application/json',
             },
-            timeout: 10000 
+            timeout: 30000 
         });
 
         this.api.interceptors.request.use(async (config) => {
@@ -165,7 +165,7 @@ class BaseRepository {
                     data,
                     {
                         ...config,
-                        timeout: 10000 
+                    timeout: 30000 // Increased timeout for larger data fetches
                     }
                 );
                 BaseRepository.setLoadingState(requestKey, false);
@@ -205,7 +205,7 @@ class BaseRepository {
                 const response = await this.api.put(
                     this.endpoint + this.normalizePath(path),
                     data,
-                    { timeout: 10000 }
+                    { timeout: 30000 } // Increased timeout for larger data fetches
                 );
                 BaseRepository.setLoadingState(requestKey, false);
 
@@ -237,7 +237,7 @@ class BaseRepository {
             try {
                 const response = await this.api.delete(
                     this.endpoint + this.normalizePath(path),
-                    { timeout: 10000 }
+                    { timeout: 30000 } // Increased timeout for larger data fetches
                 );
                 BaseRepository.setLoadingState(requestKey, false);
 
@@ -264,11 +264,20 @@ class BaseRepository {
 
         const resourceType = pathSegments[0];
         
+        // Clear all cached data for this resource type and related queries
         for (const [key] of this.cache) {
+            // Clear exact resource matches
             if (key.includes(resourceType)) {
                 this.cache.delete(key);
             }
+            // Clear list queries that might contain this resource
+            if (key.includes(`${this.endpoint}`) || key.includes('?')) {
+                this.cache.delete(key);
+            }
         }
+        
+        // Force cache invalidation for the base endpoint
+        this.cache.delete(this.endpoint);
     }
 }
 

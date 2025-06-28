@@ -53,8 +53,7 @@ class PromotionRepository extends BaseRepository {
 
     async deletePromotion(id) {
         try {
-            const response = await this.api.delete(`${this.endpoint}/${id}`);
-            return response.data;
+            return await this.delete(`/${id}`);
         } catch (error) {
             this.handleError(error, "Failed to delete promotion");
         }

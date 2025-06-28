@@ -205,6 +205,7 @@ router.put('/:id', async (req, res) => {
     notes,
     address
   } = req.body;
+  const parsedBonusPoints = bonusPoints ? parseInt(bonusPoints) : 0;
   try {
     const customer = await prisma.customers.update({
       where: { ID: parseInt(id) },
@@ -216,7 +217,7 @@ router.put('/:id', async (req, res) => {
         email,
         introduce,
         postalCode,
-        bonusPoints,
+        bonusPoints: parsedBonusPoints,
         notes,
         address
       },

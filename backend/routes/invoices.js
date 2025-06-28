@@ -90,7 +90,7 @@ const { promotionID, customerID, employeeName, exportTime, paymentMethod, tax, d
       });
 
       if (customerID) {
-        const bonusPointsToAdd = Math.floor(req.body.total / 100000);
+        const bonusPointsToAdd = req.body.total >= 500000 ? 1 : 0;
         if (bonusPointsToAdd > 0) {
           await tx.customers.update({
             where: { ID: customerID },
@@ -471,7 +471,7 @@ router.put('/:id', async (req, res) => {
 
       // Update bonus points if total amount changed
       if (updateFields.total !== undefined && updateFields.customerID !== undefined) {
-        const bonusPointsToAdd = Math.floor(updateFields.total / 100000);
+        const bonusPointsToAdd = updateFields.total >= 500000 ? 1 : 0;
         if (bonusPointsToAdd > 0) {
           await tx.customers.update({
             where: { ID: updateFields.customerID },

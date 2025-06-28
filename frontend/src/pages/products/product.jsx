@@ -46,7 +46,7 @@ const Product = () => {
     const fetchCategories = async () => {
         try {
             const response = await productCategoryApi.getAll();
-            setCategories(Array.isArray(response.data) ? response.data : []);
+            setCategories(response);
         } catch (error) {
             setCategories([]);
         }
@@ -56,9 +56,14 @@ const Product = () => {
         try {
             setLoading(true);
             const response = await productApi.getAll();
-            const productsList = Array.isArray(response.data) ? response.data : [];
-            setProducts(productsList);
+            if (response?.data) {
+                setProducts(Array.isArray(response.data) ? response.data : []);
+            } else {
+                console.error("Invalid response format:", response);
+                setProducts([]);
+            }
         } catch (error) {
+            console.error("Error fetching products:", error);
             setProducts([]);
         } finally {
             setLoading(false);
@@ -211,7 +216,7 @@ const Product = () => {
             product.ID.toString().includes(searchQuery)
         )
         .filter((product) =>
-            filterType === "all" ? true : String(product.produceCategoriesID) === String(filterType)
+            filterType === "all" ? true : String(product.productCategory?.ID) === String(filterType)
         )
         .filter((product) => product.name.toLowerCase().includes(filterName.toLowerCase()))
         .sort((a, b) => a.ID - b.ID);

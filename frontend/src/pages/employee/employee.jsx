@@ -273,9 +273,13 @@ const Employee = () => {
                         onChange={(e) => setFilterDepartment(e.target.value)}
                     >
                         <option value="">Phòng ban</option>
-                        {[...new Set(employees.map(e => e.department))].map(dept => (
-                            <option key={dept} value={dept}>{dept}</option>
-                        ))}
+                        {[...new Set(employees.map(e => e.department))].map(dept => {
+                            const translatedDept = dept === 'Customer Service' ? 'Chăm sóc khách hàng' :
+                                dept === 'accounting' ? 'Kế toán' :
+                                dept === 'sales' ? 'Kinh doanh' :
+                                dept === 'warehouse' ? 'Kho' : dept;
+                            return <option key={dept} value={dept}>{translatedDept}</option>;
+                        })}
                     </select>
                     <img src={downIcon} alt="▼" className="icon-down" />
                 </div>
@@ -313,8 +317,8 @@ const Employee = () => {
                                 </td>
                                 <td>
                                     {user.department === 'Customer Service' ? 'Chăm sóc khách hàng' :
-                                        user.department === 'accounting' ? 'Kinh doanh' :
-                                            user.department === 'sales' ? 'Kế toán' :
+                                        user.department === 'accounting' ? 'Kế toán' :
+                                            user.department === 'sales' ? 'Kinh doanh' :
                                                 user.department === 'warehouse' ? 'Kho' :
                                                     user.department}
                                 </td>

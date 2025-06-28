@@ -110,7 +110,7 @@ const Promotion = () => {
         setShowDeleteConfirm(false);
         try {
             for (const id of selectedPromotions) {
-                await apiPromotion.delete(id);
+                await apiPromotion.deletePromotion(id);
             }
             toast.success(`Đã xóa ${selectedPromotions.length} khuyến mãi thành công!`);
             await fetchPromotions();

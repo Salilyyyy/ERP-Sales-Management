@@ -21,7 +21,6 @@ const Suppliers = () => {
     const navigate = useNavigate();
     const currentUser = useMemo(() => {
         const user = apiAuth.getCurrentUser();
-        console.log('Current user:', user);
         return user;
     }, []);
     const isStaff = currentUser?.userType === 'staff';

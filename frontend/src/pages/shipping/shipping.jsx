@@ -171,7 +171,6 @@ const Shipping = () => {
     const getDetailedShippingData = async (id) => {
         try {
             const detailedData = await apiShipping.getById(id);
-            console.log(`Fetched detailed data for shipping ${id}:`, detailedData);
 
             if (!detailedData) {
                 throw new Error("No data returned from API");
@@ -276,7 +275,6 @@ const Shipping = () => {
         return <div className="error">{t.error}{error}</div>;
     }
 
-    console.log('Starting filtering with shippingData:', shippingData);
     const filteredShippings = (shippingData || [])
         .filter(ship => {
             return ship?.receiverName;
@@ -291,7 +289,6 @@ const Shipping = () => {
             const shipId = ship?.ID?.toString();
             const selectedId = filterType?.toString();
             const typeMatch = filterType === "" ? true : shipId === selectedId;
-            console.log('Filtering by type:', { shipId, filterType: selectedId, matches: typeMatch });
             return typeMatch;
         })
         .filter((ship) => {
@@ -517,27 +514,27 @@ const Shipping = () => {
                 <thead>
                     <tr>
                         <th><input type="checkbox" checked={selectAll} onChange={handleSelectAll} /></th>
+                        <th>Mã vận đơn</th>
                         <th>{t.shippingCode}</th>
                         <th>{t.shippingUnit}</th>
                         <th>{t.receiver}</th>
-                        <th>{t.trackingNumber}</th>
                         <th>{t.sendTime}</th>
                         <th>{t.expectedDelivery}</th>
-                        <th>{t.status}</th>
+                        <th>Người thanh toán</th>
                         <th>{t.action}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {paginatedShippings.map((ship) => (
-                        <tr key={ship.ID}>
+                    <tr key={ship.ID}>
                             <td><input type="checkbox" checked={selectedShippings.includes(ship.ID)} onChange={() => handleSelectShipping(ship.ID)} /></td>
                             <td>{ship.ID}</td>
+                            <td>{`${ship.invoiceID} `}</td>
                             <td>{ship.PostOffices?.name || t.unspecified}</td>
                             <td>{ship.receiverName}</td>
-                            <td>{ship.invoiceID}</td>
                             <td>{ship.sendTime ? moment(ship.sendTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
                             <td>{ship.receiveTime ? moment(ship.receiveTime).format('DD/MM/YYYY HH:mm:ss') : ''}</td>
-                            <td>{ship.payer}</td>
+                            <td>{ship.payer === 'receiver' ? 'Người nhận' : 'Người bán'}</td>
                             <td className="action-buttons">
                                 <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}`)}><img src={viewIcon} alt={t.view} /> {t.view}</button>
                                 <button className="btn-icon" onClick={() => navigate(`/shipping/${ship.ID}?edit=true`)}><img src={editIcon} alt={t.edit} /> {t.edit}</button>
